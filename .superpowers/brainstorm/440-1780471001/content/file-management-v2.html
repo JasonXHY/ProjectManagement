@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理功能设计 v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .feature-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .feature-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+        }
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .feature-title {
+            font-size: 1.4em;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .feature-desc {
+            color: #718096;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .feature-details {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        .detail-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+        .detail-icon {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-top: 2px;
+        }
+        .detail-text {
+            color: #4a5568;
+            font-size: 0.95em;
+        }
+        .new-feature {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+        .new-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .flow-section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            min-width: 150px;
+            border: 2px solid #e2e8f0;
+        }
+        .flow-step-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .flow-step-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        .flow-step-desc {
+            font-size: 0.9em;
+            color: #718096;
+        }
+        .flow-arrow {
+            font-size: 2em;
+            color: #667eea;
+        }
+        .note {
+            background: #ebf8ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #4299e1;
+            margin-bottom: 20px;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #2b6cb0;
+            margin-bottom: 10px;
+        }
+        .note-content {
+            color: #2c5282;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #fefcbf;
+            border-left-color: #ecc94b;
+        }
+        .highlight .note-title {
+            color: #975a16;
+        }
+        .highlight .note-content {
+            color: #744210;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .success .note-title {
+            color: #276749;
+        }
+        .success .note-content {
+            color: #22543d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件管理功能设计 v2</h1>
+        <p class="subtitle">智能分类、版本控制、内容追踪、文件生成</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <div class="feature-title">智能分类系统</div>
+                <div class="feature-desc">基于AI分析文件内容，自动分类到合适的类别</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">📁</span>
+                        <span class="detail-text">预设分类：需求文档、技术方案、会议纪要、测试报告、用户手册</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🏷️</span>
+                        <span class="detail-text">自动标签：根据内容生成关键词标签</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📊</span>
+                        <span class="detail-text">分类统计：显示各类别文件数量和占比</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">版本控制系统</div>
+                <div class="feature-desc">追踪文件变更历史，支持版本回退和比较</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">📝</span>
+                        <span class="detail-text">版本记录：每次修改自动保存版本</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">🔍</span>
+                        <span class="detail-text">变更比较：查看两个版本之间的差异</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">⏪</span>
+                        <span class="detail-text">版本回退：恢复到任意历史版本</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card new-feature">
+                <div class="feature-icon">📝</div>
+                <div class="feature-title">内容追踪系统 <span class="new-badge">新增</span></div>
+                <div class="feature-desc">AI读取文件后自动更新项目进度和追踪记录</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">📈</span>
+                        <span class="detail-text">进度更新：自动识别并更新项目进度</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">❓</span>
+                        <span class="detail-text">问题发现：识别文件中的问题和风险</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💡</span>
+                        <span class="detail-text">方案新增：提取文件中的新方案和建议</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📋</span>
+                        <span class="detail-text">追踪记录：生成变更日志和影响分析</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card new-feature">
+                <div class="feature-icon">📄</div>
+                <div class="feature-title">文件生成系统 <span class="new-badge">新增</span></div>
+                <div class="feature-desc">支持手动生成MD文件，提取关键信息供其他agent使用</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">📊</span>
+                        <span class="detail-text">进度报告：生成项目进度汇总报告</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📋</span>
+                        <span class="detail-text">问题清单：提取所有问题和解决方案</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💡</span>
+                        <span class="detail-text">方案汇总：汇总所有技术方案和决策</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📤</span>
+                        <span class="detail-text">关键信息提取：为其他agent准备上下文</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-title">全文搜索引擎</div>
+                <div class="feature-desc">快速搜索项目中的所有文件内容</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">🔎</span>
+                        <span class="detail-text">关键词搜索：支持精确匹配和模糊搜索</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📂</span>
+                        <span class="detail-text">分类过滤：按文件类型、标签、日期筛选</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">💡</span>
+                        <span class="detail-text">搜索建议：智能提示相关文件和内容</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📤</div>
+                <div class="feature-title">拖拽上传</div>
+                <div class="feature-desc">支持拖拽文件到项目，自动处理和分类</div>
+                <div class="feature-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">🎯</span>
+                        <span class="detail-text">批量上传：支持同时上传多个文件</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">⚡</span>
+                        <span class="detail-text">实时处理：上传后立即进行内容分析</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon">📋</span>
+                        <span class="detail-text">进度显示：显示上传和处理进度</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="section-title">文件处理流程（增强版）</div>
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-step-icon">📤</div>
+                    <div class="flow-step-title">拖拽上传</div>
+                    <div class="flow-step-desc">用户拖拽文件到项目</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">📖</div>
+                    <div class="flow-step-title">内容提取</div>
+                    <div class="flow-step-desc">本地提取文本概要</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">🤖</div>
+                    <div class="flow-step-title">AI分析</div>
+                    <div class="flow-step-desc">分析内容、分类、追踪</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">📁</div>
+                    <div class="flow-step-title">自动归类</div>
+                    <div class="flow-step-desc">移动到对应分类文件夹</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">📝</div>
+                    <div class="flow-step-title">更新追踪</div>
+                    <div class="flow-step-desc">更新进度、问题、方案</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note success">
+            <div class="note-title">✅ 新增功能：内容追踪系统</div>
+            <div class="note-content">
+                <p>• <strong>AI读取文件后自动更新项目状态</strong>：识别进度变化、新增问题、技术方案</p>
+                <p>• <strong>生成追踪记录</strong>：记录每次文件分析的结果和影响</p>
+                <p>• <strong>维护项目知识库</strong>：确保项目信息始终最新且完整</p>
+                <p>• <strong>为决策提供依据</strong>：基于文件内容提供项目状态洞察</p>
+            </div>
+        </div>
+
+        <div class="note success">
+            <div class="note-title">✅ 新增功能：文件生成系统</div>
+            <div class="note-content">
+                <p>• <strong>手动生成MD文件</strong>：用户可随时生成项目相关文档</p>
+                <p>• <strong>进度报告生成</strong>：汇总项目进度、里程碑、风险</p>
+                <p>• <strong>问题清单生成</strong>：提取所有问题和解决方案</p>
+                <p>• <strong>方案汇总生成</strong>：汇总技术方案和决策记录</p>
+                <p>• <strong>关键信息提取</strong>：为其他agent准备结构化上下文</p>
+            </div>
+        </div>
+
+        <div class="note highlight">
+            <div class="note-title">🔮 未来扩展（暂不实现）</div>
+            <div class="note-content">
+                <p>• <strong>邮件生成</strong>：基于项目信息自动生成邮件内容</p>
+                <p>• <strong>客户汇报</strong>：生成给客户的蓝图汇报文档</p>
+                <p>• <strong>自动报告</strong>：定期自动生成项目状态报告</p>
+                <p>• <strong>多agent协作</strong>：与其他agent共享项目上下文</p>
+            </div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">💡 设计要点</div>
+            <div class="note-content">
+                <p>• <strong>本地优先</strong>：所有生成文件保存在本地项目文件夹</p>
+                <p>• <strong>按需生成</strong>：用户手动触发生成，避免不必要的资源消耗</p>
+                <p>• <strong>结构化输出</strong>：生成的文件采用标准格式，便于其他agent处理</p>
+                <p>• <strong>版本控制</strong>：生成的文件也纳入版本控制系统</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

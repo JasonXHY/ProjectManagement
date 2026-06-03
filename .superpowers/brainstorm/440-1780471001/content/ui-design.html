@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI界面设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .design-style {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 2px solid #e2e8f0;
+        }
+        .style-title {
+            font-size: 1.3em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .style-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .style-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        .style-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+        .style-desc {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        .page-section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .mockup-container {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+        .mockup-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .mockup {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .mockup-header {
+            background: #f7fafc;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mockup-logo {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .mockup-nav {
+            display: flex;
+            gap: 20px;
+        }
+        .mockup-nav-item {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        .mockup-nav-item.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .mockup-body {
+            padding: 20px;
+            min-height: 300px;
+        }
+        .mockup-sidebar {
+            width: 250px;
+            background: #f7fafc;
+            border-right: 1px solid #e2e8f0;
+            padding: 20px;
+        }
+        .mockup-content {
+            flex: 1;
+            padding: 20px;
+        }
+        .mockup-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .mockup-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+        .mockup-card-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .mockup-card-desc {
+            color: #718096;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .mockup-card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #a0aec0;
+        }
+        .mockup-progress {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .mockup-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+        }
+        .mockup-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .mockup-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .mockup-chat {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .mockup-message {
+            display: flex;
+            gap: 10px;
+            max-width: 80%;
+        }
+        .mockup-message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+        .mockup-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        .mockup-message.user .mockup-avatar {
+            background: #667eea;
+            color: white;
+        }
+        .mockup-message.ai .mockup-avatar {
+            background: #48bb78;
+            color: white;
+        }
+        .mockup-bubble {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        .mockup-message.user .mockup-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .mockup-message.ai .mockup-bubble {
+            background: #f7fafc;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+        .note {
+            background: #ebf8ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #4299e1;
+            margin-bottom: 20px;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #2b6cb0;
+            margin-bottom: 10px;
+        }
+        .note-content {
+            color: #2c5282;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .success .note-title {
+            color: #276749;
+        }
+        .success .note-content {
+            color: #22543d;
+        }
+        .color-palette {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>UI界面设计</h1>
+        <p class="subtitle">简约现代，清新自然的设计风格</p>
+
+        <div class="design-style">
+            <div class="style-title">🎨 设计风格定义</div>
+            <div class="style-grid">
+                <div class="style-item">
+                    <div class="style-icon">✨</div>
+                    <div class="style-name">简约现代</div>
+                    <div class="style-desc">大量留白，简洁线条，类似Notion、Linear风格</div>
+                </div>
+                <div class="style-item">
+                    <div class="style-icon">🌿</div>
+                    <div class="style-name">清新自然</div>
+                    <div class="style-desc">柔和色彩，舒适视觉体验</div>
+                </div>
+                <div class="style-item">
+                    <div class="style-icon">🎯</div>
+                    <div class="style-name">功能导向</div>
+                    <div class="style-desc">清晰层次结构，易于操作</div>
+                </div>
+                <div class="style-item">
+                    <div class="style-icon">📱</div>
+                    <div class="style-name">响应式设计</div>
+                    <div class="style-desc">适配不同屏幕尺寸</div>
+                </div>
+            </div>
+            <div class="color-palette">
+                <div class="color-swatch" style="background: #667eea;">主色</div>
+                <div class="color-swatch" style="background: #764ba2;">辅助色</div>
+                <div class="color-swatch" style="background: #48bb78;">成功色</div>
+                <div class="color-swatch" style="background: #ecc94b;">警告色</div>
+                <div class="color-swatch" style="background: #fc8181;">错误色</div>
+                <div class="color-swatch" style="background: #f7fafc; color: #333; border: 1px solid #e2e8f0;">背景色</div>
+                <div class="color-swatch" style="background: #2d3748;">文字色</div>
+            </div>
+        </div>
+
+        <div class="page-section">
+            <div class="section-title">📄 页面设计</div>
+
+            <div class="mockup-container">
+                <div class="mockup-title">项目列表页</div>
+                <div class="mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-logo">📋 项目管理工具</div>
+                        <div class="mockup-nav">
+                            <span class="mockup-nav-item active">项目列表</span>
+                            <span class="mockup-nav-item">设置</span>
+                        </div>
+                    </div>
+                    <div class="mockup-body">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="color: #2d3748;">我的项目</h3>
+                            <button class="mockup-button">+ 新建项目</button>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-title">信息化项目A</div>
+                            <div class="mockup-card-desc">企业资源管理系统开发</div>
+                            <div class="mockup-progress">
+                                <div class="mockup-progress-bar" style="width: 65%;"></div>
+                            </div>
+                            <div class="mockup-card-meta">
+                                <span>进度：65%</span>
+                                <span>更新：2小时前</span>
+                            </div>
+                        </div>
+                        <div class="mockup-card">
+                            <div class="mockup-card-title">数据分析平台</div>
+                            <div class="mockup-card-desc">业务数据可视化分析</div>
+                            <div class="mockup-progress">
+                                <div class="mockup-progress-bar" style="width: 30%;"></div>
+                            </div>
+                            <div class="mockup-card-meta">
+                                <span>进度：30%</span>
+                                <span>更新：1天前</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-title">项目管理页（甘特图 + 文件管理）</div>
+                <div class="mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-logo">📋 信息化项目A</div>
+                        <div class="mockup-nav">
+                            <span class="mockup-nav-item active">甘特图</span>
+                            <span class="mockup-nav-item">文件管理</span>
+                            <span class="mockup-nav-item">对话</span>
+                        </div>
+                    </div>
+                    <div class="mockup-body" style="display: flex; gap: 20px;">
+                        <div class="mockup-sidebar">
+                            <h4 style="color: #2d3748; margin-bottom: 15px;">📁 文件分类</h4>
+                            <div style="margin-bottom: 10px; color: #667eea; font-weight: 500;">需求文档 (5)</div>
+                            <div style="margin-bottom: 10px; color: #718096;">技术方案 (3)</div>
+                            <div style="margin-bottom: 10px; color: #718096;">会议纪要 (8)</div>
+                            <div style="margin-bottom: 10px; color: #718096;">测试报告 (2)</div>
+                            <div style="margin-bottom: 20px; color: #718096;">用户手册 (1)</div>
+                            <button class="mockup-button" style="width: 100%;">📤 上传文件</button>
+                        </div>
+                        <div class="mockup-content">
+                            <h4 style="color: #2d3748; margin-bottom: 15px;">📊 项目进度</h4>
+                            <div style="background: #f7fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>需求分析</span>
+                                    <span style="color: #48bb78;">✅ 完成</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>系统设计</span>
+                                    <span style="color: #667eea;">🔄 进行中</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span>开发实现</span>
+                                    <span style="color: #a0aec0;">⏳ 待开始</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>测试上线</span>
+                                    <span style="color: #a0aec0;">⏳ 待开始</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mockup-container">
+                <div class="mockup-title">项目对话窗</div>
+                <div class="mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-logo">💬 项目对话</div>
+                        <div class="mockup-nav">
+                            <span class="mockup-nav-item">导出对话</span>
+                            <span class="mockup-item">清空历史</span>
+                        </div>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="mockup-chat">
+                            <div class="mockup-message user">
+                                <div class="mockup-avatar">👤</div>
+                                <div class="mockup-bubble">帮我找一下最新的项目蓝图</div>
+                            </div>
+                            <div class="mockup-message ai">
+                                <div class="mockup-avatar">🤖</div>
+                                <div class="mockup-bubble">
+                                    根据项目文件分析，找到以下相关文档：<br>
+                                    1. 项目蓝图v2.3.md - 最后更新：2024-01-15<br>
+                                    2. 系统架构设计.md - 最后更新：2024-01-12<br><br>
+                                    建议查看"项目蓝图v2.3.md"，这是最新的版本。
+                                </div>
+                            </div>
+                            <div class="mockup-message user">
+                                <div class="mockup-avatar">👤</div>
+                                <div class="mockup-bubble">这个项目目前有哪些待解决的问题？</div>
+                            </div>
+                            <div class="mockup-message ai">
+                                <div class="mockup-avatar">🤖</div>
+                                <div class="mockup-bubble">
+                                    根据项目文件分析，当前有3个待解决问题：<br>
+                                    1. 🔴 高优先级：用户认证模块性能问题<br>
+                                    2. 🟡 中优先级：数据库索引优化<br>
+                                    3. 🟢 低优先级：前端响应式布局适配
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <input class="mockup-input" placeholder="输入你的问题..." style="margin-bottom: 0; flex: 1;">
+                            <button class="mockup-button">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note success">
+            <div class="note-title">✅ UI设计要点</div>
+            <div class="note-content">
+                <p>• <strong>简约现代</strong>：大量留白，简洁线条，类似Notion、Linear风格</p>
+                <p>• <strong>清新自然</strong>：柔和色彩，舒适视觉体验</p>
+                <p>• <strong>功能导向</strong>：清晰层次结构，易于操作</p>
+                <p>• <strong>响应式设计</strong>：适配不同屏幕尺寸</p>
+                <p>• <strong>一致性</strong>：统一的组件样式和交互模式</p>
+            </div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">💡 技术实现</div>
+            <div class="note-content">
+                <p>• <strong>组件库</strong>：Ant Design X（对话组件） + shadcn/ui（轻量组件）</p>
+                <p>• <strong>样式方案</strong>：CSS Modules + Tailwind CSS</p>
+                <p>• <strong>图标</strong>：Ant Design Icons + 自定义SVG</p>
+                <p>• <strong>主题</strong>：支持亮色/暗色主题切换</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

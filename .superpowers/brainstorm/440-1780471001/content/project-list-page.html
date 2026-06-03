@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目列表页（优化版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .update-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+        .mockup-container {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+        .mockup-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .mockup {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .mockup-header {
+            background: #f7fafc;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mockup-logo {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .mockup-nav {
+            display: flex;
+            gap: 20px;
+        }
+        .mockup-nav-item {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        .mockup-nav-item.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .mockup-body {
+            padding: 20px;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-box {
+            padding: 8px 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            width: 250px;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+            cursor: pointer;
+        }
+        .sort-select {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+            cursor: pointer;
+        }
+        .mockup-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .mockup-button-outline {
+            background: white;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .project-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .project-table th,
+        .project-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .project-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+        .project-table tr:hover {
+            background: #f7fafc;
+        }
+        .project-table tr:last-child td {
+            border-bottom: none;
+        }
+        .project-name {
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+        }
+        .project-name:hover {
+            color: #667eea;
+        }
+        .project-desc {
+            color: #718096;
+            font-size: 0.9em;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .mockup-stage {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .stage-blueprint {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+        .stage-startup {
+            background: #f0fff4;
+            color: #276749;
+        }
+        .stage-presale {
+            background: #fefcbf;
+            color: #975a16;
+        }
+        .stage-progress {
+            background: #e9d8fd;
+            color: #553c9a;
+        }
+        .stage-acceptance {
+            background: #fed7e2;
+            color: #97266d;
+        }
+        .stage-ended {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .stage-halted {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+        .project-meta {
+            color: #a0aec0;
+            font-size: 0.85em;
+        }
+        .project-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .action-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #718096;
+        }
+        .action-btn:hover {
+            background: #f7fafc;
+            border-color: #667eea;
+            color: #667eea;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .pagination-btn {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background: white;
+            color: #718096;
+            cursor: pointer;
+        }
+        .pagination-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .pagination-btn:hover:not(.active) {
+            background: #f7fafc;
+        }
+        .note {
+            background: #ebf8ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #4299e1;
+            margin-bottom: 20px;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #2b6cb0;
+            margin-bottom: 10px;
+        }
+        .note-content {
+            color: #2c5282;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .success .note-title {
+            color: #276749;
+        }
+        .success .note-content {
+            color: #22543d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>项目列表页（优化版）</h1>
+        <p class="subtitle">表格布局，支持排序和筛选</p>
+
+        <div class="update-badge">✅ 已优化</div>
+
+        <div class="mockup-container">
+            <div class="mockup-title">项目列表页</div>
+            <div class="mockup">
+                <div class="mockup-header">
+                    <div class="mockup-logo">📋 项目管理工具</div>
+                    <div class="mockup-nav">
+                        <span class="mockup-nav-item active">项目列表</span>
+                        <span class="mockup-nav-item">设置</span>
+                    </div>
+                </div>
+                <div class="mockup-body">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <input class="search-box" placeholder="🔍 搜索项目名称或描述...">
+                            <select class="filter-select">
+                                <option>全部状态</option>
+                                <option>蓝图阶段</option>
+                                <option>启动阶段</option>
+                                <option>售前阶段</option>
+                                <option>项目中</option>
+                                <option>验收阶段</option>
+                                <option>已结束</option>
+                                <option>已中止</option>
+                            </select>
+                            <select class="filter-select">
+                                <option>默认筛选（隐藏已结束/中止）</option>
+                                <option>显示全部项目</option>
+                                <option>仅显示进行中</option>
+                                <option>仅显示已结束</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-right">
+                            <select class="sort-select">
+                                <option>按更新时间排序</option>
+                                <option>按创建时间排序</option>
+                                <option>按项目名称排序</option>
+                            </select>
+                            <button class="mockup-button">+ 新建项目</button>
+                        </div>
+                    </div>
+
+                    <table class="project-table">
+                        <thead>
+                            <tr>
+                                <th>项目名称</th>
+                                <th>项目描述</th>
+                                <th>项目状态</th>
+                                <th>更新时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="project-name">信息化项目A</span></td>
+                                <td><span class="project-desc">企业资源管理系统开发，包含财务、人事、采购等模块</span></td>
+                                <td><span class="mockup-stage stage-progress">🔄 项目中</span></td>
+                                <td><span class="project-meta">2小时前</span></td>
+                                <td>
+                                    <div class="project-actions">
+                                        <button class="action-btn">📁 管理</button>
+                                        <button class="action-btn">✏️ 编辑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="project-name">数据分析平台</span></td>
+                                <td><span class="project-desc">业务数据可视化分析平台，支持多数据源接入</span></td>
+                                <td><span class="mockup-stage stage-presale">📋 售前阶段</span></td>
+                                <td><span class="project-meta">1天前</span></td>
+                                <td>
+                                    <div class="project-actions">
+                                        <button class="action-btn">📁 管理</button>
+                                        <button class="action-btn">✏️ 编辑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="project-name">移动端APP</span></td>
+                                <td><span class="project-desc">公司内部移动办公应用开发</span></td>
+                                <td><span class="mockup-stage stage-blueprint">📋 蓝图阶段</span></td>
+                                <td><span class="project-meta">3天前</span></td>
+                                <td>
+                                    <div class="project-actions">
+                                        <button class="action-btn">📁 管理</button>
+                                        <button class="action-btn">✏️ 编辑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="project-name">客户管理系统</span></td>
+                                <td><span class="project-desc">CRM系统升级，增加智能客服功能</span></td>
+                                <td><span class="mockup-stage stage-startup">🚀 启动阶段</span></td>
+                                <td><span class="project-meta">5天前</span></td>
+                                <td>
+                                    <div class="project-actions">
+                                        <button class="action-btn">📁 管理</button>
+                                        <button class="action-btn">✏️ 编辑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="project-name">供应链系统</span></td>
+                                <td><span class="project-desc">供应链管理平台开发，优化采购流程</span></td>
+                                <td><span class="mockup-stage stage-acceptance">✅ 验收阶段</span></td>
+                                <td><span class="project-meta">1周前</span></td>
+                                <td>
+                                    <div class="project-actions">
+                                        <button class="action-btn">📁 管理</button>
+                                        <button class="action-btn">✏️ 编辑</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="pagination">
+                        <button class="pagination-btn">上一页</button>
+                        <button class="pagination-btn active">1</button>
+                        <button class="pagination-btn">2</button>
+                        <button class="pagination-btn">3</button>
+                        <button class="pagination-btn">下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note success">
+            <div class="note-title">✅ 优化要点</div>
+            <div class="note-content">
+                <p>• <strong>表格布局</strong>：项目名称、描述、状态放在一行，紧凑显示</p>
+                <p>• <strong>搜索功能</strong>：支持按项目名称或描述搜索</p>
+                <p>• <strong>状态筛选</strong>：支持按项目状态筛选，默认隐藏已结束/中止的项目</p>
+                <p>• <strong>排序功能</strong>：支持按更新时间、创建时间、项目名称排序</p>
+                <p>• <strong>分页显示</strong>：每页显示固定数量，支持翻页</p>
+                <p>• <strong>操作按钮</strong>：管理、编辑等快捷操作</p>
+            </div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">💡 筛选逻辑</div>
+            <div class="note-content">
+                <p>• <strong>默认筛选</strong>：隐藏"已结束"和"已中止"状态的项目</p>
+                <p>• <strong>可切换</strong>：用户可选择显示全部项目或仅显示特定状态</p>
+                <p>• <strong>状态选项</strong>：蓝图阶段、启动阶段、售前阶段、项目中、验收阶段、已结束、已中止</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据模型设计</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .data-model {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .entity {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .entity:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+        }
+        .entity-title {
+            font-size: 1.3em;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .entity-icon {
+            font-size: 1.5em;
+        }
+        .fields {
+            margin-bottom: 15px;
+        }
+        .field {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .field:last-child {
+            border-bottom: none;
+        }
+        .field-name {
+            font-weight: 500;
+            color: #4a5568;
+        }
+        .field-type {
+            color: #718096;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+        }
+        .field-primary {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .field-foreign {
+            color: #ed8936;
+            font-weight: 500;
+        }
+        .relationships {
+            margin-top: 15px;
+        }
+        .relationship {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #718096;
+        }
+        .relationship-icon {
+            color: #667eea;
+        }
+        .note {
+            background: #ebf8ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #4299e1;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #2b6cb0;
+            margin-bottom: 10px;
+        }
+        .note-content {
+            color: #2c5282;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #fefcbf;
+            border-left-color: #ecc94b;
+        }
+        .highlight .note-title {
+            color: #975a16;
+        }
+        .highlight .note-content {
+            color: #744210;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>数据模型设计</h1>
+        <p class="subtitle">SQLite数据库表结构设计</p>
+
+        <div class="data-model">
+            <div class="entity">
+                <div class="entity-title">
+                    <span class="entity-icon">📁</span>
+                    项目表 (projects)
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="field-name field-primary">id</span>
+                        <span class="field-type">INTEGER PRIMARY KEY</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">description</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">created_at</span>
+                        <span class="field-type">DATETIME</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">updated_at</span>
+                        <span class="field-type">DATETIME</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">TEXT DEFAULT 'active'</span>
+                    </div>
+                </div>
+                <div class="relationships">
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>一个项目包含多个任务</span>
+                    </div>
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>一个项目包含多个文件</span>
+                    </div>
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>一个项目包含多条对话记录</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="entity">
+                <div class="entity-title">
+                    <span class="entity-icon">✅</span>
+                    任务表 (tasks)
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="field-name field-primary">id</span>
+                        <span class="field-type">INTEGER PRIMARY KEY</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name field-foreign">project_id</span>
+                        <span class="field-type">INTEGER REFERENCES projects(id)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">start_date</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">end_date</span>
+                        <span class="field-type">DATE</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">progress</span>
+                        <span class="field-type">INTEGER DEFAULT 0</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">TEXT DEFAULT 'pending'</span>
+                    </div>
+                </div>
+                <div class="relationships">
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>任务属于一个项目</span>
+                    </div>
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>任务可以依赖其他任务</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="entity">
+                <div class="entity-title">
+                    <span class="entity-icon">📄</span>
+                    文件表 (files)
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="field-name field-primary">id</span>
+                        <span class="field-type">INTEGER PRIMARY KEY</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name field-foreign">project_id</span>
+                        <span class="field-type">INTEGER REFERENCES projects(id)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">path</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">category</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">tags</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">version</span>
+                        <span class="field-type">INTEGER DEFAULT 1</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">content_hash</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+                <div class="relationships">
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>文件属于一个项目</span>
+                    </div>
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>文件有版本历史</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="entity">
+                <div class="entity-title">
+                    <span class="entity-icon">💬</span>
+                    对话表 (conversations)
+                </div>
+                <div class="fields">
+                    <div class="field">
+                        <span class="field-name field-primary">id</span>
+                        <span class="field-type">INTEGER PRIMARY KEY</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name field-foreign">project_id</span>
+                        <span class="field-type">INTEGER REFERENCES projects(id)</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">role</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">content</span>
+                        <span class="field-type">TEXT NOT NULL</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">created_at</span>
+                        <span class="field-type">DATETIME</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">token_count</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                </div>
+                <div class="relationships">
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>对话属于一个项目</span>
+                    </div>
+                    <div class="relationship">
+                        <span class="relationship-icon">🔗</span>
+                        <span>记录用户和AI的交互</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">💡 数据模型设计要点</div>
+            <div class="note-content">
+                <p>• <strong>简洁明了</strong>：只包含必要的字段，避免过度设计</p>
+                <p>• <strong>外键关联</strong>：通过project_id建立表间关系</p>
+                <p>• <strong>版本控制</strong>：文件表包含version和content_hash字段</p>
+                <p>• <strong>Token追踪</strong>：对话表记录token使用量，便于成本控制</p>
+            </div>
+        </div>
+
+        <div class="note highlight">
+            <div class="note-title">🔧 扩展性考虑</div>
+            <div class="note-content">
+                <p>• 后期可添加：里程碑表(milestones)、依赖关系表(dependencies)</p>
+                <p>• 文件标签系统：可将tags字段改为独立的标签表</p>
+                <p>• 向量索引：可单独存储，不放在主数据库中</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

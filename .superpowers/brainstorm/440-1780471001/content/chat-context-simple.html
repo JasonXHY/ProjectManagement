@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>对话上下文管理（简化版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .simplification-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .comparison-card {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+        }
+        .comparison-card.old {
+            border-color: #fc8181;
+            background: #fff5f5;
+        }
+        .comparison-card.new {
+            border-color: #9ae6b4;
+            background: #f0fff4;
+        }
+        .comparison-title {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .comparison-card.old .comparison-title {
+            color: #c53030;
+        }
+        .comparison-card.new .comparison-title {
+            color: #276749;
+        }
+        .comparison-list {
+            list-style: none;
+        }
+        .comparison-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .comparison-list li:last-child {
+            border-bottom: none;
+        }
+        .comparison-card.old .comparison-list li {
+            color: #742a2a;
+        }
+        .comparison-card.new .comparison-list li {
+            color: #276749;
+        }
+        .icon-old {
+            color: #fc8181;
+        }
+        .icon-new {
+            color: #48bb78;
+        }
+        .simple-design {
+            background: #f0fff4;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 2px solid #9ae6b4;
+        }
+        .simple-title {
+            font-size: 1.3em;
+            color: #276749;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .simple-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        .simple-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #9ae6b4;
+        }
+        .simple-card-icon {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        .simple-card-title {
+            font-weight: 600;
+            color: #276749;
+            margin-bottom: 10px;
+        }
+        .simple-card-desc {
+            color: #276749;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .flow-section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            min-width: 120px;
+            border: 2px solid #e2e8f0;
+        }
+        .flow-step-icon {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+        .flow-step-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+        .flow-step-desc {
+            font-size: 0.8em;
+            color: #718096;
+        }
+        .flow-arrow {
+            font-size: 1.5em;
+            color: #667eea;
+        }
+        .note {
+            background: #ebf8ff;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid #4299e1;
+            margin-bottom: 20px;
+        }
+        .note-title {
+            font-weight: 600;
+            color: #2b6cb0;
+            margin-bottom: 10px;
+        }
+        .note-content {
+            color: #2c5282;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        .success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .success .note-title {
+            color: #276749;
+        }
+        .success .note-content {
+            color: #22543d;
+        }
+        .highlight {
+            background: #fefcbf;
+            border-left-color: #ecc94b;
+        }
+        .highlight .note-title {
+            color: #975a16;
+        }
+        .highlight .note-content {
+            color: #744210;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>对话上下文管理（简化版）</h1>
+        <p class="subtitle">解决上下文限制问题的实用方案</p>
+
+        <div class="simplification-badge">✅ 已简化设计</div>
+
+        <div class="comparison-section">
+            <div class="comparison-card old">
+                <div class="comparison-title">❌ 复杂设计（已移除）</div>
+                <ul class="comparison-list">
+                    <li><span class="icon-old">✗</span> 精确Token计数</li>
+                    <li><span class="icon-old">✗</span> 复杂的上下文窗口管理</li>
+                    <li><span class="icon-old">✗</span> 语义匹配缓存</li>
+                    <li><span class="icon-old">✗</span> 动态裁剪算法</li>
+                    <li><span class="icon-old">✗</span> 多层优先级排序</li>
+                </ul>
+            </div>
+            <div class="comparison-card new">
+                <div class="comparison-title">✅ 简化设计（保留）</div>
+                <ul class="comparison-list">
+                    <li><span class="icon-new">✓</span> 字符数估算（替代Token计数）</li>
+                    <li><span class="icon-new">✓</span> 固定滑动窗口</li>
+                    <li><span class="icon-new">✓</span> 简单精确匹配缓存</li>
+                    <li><span class="icon-new">✓</span> 固定格式Prompt模板</li>
+                    <li><span class="icon-new">✓</span> 基础RAG检索</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="simple-design">
+            <div class="simple-title">💡 简化后的核心设计</div>
+            <div class="simple-grid">
+                <div class="simple-card">
+                    <div class="simple-card-icon">📝</div>
+                    <div class="simple-card-title">对话历史管理</div>
+                    <div class="simple-card-desc">
+                        <p>• 本地保存所有对话记录</p>
+                        <p>• 对API只发送最近5轮对话</p>
+                        <p>• 超过5轮自动截断旧对话</p>
+                        <p>• 简单实现，无需复杂算法</p>
+                    </div>
+                </div>
+
+                <div class="simple-card">
+                    <div class="simple-card-icon">📚</div>
+                    <div class="simple-card-title">RAG检索</div>
+                    <div class="simple-card-desc">
+                        <p>• 本地存储文件向量索引</p>
+                        <p>• 每次检索Top-3相关片段</p>
+                        <p>• 片段长度限制在300字以内</p>
+                        <p>• 基础向量相似度匹配</p>
+                    </div>
+                </div>
+
+                <div class="simple-card">
+                    <div class="simple-card-icon">💾</div>
+                    <div class="simple-card-title">简单缓存</div>
+                    <div class="simple-card-desc">
+                        <p>• SQLite存储问答对</p>
+                        <p>• 问题完全匹配时直接返回</p>
+                        <p>• 不匹配时正常调用API</p>
+                        <p>• 后期可扩展为语义匹配</p>
+                    </div>
+                </div>
+
+                <div class="simple-card">
+                    <div class="simple-card-icon">📏</div>
+                    <div class="simple-card-title">长度控制</div>
+                    <div class="simple-card-desc">
+                        <p>• 字符数估算（1个中文≈2个token）</p>
+                        <p>• 系统提示：固定500字</p>
+                        <p>• 项目上下文：最多1000字</p>
+                        <p>• 对话历史：最多1000字</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="section-title">简化后的处理流程</div>
+            <div class="flow-container">
+                <div class="flow-step">
+                    <div class="flow-step-icon">💬</div>
+                    <div class="flow-step-title">用户输入</div>
+                    <div class="flow-step-desc">问题/指令</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">🔍</div>
+                    <div class="flow-step-title">检查缓存</div>
+                    <div class="flow-step-desc">精确匹配</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">📚</div>
+                    <div class="flow-step-title">RAG检索</div>
+                    <div class="flow-step-desc">Top-3片段</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">📝</div>
+                    <div class="flow-step-title">组装Prompt</div>
+                    <div class="flow-step-desc">固定格式</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <div class="flow-step-icon">🤖</div>
+                    <div class="flow-step-title">调用API</div>
+                    <div class="flow-step-desc">返回结果</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note success">
+            <div class="note-title">✅ 简化后的优势</div>
+            <div class="note-content">
+                <p>• <strong>实现简单</strong>：去掉复杂算法，基础功能即可满足需求</p>
+                <p>• <strong>性能可控</strong>：没有额外的计算开销</p>
+                <p>• <strong>易于维护</strong>：代码逻辑清晰，便于后期扩展</p>
+                <p>• <strong>成本可预测</strong>：每次对话token消耗在可控范围内</p>
+            </div>
+        </div>
+
+        <div class="note highlight">
+            <div class="note-title">⚠️ Token消耗预估（简化版）</div>
+            <div class="note-content">
+                <p>• <strong>系统提示</strong>：约500字 ≈ 1000 tokens</p>
+                <p>• <strong>项目上下文</strong>：最多1000字 ≈ 2000 tokens</p>
+                <p>• <strong>对话历史</strong>：最近5轮 ≈ 1000 tokens</p>
+                <p>• <strong>用户问题</strong>：约100字 ≈ 200 tokens</p>
+                <p>• <strong>总计</strong>：约4200 tokens/次（在主流模型限制内）</p>
+            </div>
+        </div>
+
+        <div class="note">
+            <div class="note-title">💡 后期扩展建议</div>
+            <div class="note-content">
+                <p>• <strong>第一阶段</strong>：实现基础功能，验证核心逻辑</p>
+                <p>• <strong>第二阶段</strong>：根据使用情况优化缓存匹配</p>
+                <p>• <strong>第三阶段</strong>：考虑添加简单的语义匹配</p>
+                <p>• <strong>持续优化</strong>：根据实际token消耗调整参数</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
