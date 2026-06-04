@@ -36,7 +36,7 @@ interface ProjectTableProps {
 /** 数据驱动的基础列配置（不含回调，提取到组件外部避免每次渲染重建） */
 const BASE_COLUMNS: ColumnsType<Project> = [
   {
-    title: "Project Name",
+    title: "项目名称",
     dataIndex: "name",
     key: "name",
     render: (name: string) => (
@@ -47,14 +47,14 @@ const BASE_COLUMNS: ColumnsType<Project> = [
     ),
   },
   {
-    title: "Description",
+    title: "项目描述",
     dataIndex: "description",
     key: "description",
     ellipsis: true,
     width: 300,
   },
   {
-    title: "Stage",
+    title: "项目阶段",
     dataIndex: "stage",
     key: "stage",
     width: 140,
@@ -68,7 +68,7 @@ const BASE_COLUMNS: ColumnsType<Project> = [
     ),
   },
   {
-    title: "Updated At",
+    title: "更新时间",
     dataIndex: "updated_at",
     key: "updated_at",
     width: 200,
@@ -94,7 +94,7 @@ export default function ProjectTable({
     () => [
       ...BASE_COLUMNS,
       {
-        title: "Actions",
+        title: "操作",
         key: "actions",
         width: 220,
         fixed: "right",
@@ -106,7 +106,7 @@ export default function ProjectTable({
               icon={<FolderOutlined />}
               onClick={() => onManage(record)}
             >
-              Manage
+              管理
             </Button>
             <Button
               type="link"
@@ -114,16 +114,16 @@ export default function ProjectTable({
               icon={<EditOutlined />}
               onClick={() => onEdit(record)}
             >
-              Edit
+              编辑
             </Button>
             <Popconfirm
-              title="Are you sure you want to delete this project?"
+              title="确定要删除这个项目吗？"
               onConfirm={() => onDelete(record.id!)}
-              okText="Yes"
-              cancelText="No"
+              okText="确定"
+              cancelText="取消"
             >
               <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                Delete
+                删除
               </Button>
             </Popconfirm>
           </Space>
@@ -144,7 +144,7 @@ export default function ProjectTable({
         showSizeChanger: true,
         pageSizeOptions: ["5", "10", "20", "50"],
         showTotal: (total, range) =>
-          `${range[0]}-${range[1]} of ${total} projects`,
+          `第 ${range[0]}-${range[1]} 条，共 ${total} 个项目`,
       }}
       scroll={{ x: 900 }}
     />

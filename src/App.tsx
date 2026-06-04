@@ -45,7 +45,7 @@ function App() {
         <div className="flex items-center gap-3">
           <RobotOutlined className="text-xl text-blue-500" />
           <Title level={4} className="!mb-0 !text-gray-800">
-            AI Project Manager
+            项目管理助手
           </Title>
         </div>
       </Header>

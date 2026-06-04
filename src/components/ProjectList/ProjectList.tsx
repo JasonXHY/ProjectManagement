@@ -64,7 +64,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
       const data = await getProjects();
       setProjects(data);
     } catch (error) {
-      message.error("Failed to load projects");
+      message.error("加载项目列表失败");
       console.error(error);
     } finally {
       setLoading(false);
@@ -145,10 +145,10 @@ export default function ProjectList({ onManage }: ProjectListProps) {
   const handleDelete = async (id: number) => {
     try {
       await deleteProject(id);
-      message.success("Project deleted successfully");
+      message.success("项目已删除");
       loadProjects();
     } catch {
-      message.error("Failed to delete project");
+      message.error("删除项目失败");
     }
   };
 
@@ -169,20 +169,20 @@ export default function ProjectList({ onManage }: ProjectListProps) {
           name: values.name,
           description: values.description,
         });
-        message.success("Project updated successfully");
+        message.success("项目已更新");
       } else {
         const request: CreateProjectRequest = {
           name: values.name,
           description: values.description,
         };
         await createProject(request);
-        message.success("Project created successfully");
+        message.success("项目已创建");
       }
 
       setModalVisible(false);
       loadProjects();
     } catch {
-      message.error("Operation failed");
+      message.error("操作失败");
     }
   };
 
@@ -199,7 +199,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
       {/* 页面头部 */}
       <div className="flex items-center justify-between mb-6">
         <Title level={3} className="!mb-0">
-          Projects
+          项目列表
         </Title>
         <Space>
           <ReloadOutlined
@@ -207,7 +207,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
             onClick={loadProjects}
           />
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            New Project
+            新建项目
           </Button>
         </Space>
       </div>
@@ -216,7 +216,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
       <Card className="mb-4 shadow-sm">
         <Space wrap className="w-full" size="middle">
           <Search
-            placeholder="Search projects by name or description..."
+            placeholder="搜索项目名称或描述..."
             allowClear
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -224,7 +224,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
             prefix={<SearchOutlined className="text-gray-400" />}
           />
           <Select
-            placeholder="Filter by stage"
+            placeholder="筛选阶段"
             allowClear
             value={filterStage}
             onChange={setFilterStage}
@@ -239,9 +239,9 @@ export default function ProjectList({ onManage }: ProjectListProps) {
             onChange={setSortBy}
             style={{ width: 160 }}
             options={[
-              { label: "Sort by Updated", value: "updated_at" },
-              { label: "Sort by Created", value: "created_at" },
-              { label: "Sort by Name", value: "name" },
+              { label: "按更新时间", value: "updated_at" },
+              { label: "按创建时间", value: "created_at" },
+              { label: "按项目名称", value: "name" },
             ]}
           />
           <Select
@@ -249,18 +249,18 @@ export default function ProjectList({ onManage }: ProjectListProps) {
             onChange={setSortOrder}
             style={{ width: 140 }}
             options={[
-              { label: "Newest First", value: "descend" },
-              { label: "Oldest First", value: "ascend" },
+              { label: "最新优先", value: "descend" },
+              { label: "最早优先", value: "ascend" },
             ]}
           />
-          <Button onClick={handleReset}>Reset</Button>
+          <Button onClick={handleReset}>重置</Button>
         </Space>
       </Card>
 
       {/* 项目表格 */}
       <Card className="shadow-sm">
         {filteredProjects.length === 0 && !loading ? (
-          <Empty description="No projects found" />
+          <Empty description="暂无项目" />
         ) : (
           <ProjectTable
             projects={filteredProjects}
@@ -274,30 +274,27 @@ export default function ProjectList({ onManage }: ProjectListProps) {
 
       {/* 新建/编辑项目弹窗 */}
       <Modal
-        title={editingProject ? "Edit Project" : "New Project"}
+        title={editingProject ? "编辑项目" : "新建项目"}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => setModalVisible(false)}
-        okText={editingProject ? "Update" : "Create"}
-        cancelText="Cancel"
+        okText={editingProject ? "更新" : "创建"}
+        cancelText="取消"
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Project Name"
+            label="项目名称"
             rules={[
-              { required: true, message: "Please enter project name" },
-              { min: 2, message: "Name must be at least 2 characters" },
+              { required: true, message: "请输入项目名称" },
+              { min: 2, message: "名称至少2个字符" },
             ]}
           >
-            <Input placeholder="Enter project name" />
+            <Input placeholder="请输入项目名称" />
           </Form.Item>
-          <Form.Item name="description" label="Description">
-            <Input.TextArea
-              rows={3}
-              placeholder="Enter project description"
-            />
+          <Form.Item name="description" label="项目描述">
+            <Input.TextArea rows={3} placeholder="请输入项目描述" />
           </Form.Item>
         </Form>
       </Modal>
