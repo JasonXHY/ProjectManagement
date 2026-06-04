@@ -18,6 +18,21 @@ pub async fn create_project(
 
     let id = conn.last_insert_rowid();
 
+    // 创建项目文件夹结构
+    let project_dir = format!("projects/{}", name);
+    let stages = [
+        "售前", "启动", "需求", "方案", "构建",
+        "测试", "上线", "验收", "转客户成功", "关闭"
+    ];
+
+    for stage in stages {
+        let stage_path = format!("{}/{}", project_dir, stage);
+        std::fs::create_dir_all(&stage_path)
+            .map_err(|e| format!("创建文件夹失败: {}", e))?;
+    }
+
+    eprintln!("[PROJECT] 创建项目文件夹: {}", project_dir);
+
     Ok(Project {
         id: Some(id),
         name,
