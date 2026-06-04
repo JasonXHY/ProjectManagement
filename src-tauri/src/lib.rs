@@ -35,6 +35,7 @@ pub fn run() {
     // 创建共享的HTTP客户端
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
+        .danger_accept_invalid_certs(true) // 开发环境接受无效证书
         .build()
         .expect("无法创建HTTP客户端");
 
