@@ -1,3 +1,4 @@
+use crate::config::AppConfig;
 use crate::db::Database;
 use crate::db::models::Conversation;
 use serde::{Deserialize, Serialize};
@@ -16,9 +17,42 @@ pub struct ChatResponse {
     pub token_count: i32,
 }
 
+/// 智谱AI API 请求结构
+#[derive(Serialize)]
+struct ZhipuRequest {
+    model: String,
+    messages: Vec<ZhipuMessage>,
+    max_tokens: u32,
+    temperature: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ZhipuMessage {
+    role: String,
+    content: String,
+}
+
+/// 智谱AI API 响应结构
+#[derive(Deserialize)]
+struct ZhipuResponse {
+    choices: Vec<ZhipuChoice>,
+    usage: Option<ZhipuUsage>,
+}
+
+#[derive(Deserialize)]
+struct ZhipuChoice {
+    message: ZhipuMessage,
+}
+
+#[derive(Deserialize)]
+struct ZhipuUsage {
+    total_tokens: Option<u32>,
+}
+
 #[tauri::command]
 pub async fn chat_with_ai(
     db: State<'_, Database>,
+    config: State<'_, AppConfig>,
     request: ChatRequest,
 ) -> Result<ChatResponse, String> {
     // 保存用户消息
@@ -54,27 +88,78 @@ pub async fn chat_with_ai(
         messages.into_iter().rev().collect::<Vec<_>>()
     };
 
-    // 构建Prompt
-    let system_prompt = "你是一个专业的项目管理助手，专门协助项目经理管理信息化项目。回答应简洁、专业、基于提供的项目上下文。如果信息不足，请明确说明。使用 markdown 格式输出。";
+    // 构建消息列表
+    let mut messages = Vec::new();
 
-    let mut prompt = format!("{}\n\n", system_prompt);
+    // 系统提示词
+    messages.push(ZhipuMessage {
+        role: "system".to_string(),
+        content: "你是一个专业的项目管理助手，专门协助项目经理管理信息化项目。你的回答应简洁、专业、基于提供的项目上下文。如果信息不足，请明确说明。使用中文回答。".to_string(),
+    });
 
     // 添加文件内容（如果有）
     if let Some(file_content) = &request.file_content {
-        prompt.push_str(&format!("上传的文件内容：\n{}\n\n", file_content));
+        messages.push(ZhipuMessage {
+            role: "user".to_string(),
+            content: format!("以下是上传的文件内容，请先阅读：\n\n{}", file_content),
+        });
+        messages.push(ZhipuMessage {
+            role: "assistant".to_string(),
+            content: "已收到文件内容，请问有什么可以帮助您的？".to_string(),
+        });
     }
 
     // 添加对话历史
     for (role, content) in &history {
-        prompt.push_str(&format!("{}: {}\n", role, content));
+        messages.push(ZhipuMessage {
+            role: role.clone(),
+            content: content.clone(),
+        });
     }
 
-    prompt.push_str(&format!("user: {}\n\nassistant: ", request.message));
+    // 添加当前用户消息
+    messages.push(ZhipuMessage {
+        role: "user".to_string(),
+        content: request.message.clone(),
+    });
 
-    // 调用大模型API（这里需要实际实现API调用）
-    // 暂时返回模拟响应
-    let reply = format!("收到您的消息：{}\n\n这是AI的回复。", request.message);
-    let token_count = 100; // 模拟token计数
+    // 调用智谱AI API
+    let client = reqwest::Client::new();
+    let api_request = ZhipuRequest {
+        model: config.model_name.clone(),
+        messages,
+        max_tokens: 4096,
+        temperature: 0.7,
+    };
+
+    let response = client
+        .post(&config.zhipu_api_url)
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", config.zhipu_api_key))
+        .json(&api_request)
+        .send()
+        .await
+        .map_err(|e| format!("API请求失败: {}", e))?;
+
+    let response_text = response
+        .text()
+        .await
+        .map_err(|e| format!("读取响应失败: {}", e))?;
+
+    let zhipu_response: ZhipuResponse = serde_json::from_str(&response_text)
+        .map_err(|e| format!("解析响应失败: {}. 响应内容: {}", e, response_text))?;
+
+    let reply = zhipu_response
+        .choices
+        .first()
+        .map(|c| c.message.content.clone())
+        .unwrap_or_else(|| "抱歉，无法生成回复。".to_string());
+
+    let token_count = zhipu_response
+        .usage
+        .as_ref()
+        .and_then(|u| u.total_tokens)
+        .unwrap_or(0) as i32;
 
     // 保存AI回复
     {

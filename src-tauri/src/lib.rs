@@ -1,7 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
+mod config;
 mod db;
 
+use config::AppConfig;
 use db::Database;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -10,9 +12,13 @@ pub fn run() {
     let db = Database::new("projects.db").expect("Failed to create database");
     db.init().expect("Failed to initialize database");
 
+    // 初始化配置
+    let app_config = AppConfig::default();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(db)
+        .manage(app_config)
         .invoke_handler(tauri::generate_handler![
             commands::project::create_project,
             commands::project::get_projects,
