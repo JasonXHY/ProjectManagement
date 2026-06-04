@@ -1,6 +1,7 @@
 use crate::db::Database;
 use crate::db::models::File;
-use tauri::State;
+use crate::services::file_storage;
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub async fn get_files_by_project(
@@ -63,17 +64,30 @@ pub async fn get_files_by_project(
 
 #[tauri::command]
 pub async fn create_file(
+    app: AppHandle,
     db: State<'_, Database>,
     project_id: i64,
     name: String,
     path: String,
     category: Option<String>,
+    content: Option<String>,
+    project_name: Option<String>,
+    stage: Option<String>,
 ) -> Result<File, String> {
+    // 如果提供了文件内容，保存到磁盘
+    let actual_path = if let (Some(content), Some(project_name), Some(stage)) = (&content, &project_name, &stage) {
+        let app_data_dir = app.path().app_data_dir()
+            .map_err(|e| format!("无法获取应用数据目录: {}", e))?;
+        file_storage::save_file(&app_data_dir, &project_name, &stage, &name, content)?
+    } else {
+        path
+    };
+
     let conn = db.conn.lock().await;
 
     conn.execute(
         "INSERT INTO files (project_id, name, path, category) VALUES (?1, ?2, ?3, ?4)",
-        rusqlite::params![project_id, name, path, category],
+        rusqlite::params![project_id, name, actual_path, category],
     )
     .map_err(|e| e.to_string())?;
 
@@ -83,7 +97,7 @@ pub async fn create_file(
         id: Some(id),
         project_id,
         name,
-        path,
+        path: actual_path,
         category,
         tags: None,
         version: 1,
