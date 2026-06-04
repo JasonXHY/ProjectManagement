@@ -1,18 +1,72 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { Button, Input, Card, Space, Typography, Layout } from "antd";
-import { ProjectOutlined, RobotOutlined } from "@ant-design/icons";
+import { useState, useCallback } from "react";
+import { Layout, Typography } from "antd";
+import { RobotOutlined } from "@ant-design/icons";
+import ProjectList from "./components/ProjectList/ProjectList";
+import FileManager from "./components/FileManager/FileManager";
+import ChatWindow from "./components/Chat/ChatWindow";
+import type { Project, Conversation } from "./types";
 
 const { Header, Content } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
+
+/** 页面类型 */
+type Page = "projects" | "files" | "chat";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [currentPage, setCurrentPage] = useState<Page>("projects");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [currentConversation, setCurrentConversation] =
+    useState<Conversation | null>(null);
 
-  async function greet() {
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  /** 进入文件管理页面 */
+  const handleManageProject = useCallback((project: Project) => {
+    setSelectedProject(project);
+    setCurrentPage("files");
+  }, []);
+
+  /** 返回项目列表 */
+  const handleBackToProjects = useCallback(() => {
+    setCurrentPage("projects");
+    setSelectedProject(null);
+    setCurrentConversation(null);
+  }, []);
+
+  /** 进入对话窗口 */
+  const handleOpenChat = useCallback(() => {
+    if (!selectedProject) return;
+
+    // 如果项目没有对话，创建一个默认对话
+    if (
+      selectedProject.conversations &&
+      selectedProject.conversations.length > 0
+    ) {
+      setCurrentConversation(selectedProject.conversations[0]);
+    } else {
+      const defaultConversation: Conversation = {
+        id: `conv_${Date.now()}`,
+        projectId: selectedProject.id,
+        title: `${selectedProject.name} - 对话`,
+        messages: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setCurrentConversation(defaultConversation);
+    }
+    setCurrentPage("chat");
+  }, [selectedProject]);
+
+  /** 从对话返回文件管理 */
+  const handleBackToFiles = useCallback(() => {
+    setCurrentPage("files");
+  }, []);
+
+  /** 更新对话信息 */
+  const handleConversationUpdate = useCallback(
+    (conversation: Conversation) => {
+      setCurrentConversation(conversation);
+    },
+    [],
+  );
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -25,39 +79,27 @@ function App() {
         </div>
       </Header>
       <Content className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <Card className="mb-6 shadow-sm">
-            <div className="text-center py-12">
-              <ProjectOutlined className="text-6xl text-blue-400 mb-4" />
-              <Title level={2}>Welcome to AI Project Manager</Title>
-              <Text type="secondary" className="text-lg">
-                A lightweight AI-powered project management tool built with
-                Tauri + React + TypeScript
-              </Text>
-            </div>
-          </Card>
+        <div className="max-w-6xl mx-auto">
+          {currentPage === "projects" && (
+            <ProjectList onManage={handleManageProject} />
+          )}
 
-          <Card title="Quick Start" className="shadow-sm">
-            <Space direction="vertical" className="w-full" size="middle">
-              <Text>Enter your name to get started:</Text>
-              <Space.Compact className="w-full max-w-md">
-                <Input
-                  placeholder="Enter your name..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onPressEnter={greet}
-                />
-                <Button type="primary" onClick={greet}>
-                  Greet
-                </Button>
-              </Space.Compact>
-              {greetMsg && (
-                <Card size="small" className="bg-blue-50 border-blue-200">
-                  <Text strong>{greetMsg}</Text>
-                </Card>
-              )}
-            </Space>
-          </Card>
+          {currentPage === "files" && selectedProject && (
+            <FileManager
+              projectId={selectedProject.id}
+              onBack={handleBackToProjects}
+              onChat={handleOpenChat}
+            />
+          )}
+
+          {currentPage === "chat" && currentConversation && (
+            <ChatWindow
+              conversation={currentConversation}
+              onConversationUpdate={handleConversationUpdate}
+              onBack={handleBackToProjects}
+              onFiles={handleBackToFiles}
+            />
+          )}
         </div>
       </Content>
     </Layout>
