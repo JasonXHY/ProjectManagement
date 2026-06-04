@@ -46,15 +46,35 @@ struct AIError {
     message: Option<String>,
 }
 
+/// 去除markdown代码围栏，提取纯JSON内容
+fn strip_markdown_fences(text: &str) -> String {
+    let trimmed = text.trim();
+    // 处理 ```json ... ``` 或 ``` ... ``` 格式
+    if trimmed.starts_with("```") {
+        // 跳过第一行（```json 或 ```）
+        let after_open = if let Some(newline_pos) = trimmed.find('\n') {
+            &trimmed[newline_pos + 1..]
+        } else {
+            return trimmed.to_string();
+        };
+        // 去掉末尾的 ```
+        let content = after_open.trim_end();
+        if content.ends_with("```") {
+            return content[..content.len() - 3].trim().to_string();
+        }
+    }
+    trimmed.to_string()
+}
+
 /// 调用AI进行文件分类
 pub async fn classify_file(
+    http_client: &reqwest::Client,
     file_content: &str,
     prompt: &str,
     api_key: &str,
     api_url: &str,
     model: &str,
 ) -> Result<ClassificationResult, String> {
-    let http_client = reqwest::Client::new();
 
     // 构建prompt，替换{content}占位符
     let full_prompt = prompt.replace("{content}", file_content);
@@ -87,7 +107,8 @@ pub async fn classify_file(
     let response_text = response.text().await
         .map_err(|e| format!("读取响应失败: {}", e))?;
 
-    eprintln!("[CLASSIFIER] 收到响应: {}", &response_text[..response_text.len().min(200)]);
+    let preview: String = response_text.chars().take(200).collect();
+    eprintln!("[CLASSIFIER] 收到响应: {}", preview);
 
     // 解析响应
     let ai_response: AIResponse = serde_json::from_str(&response_text)
@@ -106,8 +127,11 @@ pub async fn classify_file(
         .map(|m| m.content.clone())
         .ok_or_else(|| "无法获取AI回复".to_string())?;
 
+    // 去除markdown代码围栏，提取纯JSON
+    let clean_reply = strip_markdown_fences(&reply);
+
     // 解析JSON结果
-    let result: ClassificationResult = serde_json::from_str(&reply)
+    let result: ClassificationResult = serde_json::from_str(&clean_reply)
         .map_err(|e| format!("解析分类结果失败: {}. 原始回复: {}", e, reply))?;
 
     eprintln!("[CLASSIFIER] 分类结果: category={}, confidence={}", result.category, result.confidence);
