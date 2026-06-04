@@ -3,12 +3,12 @@ use crate::db::models::Project;
 use tauri::State;
 
 #[tauri::command]
-pub fn create_project(
+pub async fn create_project(
     db: State<'_, Database>,
     name: String,
     description: Option<String>,
 ) -> Result<Project, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     conn.execute(
         "INSERT INTO projects (name, description) VALUES (?1, ?2)",
@@ -30,11 +30,11 @@ pub fn create_project(
 }
 
 #[tauri::command]
-pub fn get_projects(
+pub async fn get_projects(
     db: State<'_, Database>,
     include_archived: Option<bool>,
 ) -> Result<Vec<Project>, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
     let include = include_archived.unwrap_or(false);
 
     let mut stmt = if include {
@@ -68,14 +68,14 @@ pub fn get_projects(
 }
 
 #[tauri::command]
-pub fn update_project(
+pub async fn update_project(
     db: State<'_, Database>,
     id: i64,
     name: Option<String>,
     description: Option<String>,
     stage: Option<String>,
 ) -> Result<Project, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     if let Some(name) = name {
         conn.execute(
@@ -127,8 +127,8 @@ pub fn update_project(
 }
 
 #[tauri::command]
-pub fn delete_project(db: State<'_, Database>, id: i64) -> Result<(), String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+pub async fn delete_project(db: State<'_, Database>, id: i64) -> Result<(), String> {
+    let conn = db.conn.lock().await;
 
     conn.execute(
         "UPDATE projects SET status = 'archived' WHERE id = ?1",

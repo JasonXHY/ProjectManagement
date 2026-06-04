@@ -8,17 +8,41 @@ use db::Database;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 初始化数据库
-    let db = Database::new("projects.db").expect("Failed to create database");
-    db.init().expect("Failed to initialize database");
+    // 初始化数据库（带错误恢复）
+    let db_path = "projects.db";
+    let db = match Database::new(db_path) {
+        Ok(db) => db,
+        Err(e) => {
+            eprintln!("数据库创建失败，尝试删除后重建: {}", e);
+            // 尝试删除损坏的数据库文件
+            let _ = std::fs::remove_file(db_path);
+            // 重试创建
+            Database::new(db_path).expect("无法创建数据库")
+        }
+    };
+
+    // 初始化数据库表
+    let rt = tokio::runtime::Runtime::new().expect("无法创建Tokio运行时");
+    rt.block_on(async {
+        if let Err(e) = db.init().await {
+            eprintln!("数据库初始化失败: {}", e);
+        }
+    });
 
     // 初始化配置
     let app_config = AppConfig::default();
+
+    // 创建共享的HTTP客户端
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(60))
+        .build()
+        .expect("无法创建HTTP客户端");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(db)
         .manage(app_config)
+        .manage(http_client)
         .invoke_handler(tauri::generate_handler![
             commands::project::create_project,
             commands::project::get_projects,

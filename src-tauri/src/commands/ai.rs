@@ -53,11 +53,12 @@ struct ZhipuUsage {
 pub async fn chat_with_ai(
     db: State<'_, Database>,
     config: State<'_, AppConfig>,
+    http_client: State<'_, reqwest::Client>,
     request: ChatRequest,
 ) -> Result<ChatResponse, String> {
     // 保存用户消息
     {
-        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let conn = db.conn.lock().await;
         conn.execute(
             "INSERT INTO conversations (project_id, role, content) VALUES (?1, 'user', ?2)",
             rusqlite::params![request.project_id, request.message],
@@ -67,7 +68,7 @@ pub async fn chat_with_ai(
 
     // 获取最近5轮对话历史
     let history = {
-        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let conn = db.conn.lock().await;
         let mut stmt = conn
             .prepare(
                 "SELECT role, content FROM conversations
@@ -124,7 +125,6 @@ pub async fn chat_with_ai(
     });
 
     // 调用智谱AI API
-    let client = reqwest::Client::new();
     let api_request = ZhipuRequest {
         model: config.model_name.clone(),
         messages,
@@ -132,7 +132,7 @@ pub async fn chat_with_ai(
         temperature: 0.7,
     };
 
-    let response = client
+    let response = http_client
         .post(&config.zhipu_api_url)
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", config.zhipu_api_key))
@@ -163,7 +163,7 @@ pub async fn chat_with_ai(
 
     // 保存AI回复
     {
-        let conn = db.conn.lock().map_err(|e| e.to_string())?;
+        let conn = db.conn.lock().await;
         conn.execute(
             "INSERT INTO conversations (project_id, role, content, token_count) VALUES (?1, 'assistant', ?2, ?3)",
             rusqlite::params![request.project_id, reply, token_count],
@@ -178,12 +178,12 @@ pub async fn chat_with_ai(
 }
 
 #[tauri::command]
-pub fn get_conversation_history(
+pub async fn get_conversation_history(
     db: State<'_, Database>,
     project_id: i64,
     limit: Option<i32>,
 ) -> Result<Vec<Conversation>, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
     let limit = limit.unwrap_or(50);
 
     let mut stmt = conn
@@ -215,11 +215,11 @@ pub fn get_conversation_history(
 }
 
 #[tauri::command]
-pub fn clear_conversation_history(
+pub async fn clear_conversation_history(
     db: State<'_, Database>,
     project_id: i64,
 ) -> Result<(), String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     conn.execute(
         "DELETE FROM conversations WHERE project_id = ?1",

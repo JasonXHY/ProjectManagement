@@ -1,7 +1,7 @@
 pub mod models;
 
 use rusqlite::{Connection, Result};
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 
 pub struct Database {
     pub conn: Mutex<Connection>,
@@ -15,8 +15,8 @@ impl Database {
         })
     }
 
-    pub fn init(&self) -> Result<()> {
-        let conn = self.conn.lock().unwrap();
+    pub async fn init(&self) -> Result<()> {
+        let conn = self.conn.lock().await;
 
         // 创建项目表
         conn.execute(

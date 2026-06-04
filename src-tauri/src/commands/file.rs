@@ -3,12 +3,12 @@ use crate::db::models::File;
 use tauri::State;
 
 #[tauri::command]
-pub fn get_files_by_project(
+pub async fn get_files_by_project(
     db: State<'_, Database>,
     project_id: i64,
     stage: Option<String>,
 ) -> Result<Vec<File>, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     let map_row = |row: &rusqlite::Row| {
         Ok(File {
@@ -62,14 +62,14 @@ pub fn get_files_by_project(
 }
 
 #[tauri::command]
-pub fn create_file(
+pub async fn create_file(
     db: State<'_, Database>,
     project_id: i64,
     name: String,
     path: String,
     category: Option<String>,
 ) -> Result<File, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     conn.execute(
         "INSERT INTO files (project_id, name, path, category) VALUES (?1, ?2, ?3, ?4)",
@@ -94,12 +94,12 @@ pub fn create_file(
 }
 
 #[tauri::command]
-pub fn update_file_category(
+pub async fn update_file_category(
     db: State<'_, Database>,
     id: i64,
     category: String,
 ) -> Result<File, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let conn = db.conn.lock().await;
 
     conn.execute(
         "UPDATE files SET category = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2",
@@ -133,8 +133,8 @@ pub fn update_file_category(
 }
 
 #[tauri::command]
-pub fn delete_file(db: State<'_, Database>, id: i64) -> Result<(), String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+pub async fn delete_file(db: State<'_, Database>, id: i64) -> Result<(), String> {
+    let conn = db.conn.lock().await;
 
     conn.execute("DELETE FROM files WHERE id = ?1", rusqlite::params![id])
         .map_err(|e| e.to_string())?;
