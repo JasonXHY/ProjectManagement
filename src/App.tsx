@@ -1,16 +1,17 @@
 import { useState, useCallback } from "react";
-import { Layout, Typography } from "antd";
-import { RobotOutlined } from "@ant-design/icons";
+import { Layout, Typography, Button, Tooltip } from "antd";
+import { RobotOutlined, SettingOutlined } from "@ant-design/icons";
 import ProjectList from "./components/ProjectList/ProjectList";
 import FileManager from "./components/FileManager/FileManager";
 import ChatWindow from "./components/Chat/ChatWindow";
+import SettingsPage from "./components/Settings/SettingsPage";
 import type { Project } from "./types";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
 /** 页面类型 */
-type Page = "projects" | "files" | "chat";
+type Page = "projects" | "files" | "chat" | "settings";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("projects");
@@ -39,15 +40,32 @@ function App() {
     setCurrentPage("files");
   }, []);
 
+  /** 进入设置页面 */
+  const handleOpenSettings = useCallback(() => {
+    setCurrentPage("settings");
+  }, []);
+
+  /** 从设置返回 */
+  const handleBackFromSettings = useCallback(() => {
+    setCurrentPage("projects");
+  }, []);
+
   return (
     <Layout className="min-h-screen bg-gray-50">
-      <Header className="flex items-center bg-white shadow-sm px-6">
+      <Header className="flex items-center justify-between bg-white shadow-sm px-6">
         <div className="flex items-center gap-3">
           <RobotOutlined className="text-xl text-blue-500" />
           <Title level={4} className="!mb-0 !text-gray-800">
             项目管理助手
           </Title>
         </div>
+        <Tooltip title="设置">
+          <Button
+            type="text"
+            icon={<SettingOutlined className="text-lg" />}
+            onClick={handleOpenSettings}
+          />
+        </Tooltip>
       </Header>
       <Content className="p-6">
         <div className="max-w-6xl mx-auto">
@@ -71,6 +89,10 @@ function App() {
               onBack={handleBackToProjects}
               onFiles={handleBackToFiles}
             />
+          )}
+
+          {currentPage === "settings" && (
+            <SettingsPage onBack={handleBackFromSettings} />
           )}
         </div>
       </Content>
