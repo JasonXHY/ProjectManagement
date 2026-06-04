@@ -78,11 +78,11 @@ function App() {
   };
 
   return (
-    <Layout className="min-h-screen bg-gray-50">
-      <Header className="flex items-center justify-between bg-white shadow-sm px-6">
+    <Layout className="min-h-screen bg-gray-100">
+      <Header className="flex items-center justify-between bg-white shadow-md px-6">
         <div className="flex items-center gap-3">
-          <RobotOutlined className="text-xl text-blue-500" />
-          <Title level={4} className="!mb-0 !text-gray-800">
+          <RobotOutlined className="text-2xl text-blue-600" />
+          <Title level={3} className="!mb-0 !text-gray-900">
             项目管理助手
           </Title>
         </div>

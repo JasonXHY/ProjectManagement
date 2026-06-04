@@ -35,7 +35,7 @@ export default function ProjectHome({
         <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
           返回项目列表
         </Button>
-        <Title level={4} className="!mb-0">
+        <Title level={3} className="!mb-0">
           {project.name}
         </Title>
       </Space>
