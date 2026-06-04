@@ -30,6 +30,8 @@ struct ZhipuRequest {
 struct ZhipuMessage {
     role: String,
     content: String,
+    #[serde(default)]
+    reasoning_content: Option<String>,
 }
 
 /// 智谱AI API 响应结构
@@ -42,7 +44,8 @@ struct ZhipuResponse {
 
 #[derive(Debug, Deserialize)]
 struct ZhipuChoice {
-    message: ZhipuMessage,
+    message: Option<ZhipuMessage>,
+    finish_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -103,6 +106,7 @@ pub async fn chat_with_ai(
     messages.push(ZhipuMessage {
         role: "system".to_string(),
         content: "你是一个专业的项目管理助手，专门协助项目经理管理信息化项目。你的回答应简洁、专业、基于提供的项目上下文。如果信息不足，请明确说明。使用中文回答。".to_string(),
+        reasoning_content: None,
     });
 
     // 添加文件内容（如果有）
@@ -110,10 +114,12 @@ pub async fn chat_with_ai(
         messages.push(ZhipuMessage {
             role: "user".to_string(),
             content: format!("以下是上传的文件内容，请先阅读：\n\n{}", file_content),
+            reasoning_content: None,
         });
         messages.push(ZhipuMessage {
             role: "assistant".to_string(),
             content: "已收到文件内容，请问有什么可以帮助您的？".to_string(),
+            reasoning_content: None,
         });
     }
 
@@ -122,6 +128,7 @@ pub async fn chat_with_ai(
         messages.push(ZhipuMessage {
             role: role.clone(),
             content: content.clone(),
+            reasoning_content: None,
         });
     }
 
@@ -129,6 +136,7 @@ pub async fn chat_with_ai(
     messages.push(ZhipuMessage {
         role: "user".to_string(),
         content: request.message.clone(),
+        reasoning_content: None,
     });
 
     // 调用智谱AI API
@@ -184,7 +192,17 @@ pub async fn chat_with_ai(
         .choices
         .as_ref()
         .and_then(|c| c.first())
-        .map(|c| c.message.content.clone())
+        .and_then(|c| c.message.as_ref())
+        .map(|m| {
+            // 优先使用content，如果为空则使用reasoning_content
+            if !m.content.is_empty() {
+                m.content.clone()
+            } else if let Some(ref reasoning) = m.reasoning_content {
+                format!("（思考中...）\n\n{}", reasoning)
+            } else {
+                "抱歉，无法生成回复。".to_string()
+            }
+        })
         .unwrap_or_else(|| "抱歉，无法生成回复。".to_string());
 
     let token_count = zhipu_response
