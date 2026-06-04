@@ -1,0 +1,127 @@
+use crate::db::Database;
+use crate::db::models::File;
+use tauri::State;
+
+#[tauri::command]
+pub fn get_files_by_project(
+    db: State<'_, Database>,
+    project_id: i64,
+    stage: Option<String>,
+) -> Result<Vec<File>, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+
+    let mut sql = String::from(
+        "SELECT id, project_id, name, path, category, tags, version, content_hash, created_at, updated_at
+         FROM files WHERE project_id = ?1"
+    );
+
+    if let Some(stage) = stage {
+        sql.push_str(&format!(" AND category = '{}'", stage));
+    }
+
+    sql.push_str(" ORDER BY updated_at DESC");
+
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+
+    let files = stmt
+        .query_map(rusqlite::params![project_id], |row| {
+            Ok(File {
+                id: row.get(0)?,
+                project_id: row.get(1)?,
+                name: row.get(2)?,
+                path: row.get(3)?,
+                category: row.get(4)?,
+                tags: row.get(5)?,
+                version: row.get(6)?,
+                content_hash: row.get(7)?,
+                created_at: row.get(8)?,
+                updated_at: row.get(9)?,
+            })
+        })
+        .map_err(|e| e.to_string())?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    Ok(files)
+}
+
+#[tauri::command]
+pub fn create_file(
+    db: State<'_, Database>,
+    project_id: i64,
+    name: String,
+    path: String,
+    category: Option<String>,
+) -> Result<File, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "INSERT INTO files (project_id, name, path, category) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![project_id, name, path, category],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let id = conn.last_insert_rowid();
+
+    Ok(File {
+        id: Some(id),
+        project_id,
+        name,
+        path,
+        category,
+        tags: None,
+        version: 1,
+        content_hash: None,
+        created_at: None,
+        updated_at: None,
+    })
+}
+
+#[tauri::command]
+pub fn update_file_category(
+    db: State<'_, Database>,
+    id: i64,
+    category: String,
+) -> Result<File, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute(
+        "UPDATE files SET category = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2",
+        rusqlite::params![category, id],
+    )
+    .map_err(|e| e.to_string())?;
+
+    let file = conn
+        .query_row(
+            "SELECT id, project_id, name, path, category, tags, version, content_hash, created_at, updated_at
+             FROM files WHERE id = ?1",
+            rusqlite::params![id],
+            |row| {
+                Ok(File {
+                    id: row.get(0)?,
+                    project_id: row.get(1)?,
+                    name: row.get(2)?,
+                    path: row.get(3)?,
+                    category: row.get(4)?,
+                    tags: row.get(5)?,
+                    version: row.get(6)?,
+                    content_hash: row.get(7)?,
+                    created_at: row.get(8)?,
+                    updated_at: row.get(9)?,
+                })
+            },
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(file)
+}
+
+#[tauri::command]
+pub fn delete_file(db: State<'_, Database>, id: i64) -> Result<(), String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+
+    conn.execute("DELETE FROM files WHERE id = ?1", rusqlite::params![id])
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
