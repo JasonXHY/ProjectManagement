@@ -67,3 +67,30 @@ export interface UpdateProjectRequest {
   description?: string;
   stage?: ProjectStage;
 }
+
+/** 文件分类结果 */
+export interface ClassificationResult {
+  category: string;
+  confidence: number;
+  summary: string;
+  file_type: string;
+}
+
+/** 应用配置 */
+export interface AppConfig {
+  zhipu_api_key: string;
+  zhipu_api_url: string;
+  model_name: string;
+  classification_prompt: string;
+}
+
+/** 文件上传请求 */
+export interface UploadFileRequest {
+  project_id: number;
+  name: string;
+  path: string;
+  category?: string;
+  content?: string; // base64编码
+  project_name?: string;
+  stage?: string;
+}
