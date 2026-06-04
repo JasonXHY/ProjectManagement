@@ -37,14 +37,14 @@ const { Search } = Input;
 
 /** 项目列表页面属性 */
 interface ProjectListProps {
-  onManage?: (project: Project) => void;
+  onOpen?: (project: Project) => void;
 }
 
 /**
  * 项目列表页面
  * 包含搜索、筛选、排序功能
  */
-export default function ProjectList({ onManage }: ProjectListProps) {
+export default function ProjectList({ onOpen }: ProjectListProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -186,6 +186,13 @@ export default function ProjectList({ onManage }: ProjectListProps) {
     }
   };
 
+  /** 处理打开项目 */
+  const handleOpenProject = (project: Project) => {
+    if (onOpen) {
+      onOpen(project);
+    }
+  };
+
   /** 重置筛选 */
   const handleReset = () => {
     setSearchText("");
@@ -265,9 +272,9 @@ export default function ProjectList({ onManage }: ProjectListProps) {
           <ProjectTable
             projects={filteredProjects}
             loading={loading}
-            onEdit={handleEdit}
+            onOpen={handleOpenProject}
             onDelete={handleDelete}
-            onManage={onManage ?? (() => {})}
+            onEdit={handleEdit}
           />
         )}
       </Card>

@@ -28,9 +28,9 @@ const STAGE_LABEL_MAP: Record<ProjectStage, string> = PROJECT_STAGES;
 interface ProjectTableProps {
   projects: Project[];
   loading: boolean;
-  onEdit: (project: Project) => void;
-  onDelete: (id: number) => void;
-  onManage: (project: Project) => void;
+  onOpen?: (project: Project) => void;
+  onDelete?: (id: number) => void;
+  onEdit?: (project: Project) => void;
 }
 
 /** 数据驱动的基础列配置（不含回调，提取到组件外部避免每次渲染重建） */
@@ -86,9 +86,9 @@ const BASE_COLUMNS: ColumnsType<Project> = [
 export default function ProjectTable({
   projects,
   loading,
-  onEdit,
+  onOpen,
   onDelete,
-  onManage,
+  onEdit,
 }: ProjectTableProps) {
   const columns: ColumnsType<Project> = useMemo(
     () => [
@@ -103,22 +103,22 @@ export default function ProjectTable({
             <Button
               type="link"
               size="small"
-              icon={<FolderOutlined />}
-              onClick={() => onManage(record)}
+              icon={<EditOutlined />}
+              onClick={() => onOpen?.(record)}
             >
-              管理
+              打开
             </Button>
             <Button
               type="link"
               size="small"
-              icon={<EditOutlined />}
-              onClick={() => onEdit(record)}
+              icon={<FolderOutlined />}
+              onClick={() => onEdit?.(record)}
             >
               编辑
             </Button>
             <Popconfirm
               title="确定要删除这个项目吗？"
-              onConfirm={() => onDelete(record.id!)}
+              onConfirm={() => onDelete?.(record.id!)}
               okText="确定"
               cancelText="取消"
             >
@@ -130,7 +130,7 @@ export default function ProjectTable({
         ),
       },
     ],
-    [onEdit, onDelete, onManage],
+    [onOpen, onDelete, onEdit],
   );
 
   return (

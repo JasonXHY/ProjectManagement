@@ -100,7 +100,7 @@ function App() {
       <Content className="p-6">
         <div className="max-w-6xl mx-auto">
           {currentPage === "projects" && (
-            <ProjectList onManage={handleOpenProject} />
+            <ProjectList onOpen={handleOpenProject} />
           )}
 
           {currentPage === "project-home" && selectedProject && (
