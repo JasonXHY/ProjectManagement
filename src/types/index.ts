@@ -1,30 +1,34 @@
-/** 文件信息 */
+/** 文件信息 - 与后端模型匹配 */
 export interface File {
-  id: string;
+  id: number | null;
+  project_id: number;
   name: string;
   path: string;
-  size: number;
-  mimeType: string;
-  createdAt: string;
-  updatedAt: string;
+  category: string | null;
+  tags: string | null;
+  version: number;
+  content_hash: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
-/** 对话信息 */
+/** 对话信息 - 与后端模型匹配 */
 export interface Conversation {
-  id: string;
-  projectId: string;
-  title: string;
-  messages: Message[];
-  createdAt: string;
-  updatedAt: string;
+  id: number | null;
+  project_id: number;
+  role: string;
+  content: string;
+  created_at: string | null;
+  token_count: number | null;
 }
 
-/** 消息信息 */
+/** 消息信息 - 兼容前端组件使用 */
 export interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
+  id: number | null;
+  role: "user" | "assistant";
   content: string;
-  createdAt: string;
+  created_at: string | null;
+  token_count: number | null;
 }
 
 /** 项目阶段 */
@@ -48,28 +52,26 @@ export const PROJECT_STAGES: Record<ProjectStage, string> = {
   ended: "结束",
 };
 
-/** 项目信息 */
+/** 项目信息 - 与后端模型匹配 */
 export interface Project {
-  id: string;
+  id: number | null;
   name: string;
-  description: string;
+  description: string | null;
   stage: ProjectStage;
-  files: File[];
-  conversations: Conversation[];
-  createdAt: string;
-  updatedAt: string;
+  created_at: string | null;
+  updated_at: string | null;
+  status: string;
 }
 
 /** 创建项目请求 */
 export interface CreateProjectRequest {
   name: string;
-  description: string;
-  stage: ProjectStage;
+  description?: string;
 }
 
 /** 更新项目请求 */
 export interface UpdateProjectRequest {
-  id: string;
+  id: number;
   name?: string;
   description?: string;
   stage?: ProjectStage;

@@ -8,25 +8,16 @@ import type {
 /**
  * 获取所有项目列表
  */
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(
+  includeArchived: boolean = false,
+): Promise<Project[]> {
   try {
-    const projects = await invoke<Project[]>("get_projects");
+    const projects = await invoke<Project[]>("get_projects", {
+      includeArchived,
+    });
     return projects;
   } catch (error) {
     console.error("Failed to fetch projects:", error);
-    throw error;
-  }
-}
-
-/**
- * 获取单个项目详情
- */
-export async function getProject(id: string): Promise<Project> {
-  try {
-    const project = await invoke<Project>("get_project", { id });
-    return project;
-  } catch (error) {
-    console.error("Failed to fetch project:", error);
     throw error;
   }
 }
@@ -41,7 +32,6 @@ export async function createProject(
     const project = await invoke<Project>("create_project", {
       name: request.name,
       description: request.description,
-      stage: request.stage,
     });
     return project;
   } catch (error) {
@@ -71,9 +61,9 @@ export async function updateProject(
 }
 
 /**
- * 删除项目
+ * 删除项目（软删除）
  */
-export async function deleteProject(id: string): Promise<void> {
+export async function deleteProject(id: number): Promise<void> {
   try {
     await invoke("delete_project", { id });
   } catch (error) {

@@ -8,9 +8,8 @@ import {
   PauseCircleOutlined,
   StopOutlined,
 } from "@ant-design/icons";
-import type { ProjectStage } from "../../types";
+import type { ProjectStage, File } from "../../types";
 import { PROJECT_STAGES } from "../../types";
-import type { ManagedFile } from "../../services/fileService";
 
 /** 阶段图标映射 */
 const STAGE_ICONS: Record<ProjectStage, React.ReactNode> = {
@@ -27,7 +26,7 @@ const STAGE_ICONS: Record<ProjectStage, React.ReactNode> = {
 interface StageListProps {
   selectedStage: ProjectStage | null;
   onSelectStage: (stage: ProjectStage) => void;
-  files: ManagedFile[];
+  files: File[];
 }
 
 /**
@@ -41,7 +40,7 @@ export default function StageList({
 }: StageListProps) {
   /** 统计每个阶段的文件数量 */
   const stageFileCount = (stage: ProjectStage): number => {
-    return files.filter((f) => f.stage === stage).length;
+    return files.filter((f) => f.category === stage).length;
   };
 
   const stageKeys = Object.keys(PROJECT_STAGES) as ProjectStage[];

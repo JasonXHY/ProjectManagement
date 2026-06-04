@@ -4,13 +4,13 @@ import {
   UserOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
-import type { Message } from "../../types";
+import type { Conversation } from "../../types";
 
 const { Text } = Typography;
 
 /** 消息列表属性 */
 interface MessageListProps {
-  messages: Message[];
+  messages: Conversation[];
 }
 
 /**
@@ -26,7 +26,8 @@ export default function MessageList({ messages }: MessageListProps) {
   }, [messages]);
 
   /** 格式化时间 */
-  const formatTime = (dateStr: string): string => {
+  const formatTime = (dateStr: string | null): string => {
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     return date.toLocaleTimeString("zh-CN", {
       hour: "2-digit",
@@ -76,7 +77,7 @@ export default function MessageList({ messages }: MessageListProps) {
                   isUser ? "text-blue-100" : "text-gray-400"
                 }`}
               >
-                {formatTime(msg.createdAt)}
+                {formatTime(msg.created_at)}
               </div>
             </div>
           </div>

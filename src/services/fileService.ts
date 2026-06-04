@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { File, ProjectStage } from "../types";
+import type { File } from "../types";
 
 /** 文件分类 */
 export type FileCategory =
@@ -20,45 +20,31 @@ export const FILE_CATEGORY_LABELS: Record<FileCategory, string> = {
   other: "其他",
 };
 
-/** 管理文件信息（扩展基础 File 类型） */
-export interface ManagedFile extends File {
-  version: string;
-  category: FileCategory;
-  stage: ProjectStage;
-}
-
 /** 创建文件请求 */
 export interface CreateFileRequest {
-  projectId: string;
+  project_id: number;
   name: string;
   path: string;
-  size: number;
-  mimeType: string;
-  stage: ProjectStage;
-  category: FileCategory;
+  category?: FileCategory;
 }
 
 /** 更新文件分类请求 */
 export interface UpdateFileCategoryRequest {
-  id: string;
+  id: number;
   category: FileCategory;
-}
-
-/** 更新文件阶段请求 */
-export interface UpdateFileStageRequest {
-  id: string;
-  stage: ProjectStage;
 }
 
 /**
  * 根据项目 ID 获取文件列表
  */
 export async function getFilesByProject(
-  projectId: string,
-): Promise<ManagedFile[]> {
+  projectId: number,
+  stage?: string,
+): Promise<File[]> {
   try {
-    const files = await invoke<ManagedFile[]>("get_files_by_project", {
+    const files = await invoke<File[]>("get_files_by_project", {
       projectId,
+      stage,
     });
     return files;
   } catch (error) {
@@ -72,15 +58,12 @@ export async function getFilesByProject(
  */
 export async function createFile(
   request: CreateFileRequest,
-): Promise<ManagedFile> {
+): Promise<File> {
   try {
-    const file = await invoke<ManagedFile>("create_file", {
-      projectId: request.projectId,
+    const file = await invoke<File>("create_file", {
+      projectId: request.project_id,
       name: request.name,
       path: request.path,
-      size: request.size,
-      mimeType: request.mimeType,
-      stage: request.stage,
       category: request.category,
     });
     return file;
@@ -95,9 +78,9 @@ export async function createFile(
  */
 export async function updateFileCategory(
   request: UpdateFileCategoryRequest,
-): Promise<ManagedFile> {
+): Promise<File> {
   try {
-    const file = await invoke<ManagedFile>("update_file_category", {
+    const file = await invoke<File>("update_file_category", {
       id: request.id,
       category: request.category,
     });
@@ -109,51 +92,9 @@ export async function updateFileCategory(
 }
 
 /**
- * 更新文件阶段
- */
-export async function updateFileStage(
-  request: UpdateFileStageRequest,
-): Promise<ManagedFile> {
-  try {
-    const file = await invoke<ManagedFile>("update_file_stage", {
-      id: request.id,
-      stage: request.stage,
-    });
-    return file;
-  } catch (error) {
-    console.error("Failed to update file stage:", error);
-    throw error;
-  }
-}
-
-/**
- * 上传文件到后端
- */
-export async function uploadFile(
-  projectId: string,
-  browserFile: globalThis.File,
-): Promise<ManagedFile> {
-  try {
-    const content = await browserFile.arrayBuffer();
-    const contentArray = Array.from(new Uint8Array(content));
-    const result = await invoke<ManagedFile>("upload_file", {
-      projectId,
-      name: browserFile.name,
-      size: browserFile.size,
-      mimeType: browserFile.type || "application/octet-stream",
-      content: contentArray,
-    });
-    return result;
-  } catch (error) {
-    console.error("Failed to upload file:", error);
-    throw error;
-  }
-}
-
-/**
  * 删除文件
  */
-export async function deleteFile(id: string): Promise<void> {
+export async function deleteFile(id: number): Promise<void> {
   try {
     await invoke("delete_file", { id });
   } catch (error) {

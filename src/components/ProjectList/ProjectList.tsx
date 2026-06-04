@@ -29,9 +29,8 @@ import type {
   CreateProjectRequest,
 } from "../../types";
 import { PROJECT_STAGES } from "../../types";
-import { demoProjects } from "../../mocks/demoProjects";
 
-type SortField = "updatedAt" | "createdAt" | "name";
+type SortField = "updated_at" | "created_at" | "name";
 
 const { Title } = Typography;
 const { Search } = Input;
@@ -52,7 +51,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
   const [filterStage, setFilterStage] = useState<ProjectStage | undefined>(
     undefined,
   );
-  const [sortBy, setSortBy] = useState<SortField>("updatedAt");
+  const [sortBy, setSortBy] = useState<SortField>("updated_at");
   const [sortOrder, setSortOrder] = useState<"ascend" | "descend">("descend");
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -64,9 +63,9 @@ export default function ProjectList({ onManage }: ProjectListProps) {
     try {
       const data = await getProjects();
       setProjects(data);
-    } catch {
-      message.error("Failed to load projects. Using demo data.");
-      setProjects(demoProjects);
+    } catch (error) {
+      message.error("Failed to load projects");
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
       result = result.filter(
         (p) =>
           p.name.toLowerCase().includes(lowerSearch) ||
-          p.description.toLowerCase().includes(lowerSearch),
+          (p.description?.toLowerCase().includes(lowerSearch) ?? false),
       );
     }
 
@@ -106,13 +105,15 @@ export default function ProjectList({ onManage }: ProjectListProps) {
         case "name":
           comparison = a.name.localeCompare(b.name);
           break;
-        case "updatedAt":
+        case "updated_at":
           comparison =
-            new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+            new Date(a.updated_at || 0).getTime() -
+            new Date(b.updated_at || 0).getTime();
           break;
-        case "createdAt":
+        case "created_at":
           comparison =
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime();
           break;
         default:
           comparison = 0;
@@ -136,13 +137,12 @@ export default function ProjectList({ onManage }: ProjectListProps) {
     form.setFieldsValue({
       name: project.name,
       description: project.description,
-      stage: project.stage,
     });
     setModalVisible(true);
   };
 
   /** 删除项目 */
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteProject(id);
       message.success("Project deleted successfully");
@@ -165,15 +165,15 @@ export default function ProjectList({ onManage }: ProjectListProps) {
     try {
       if (editingProject) {
         await updateProject({
-          id: editingProject.id,
-          ...values,
+          id: editingProject.id!,
+          name: values.name,
+          description: values.description,
         });
         message.success("Project updated successfully");
       } else {
         const request: CreateProjectRequest = {
           name: values.name,
           description: values.description,
-          stage: values.stage || "blueprint",
         };
         await createProject(request);
         message.success("Project created successfully");
@@ -190,7 +190,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
   const handleReset = () => {
     setSearchText("");
     setFilterStage(undefined);
-    setSortBy("updatedAt");
+    setSortBy("updated_at");
     setSortOrder("descend");
   };
 
@@ -239,8 +239,8 @@ export default function ProjectList({ onManage }: ProjectListProps) {
             onChange={setSortBy}
             style={{ width: 160 }}
             options={[
-              { label: "Sort by Updated", value: "updatedAt" },
-              { label: "Sort by Created", value: "createdAt" },
+              { label: "Sort by Updated", value: "updated_at" },
+              { label: "Sort by Created", value: "created_at" },
               { label: "Sort by Name", value: "name" },
             ]}
           />
@@ -282,11 +282,7 @@ export default function ProjectList({ onManage }: ProjectListProps) {
         cancelText="Cancel"
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ stage: "blueprint" }}
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
             name="name"
             label="Project Name"
@@ -297,22 +293,10 @@ export default function ProjectList({ onManage }: ProjectListProps) {
           >
             <Input placeholder="Enter project name" />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Please enter description" }]}
-          >
+          <Form.Item name="description" label="Description">
             <Input.TextArea
               rows={3}
               placeholder="Enter project description"
-            />
-          </Form.Item>
-          <Form.Item name="stage" label="Stage">
-            <Select
-              options={Object.entries(PROJECT_STAGES).map(([value, label]) => ({
-                label,
-                value,
-              }))}
             />
           </Form.Item>
         </Form>

@@ -7,19 +7,17 @@ import {
   ArrowLeftOutlined,
   FolderOutlined,
 } from "@ant-design/icons";
-import type { Message, Conversation } from "../../types";
+import type { Conversation } from "../../types";
 import { chat, getHistory, clearHistory } from "../../services/aiService";
 import MessageList from "./MessageList";
-import UploadZone from "./UploadZone";
-import type { UploadedFile } from "./UploadZone";
 
 const { Text } = Typography;
 const { TextArea } = Input;
 
 /** 对话窗口属性 */
 interface ChatWindowProps {
-  conversation: Conversation;
-  onConversationUpdate?: (conversation: Conversation) => void;
+  projectId: number;
+  projectName?: string;
   onBack?: () => void;
   onFiles?: () => void;
 }
@@ -29,31 +27,31 @@ interface ChatWindowProps {
  * 整合消息列表和上传区域，支持发送消息和清空历史
  */
 export default function ChatWindow({
-  conversation,
-  onConversationUpdate,
+  projectId,
+  projectName,
   onBack,
   onFiles,
 }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const messagesRef = useRef<Message[]>([]);
+  const [messages, setMessages] = useState<Conversation[]>([]);
+  const messagesRef = useRef<Conversation[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   /** 加载对话历史 */
   const loadHistory = useCallback(async () => {
     setIsHistoryLoading(true);
     try {
-      const history = await getHistory(conversation.id);
-      messagesRef.current = history;
-      setMessages(history);
+      const history = await getHistory(projectId);
+      const reversed = [...history].reverse();
+      messagesRef.current = reversed;
+      setMessages(reversed);
     } catch {
       message.error("加载对话历史失败");
     } finally {
       setIsHistoryLoading(false);
     }
-  }, [conversation.id]);
+  }, [projectId]);
 
   /** 组件挂载时加载历史 */
   useEffect(() => {
@@ -65,12 +63,14 @@ export default function ChatWindow({
     const content = inputValue.trim();
     if (!content || isLoading) return;
 
-    // 创建用户消息
-    const userMessage: Message = {
-      id: `msg_${Date.now()}_user`,
+    // 创建用户消息（临时）
+    const userMessage: Conversation = {
+      id: Date.now(),
+      project_id: projectId,
       role: "user",
       content,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      token_count: null,
     };
 
     // 立即显示用户消息
@@ -81,40 +81,37 @@ export default function ChatWindow({
     setIsLoading(true);
 
     try {
-      // 截取最近5轮对话（10条消息）作为上下文
-      const contextMessages = messagesRef.current.slice(-10);
-
       // 调用 AI 服务
-      const reply = await chat({
-        conversationId: conversation.id,
-        content,
-        fileIds: uploadedFiles.map((f) => f.id),
-        contextMessages,
+      const response = await chat({
+        project_id: projectId,
+        message: content,
       });
 
       // 显示 AI 回复
-      const finalMessages = [...messagesRef.current, reply];
+      const aiMessage: Conversation = {
+        id: Date.now() + 1,
+        project_id: projectId,
+        role: "assistant",
+        content: response.reply,
+        created_at: new Date().toISOString(),
+        token_count: response.token_count,
+      };
+
+      const finalMessages = [...messagesRef.current, aiMessage];
       messagesRef.current = finalMessages;
       setMessages(finalMessages);
-
-      // 更新对话信息
-      if (onConversationUpdate) {
-        onConversationUpdate({
-          ...conversation,
-          messages: finalMessages,
-          updatedAt: new Date().toISOString(),
-        });
-      }
     } catch {
       message.error("发送消息失败，请重试");
       // 移除用户消息如果发送失败
-      const reverted = messagesRef.current.filter((m) => m.id !== userMessage.id);
+      const reverted = messagesRef.current.filter(
+        (m) => m.id !== userMessage.id,
+      );
       messagesRef.current = reverted;
       setMessages(reverted);
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, isLoading, conversation, uploadedFiles, onConversationUpdate]);
+  }, [inputValue, isLoading, projectId]);
 
   /** 清空历史 */
   const handleClearHistory = useCallback(() => {
@@ -126,7 +123,7 @@ export default function ChatWindow({
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          await clearHistory(conversation.id);
+          await clearHistory(projectId);
           messagesRef.current = [];
           setMessages([]);
           message.success("对话历史已清空");
@@ -135,7 +132,7 @@ export default function ChatWindow({
         }
       },
     });
-  }, [conversation.id]);
+  }, [projectId]);
 
   /** 处理回车键发送 */
   const handleKeyDown = useCallback(
@@ -153,22 +150,14 @@ export default function ChatWindow({
       {/* 头部 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          <Button
-            type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={onBack}
-          >
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={onBack}>
             返回项目列表
           </Button>
-          <Button
-            type="text"
-            icon={<FolderOutlined />}
-            onClick={onFiles}
-          >
+          <Button type="text" icon={<FolderOutlined />} onClick={onFiles}>
             文件管理
           </Button>
           <CommentOutlined className="text-blue-500" />
-          <Text strong>{conversation.title}</Text>
+          <Text strong>{projectName || "项目对话"}</Text>
         </div>
         <Button
           type="text"
@@ -201,14 +190,6 @@ export default function ChatWindow({
           </Text>
         </div>
       )}
-
-      {/* 上传区域 */}
-      <UploadZone
-        projectId={conversation.projectId}
-        files={uploadedFiles}
-        onFilesChange={setUploadedFiles}
-        disabled={isLoading}
-      />
 
       {/* 输入区域 */}
       <div className="p-4 border-t border-gray-200">

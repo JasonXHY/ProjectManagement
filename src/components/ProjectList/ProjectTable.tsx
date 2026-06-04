@@ -29,7 +29,7 @@ interface ProjectTableProps {
   projects: Project[];
   loading: boolean;
   onEdit: (project: Project) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onManage: (project: Project) => void;
 }
 
@@ -69,11 +69,13 @@ const BASE_COLUMNS: ColumnsType<Project> = [
   },
   {
     title: "Updated At",
-    dataIndex: "updatedAt",
-    key: "updatedAt",
+    dataIndex: "updated_at",
+    key: "updated_at",
     width: 200,
-    render: (date: string) => (
-      <Text type="secondary">{new Date(date).toLocaleString()}</Text>
+    render: (date: string | null) => (
+      <Text type="secondary">
+        {date ? new Date(date).toLocaleString() : "N/A"}
+      </Text>
     ),
   },
 ];
@@ -116,7 +118,7 @@ export default function ProjectTable({
             </Button>
             <Popconfirm
               title="Are you sure you want to delete this project?"
-              onConfirm={() => onDelete(record.id)}
+              onConfirm={() => onDelete(record.id!)}
               okText="Yes"
               cancelText="No"
             >

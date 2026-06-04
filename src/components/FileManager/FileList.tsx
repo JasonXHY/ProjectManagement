@@ -5,14 +5,13 @@ import {
   FolderOpenOutlined,
   HistoryOutlined,
   MoreOutlined,
-  SwapOutlined,
   TagsOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import type { ManagedFile, FileCategory } from "../../services/fileService";
+import type { FileCategory } from "../../services/fileService";
 import { FILE_CATEGORY_LABELS } from "../../services/fileService";
-import type { ProjectStage } from "../../types";
+import type { File, ProjectStage } from "../../types";
 import { PROJECT_STAGES } from "../../types";
 
 /** 文件分类颜色映射 */
@@ -27,15 +26,14 @@ const CATEGORY_COLORS: Record<FileCategory, string> = {
 
 /** 文件列表属性 */
 interface FileListProps {
-  files: ManagedFile[];
+  files: File[];
   stage: ProjectStage;
-  onPreview: (file: ManagedFile) => void;
-  onEdit: (file: ManagedFile) => void;
-  onMove: (file: ManagedFile) => void;
-  onCategorize: (file: ManagedFile) => void;
-  onVersionHistory: (file: ManagedFile) => void;
-  onOpenFolder: (file: ManagedFile) => void;
-  onDelete: (fileId: string) => void;
+  onPreview: (file: File) => void;
+  onEdit: (file: File) => void;
+  onCategorize: (file: File) => void;
+  onVersionHistory: (file: File) => void;
+  onOpenFolder: (file: File) => void;
+  onDelete: (fileId: number) => void;
 }
 
 /**
@@ -47,21 +45,14 @@ export default function FileList({
   stage,
   onPreview,
   onEdit,
-  onMove,
   onCategorize,
   onVersionHistory,
   onOpenFolder,
   onDelete,
 }: FileListProps) {
-  /** 格式化文件大小 */
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
   /** 格式化日期 */
-  const formatDate = (dateStr: string): string => {
+  const formatDate = (dateStr: string | null): string => {
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString("zh-CN", {
       year: "numeric",
@@ -72,29 +63,30 @@ export default function FileList({
     });
   };
 
-  const columns: ColumnsType<ManagedFile> = [
+  const columns: ColumnsType<File> = [
     {
       title: "文件名",
       dataIndex: "name",
       key: "name",
       ellipsis: true,
-      width: "30%",
+      width: "35%",
     },
     {
       title: "版本",
       dataIndex: "version",
       key: "version",
-      width: 100,
-      render: (version: string) => <Tag>{version}</Tag>,
+      width: 80,
+      render: (version: number) => <Tag>v{version}</Tag>,
     },
     {
       title: "更新时间",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
+      dataIndex: "updated_at",
+      key: "updated_at",
       width: 180,
-      render: (date: string) => formatDate(date),
+      render: (date: string | null) => formatDate(date),
       sorter: (a, b) =>
-        new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime(),
+        new Date(a.updated_at || 0).getTime() -
+        new Date(b.updated_at || 0).getTime(),
       defaultSortOrder: "descend",
     },
     {
@@ -102,25 +94,20 @@ export default function FileList({
       dataIndex: "category",
       key: "category",
       width: 120,
-      render: (category: FileCategory) => (
-        <Tag color={CATEGORY_COLORS[category]}>
-          {FILE_CATEGORY_LABELS[category]}
-        </Tag>
-      ),
-    },
-    {
-      title: "大小",
-      dataIndex: "size",
-      key: "size",
-      width: 100,
-      render: (size: number) => formatFileSize(size),
-      sorter: (a, b) => a.size - b.size,
+      render: (category: string | null) => {
+        if (!category) return <Tag>未分类</Tag>;
+        const label =
+          FILE_CATEGORY_LABELS[category as FileCategory] || category;
+        const color =
+          CATEGORY_COLORS[category as FileCategory] || "default";
+        return <Tag color={color}>{label}</Tag>;
+      },
     },
     {
       title: "操作",
       key: "actions",
       width: 60,
-      render: (_: unknown, record: ManagedFile) => {
+      render: (_: unknown, record: File) => {
         const menuItems = [
           {
             key: "preview",
@@ -133,12 +120,6 @@ export default function FileList({
             icon: <EditOutlined />,
             label: "编辑",
             onClick: () => onEdit(record),
-          },
-          {
-            key: "move",
-            icon: <SwapOutlined />,
-            label: "移动到阶段",
-            onClick: () => onMove(record),
           },
           {
             key: "categorize",
@@ -165,7 +146,7 @@ export default function FileList({
             label: "删除",
             danger: true,
             onClick: () => {
-              void onDelete(record.id);
+              void onDelete(record.id!);
             },
           },
         ];
@@ -179,7 +160,7 @@ export default function FileList({
     },
   ];
 
-  const filteredFiles = files.filter((f) => f.stage === stage);
+  const filteredFiles = files.filter((f) => f.category === stage);
 
   return (
     <>
@@ -197,11 +178,13 @@ export default function FileList({
         columns={columns}
         dataSource={filteredFiles}
         rowKey="id"
-        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 个文件` }}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 个文件`,
+        }}
         locale={{
-          emptyText: (
-            <Empty description="该阶段暂无文件" />
-          ),
+          emptyText: <Empty description="该阶段暂无文件" />,
         }}
       />
     </>

@@ -4,7 +4,7 @@ import { RobotOutlined } from "@ant-design/icons";
 import ProjectList from "./components/ProjectList/ProjectList";
 import FileManager from "./components/FileManager/FileManager";
 import ChatWindow from "./components/Chat/ChatWindow";
-import type { Project, Conversation } from "./types";
+import type { Project } from "./types";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -15,8 +15,6 @@ type Page = "projects" | "files" | "chat";
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [currentConversation, setCurrentConversation] =
-    useState<Conversation | null>(null);
 
   /** 进入文件管理页面 */
   const handleManageProject = useCallback((project: Project) => {
@@ -28,30 +26,11 @@ function App() {
   const handleBackToProjects = useCallback(() => {
     setCurrentPage("projects");
     setSelectedProject(null);
-    setCurrentConversation(null);
   }, []);
 
   /** 进入对话窗口 */
   const handleOpenChat = useCallback(() => {
     if (!selectedProject) return;
-
-    // 如果项目没有对话，创建一个默认对话
-    if (
-      selectedProject.conversations &&
-      selectedProject.conversations.length > 0
-    ) {
-      setCurrentConversation(selectedProject.conversations[0]);
-    } else {
-      const defaultConversation: Conversation = {
-        id: `conv_${Date.now()}`,
-        projectId: selectedProject.id,
-        title: `${selectedProject.name} - 对话`,
-        messages: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setCurrentConversation(defaultConversation);
-    }
     setCurrentPage("chat");
   }, [selectedProject]);
 
@@ -59,14 +38,6 @@ function App() {
   const handleBackToFiles = useCallback(() => {
     setCurrentPage("files");
   }, []);
-
-  /** 更新对话信息 */
-  const handleConversationUpdate = useCallback(
-    (conversation: Conversation) => {
-      setCurrentConversation(conversation);
-    },
-    [],
-  );
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -86,16 +57,16 @@ function App() {
 
           {currentPage === "files" && selectedProject && (
             <FileManager
-              projectId={selectedProject.id}
+              projectId={selectedProject.id!}
               onBack={handleBackToProjects}
               onChat={handleOpenChat}
             />
           )}
 
-          {currentPage === "chat" && currentConversation && (
+          {currentPage === "chat" && selectedProject && (
             <ChatWindow
-              conversation={currentConversation}
-              onConversationUpdate={handleConversationUpdate}
+              projectId={selectedProject.id!}
+              projectName={selectedProject.name}
               onBack={handleBackToProjects}
               onFiles={handleBackToFiles}
             />

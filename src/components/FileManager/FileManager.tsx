@@ -7,15 +7,13 @@ import {
   CommentOutlined,
 } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload";
-import type { ProjectStage } from "../../types";
+import type { ProjectStage, File } from "../../types";
 import { PROJECT_STAGES } from "../../types";
-import type { ManagedFile } from "../../services/fileService";
 import {
   FILE_CATEGORY_LABELS,
   getFilesByProject,
   createFile,
   updateFileCategory,
-  updateFileStage,
   deleteFile,
 } from "../../services/fileService";
 import type { FileCategory } from "../../services/fileService";
@@ -24,7 +22,7 @@ import FileList from "./FileList";
 
 /** 文件管理页面属性 */
 interface FileManagerProps {
-  projectId: string;
+  projectId: number;
   onBack?: () => void;
   onChat?: () => void;
 }
@@ -33,18 +31,22 @@ interface FileManagerProps {
  * 文件管理页面
  * 左侧显示项目阶段列表，右侧显示对应阶段的文件列表
  */
-export default function FileManager({ projectId, onBack, onChat }: FileManagerProps) {
-  const [files, setFiles] = useState<ManagedFile[]>([]);
-  const [selectedStage, setSelectedStage] = useState<ProjectStage | null>(null);
+export default function FileManager({
+  projectId,
+  onBack,
+  onChat,
+}: FileManagerProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [selectedStage, setSelectedStage] = useState<ProjectStage | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [moveModalOpen, setMoveModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<ManagedFile | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
 
   const [categoryForm] = Form.useForm<{ category: FileCategory }>();
-  const [moveForm] = Form.useForm<{ stage: ProjectStage }>();
 
   /** 加载文件列表 */
   const loadFiles = useCallback(async () => {
@@ -79,13 +81,10 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
       if (file.originFileObj) {
         try {
           await createFile({
-            projectId,
+            project_id: projectId,
             name: file.name ?? "未知文件",
             path: `/projects/${projectId}/${file.name}`,
-            size: file.size ?? 0,
-            mimeType: file.type ?? "application/octet-stream",
-            stage: selectedStage,
-            category: "other",
+            category: selectedStage as FileCategory,
           });
           successCount++;
         } catch {
@@ -99,7 +98,9 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
     } else if (successCount === 0) {
       message.error(`全部 ${failCount} 个文件上传失败`);
     } else {
-      message.warning(`上传完成：${successCount} 个成功，${failCount} 个失败`);
+      message.warning(
+        `上传完成：${successCount} 个成功，${failCount} 个失败`,
+      );
     }
 
     setUploadModalOpen(false);
@@ -108,16 +109,31 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
   };
 
   /** 处理预览 */
-  const handlePreview = (file: ManagedFile) => {
+  const handlePreview = (file: File) => {
     Modal.info({
       title: file.name,
       content: (
         <div>
-          <p><strong>路径：</strong>{file.path}</p>
-          <p><strong>大小：</strong>{file.size} bytes</p>
-          <p><strong>版本：</strong>{file.version}</p>
-          <p><strong>分类：</strong>{FILE_CATEGORY_LABELS[file.category]}</p>
-          <p><strong>更新时间：</strong>{new Date(file.updatedAt).toLocaleString("zh-CN")}</p>
+          <p>
+            <strong>路径：</strong>
+            {file.path}
+          </p>
+          <p>
+            <strong>版本：</strong>v{file.version}
+          </p>
+          <p>
+            <strong>分类：</strong>
+            {file.category
+              ? FILE_CATEGORY_LABELS[file.category as FileCategory] ||
+                file.category
+              : "未分类"}
+          </p>
+          <p>
+            <strong>更新时间：</strong>
+            {file.updated_at
+              ? new Date(file.updated_at).toLocaleString("zh-CN")
+              : "N/A"}
+          </p>
         </div>
       ),
       width: 500,
@@ -125,38 +141,16 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
   };
 
   /** 处理编辑 */
-  const handleEdit = (file: ManagedFile) => {
+  const handleEdit = (file: File) => {
     message.info(`编辑文件：${file.name}`);
   };
 
-  /** 处理移动阶段 */
-  const handleMove = (file: ManagedFile) => {
-    setSelectedFile(file);
-    moveForm.setFieldsValue({ stage: file.stage });
-    setMoveModalOpen(true);
-  };
-
-  /** 确认移动 */
-  const handleMoveConfirm = async () => {
-    if (!selectedFile) return;
-    try {
-      const values = await moveForm.validateFields();
-      await updateFileStage({
-        id: selectedFile.id,
-        stage: values.stage,
-      });
-      void loadFiles();
-      message.success("文件已移动");
-      setMoveModalOpen(false);
-    } catch {
-      message.error("移动文件失败");
-    }
-  };
-
   /** 处理修改分类 */
-  const handleCategorize = (file: ManagedFile) => {
+  const handleCategorize = (file: File) => {
     setSelectedFile(file);
-    categoryForm.setFieldsValue({ category: file.category });
+    categoryForm.setFieldsValue({
+      category: (file.category as FileCategory) || "other",
+    });
     setCategoryModalOpen(true);
   };
 
@@ -166,7 +160,7 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
     try {
       const values = await categoryForm.validateFields();
       await updateFileCategory({
-        id: selectedFile.id,
+        id: selectedFile.id!,
         category: values.category,
       });
       void loadFiles();
@@ -178,12 +172,12 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
   };
 
   /** 处理版本历史 */
-  const handleVersionHistory = (file: ManagedFile) => {
+  const handleVersionHistory = (file: File) => {
     Modal.info({
       title: `${file.name} - 版本历史`,
       content: (
         <div>
-          <p>当前版本：{file.version}</p>
+          <p>当前版本：v{file.version}</p>
           <p>版本历史功能即将上线</p>
         </div>
       ),
@@ -191,12 +185,12 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
   };
 
   /** 处理打开文件夹 */
-  const handleOpenFolder = (file: ManagedFile) => {
+  const handleOpenFolder = (file: File) => {
     message.info(`打开文件夹：${file.path}`);
   };
 
   /** 处理删除文件 */
-  const handleDelete = async (fileId: string) => {
+  const handleDelete = async (fileId: number) => {
     try {
       await deleteFile(fileId);
       message.success("文件已删除");
@@ -211,152 +205,123 @@ export default function FileManager({ projectId, onBack, onChat }: FileManagerPr
     <div>
       {/* 导航栏 */}
       <Space className="mb-4">
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={onBack}
-        >
+        <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
           返回项目列表
         </Button>
-        <Button
-          icon={<CommentOutlined />}
-          onClick={onChat}
-        >
+        <Button icon={<CommentOutlined />} onClick={onChat}>
           对话
         </Button>
       </Space>
-      <div style={{ display: "flex", gap: 16, height: "calc(100vh - 260px)" }}>
-      {/* 左侧：阶段列表 */}
-      <Card
-        title="项目阶段"
-        style={{ width: 280, flexShrink: 0 }}
-        bodyStyle={{ padding: 0 }}
+      <div
+        style={{ display: "flex", gap: 16, height: "calc(100vh - 260px)" }}
       >
-        <Spin spinning={loading}>
-          <StageList
-            selectedStage={selectedStage}
-            onSelectStage={handleSelectStage}
-            files={files}
-          />
-        </Spin>
-      </Card>
-
-      {/* 右侧：文件列表 */}
-      <Card
-        title="文件列表"
-        style={{ flex: 1 }}
-        extra={
-          <Button
-            type="primary"
-            icon={<UploadOutlined />}
-            onClick={() => setUploadModalOpen(true)}
-            disabled={!selectedStage}
-          >
-            上传文件
-          </Button>
-        }
-      >
-        <Spin spinning={loading}>
-          {selectedStage ? (
-            <FileList
-              files={files}
-              stage={selectedStage}
-              onPreview={handlePreview}
-              onEdit={handleEdit}
-              onMove={handleMove}
-              onCategorize={handleCategorize}
-              onVersionHistory={handleVersionHistory}
-              onOpenFolder={handleOpenFolder}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <div style={{ textAlign: "center", padding: 40, color: "#999" }}>
-              请在左侧选择一个项目阶段
-            </div>
-          )}
-        </Spin>
-      </Card>
-
-      {/* 上传文件弹窗 */}
-      <Modal
-        title={`上传文件 - ${selectedStage ? PROJECT_STAGES[selectedStage] : ""}`}
-        open={uploadModalOpen}
-        onOk={() => void handleUpload()}
-        onCancel={() => {
-          setUploadModalOpen(false);
-          setUploadFileList([]);
-        }}
-        okText="上传"
-        cancelText="取消"
-        okButtonProps={{ disabled: uploadFileList.length === 0 }}
-      >
-        <Upload.Dragger
-          multiple
-          fileList={uploadFileList}
-          onChange={({ fileList }) => setUploadFileList(fileList)}
-          beforeUpload={() => false}
+        {/* 左侧：阶段列表 */}
+        <Card
+          title="项目阶段"
+          style={{ width: 280, flexShrink: 0 }}
+          bodyStyle={{ padding: 0 }}
         >
-          <p className="ant-upload-drag-icon">
-            <InboxOutlined />
-          </p>
-          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-          <p className="ant-upload-hint">支持单个或批量上传</p>
-        </Upload.Dragger>
-      </Modal>
+          <Spin spinning={loading}>
+            <StageList
+              selectedStage={selectedStage}
+              onSelectStage={handleSelectStage}
+              files={files}
+            />
+          </Spin>
+        </Card>
 
-      {/* 修改分类弹窗 */}
-      <Modal
-        title="修改文件分类"
-        open={categoryModalOpen}
-        onOk={() => void handleCategorizeConfirm()}
-        onCancel={() => setCategoryModalOpen(false)}
-        okText="确认"
-        cancelText="取消"
-      >
-        <Form form={categoryForm} layout="vertical">
-          <Form.Item
-            name="category"
-            label="文件分类"
-            rules={[{ required: true, message: "请选择文件分类" }]}
-          >
-            <Select placeholder="请选择文件分类">
-              {(Object.keys(FILE_CATEGORY_LABELS) as FileCategory[]).map(
-                (key) => (
-                  <Select.Option key={key} value={key}>
-                    {FILE_CATEGORY_LABELS[key]}
-                  </Select.Option>
-                ),
-              )}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
+        {/* 右侧：文件列表 */}
+        <Card
+          title="文件列表"
+          style={{ flex: 1 }}
+          extra={
+            <Button
+              type="primary"
+              icon={<UploadOutlined />}
+              onClick={() => setUploadModalOpen(true)}
+              disabled={!selectedStage}
+            >
+              上传文件
+            </Button>
+          }
+        >
+          <Spin spinning={loading}>
+            {selectedStage ? (
+              <FileList
+                files={files}
+                stage={selectedStage}
+                onPreview={handlePreview}
+                onEdit={handleEdit}
+                onCategorize={handleCategorize}
+                onVersionHistory={handleVersionHistory}
+                onOpenFolder={handleOpenFolder}
+                onDelete={handleDelete}
+              />
+            ) : (
+              <div
+                style={{ textAlign: "center", padding: 40, color: "#999" }}
+              >
+                请在左侧选择一个项目阶段
+              </div>
+            )}
+          </Spin>
+        </Card>
 
-      {/* 移动文件弹窗 */}
-      <Modal
-        title="移动文件到其他阶段"
-        open={moveModalOpen}
-        onOk={() => void handleMoveConfirm()}
-        onCancel={() => setMoveModalOpen(false)}
-        okText="确认移动"
-        cancelText="取消"
-      >
-        <Form form={moveForm} layout="vertical">
-          <Form.Item
-            name="stage"
-            label="目标阶段"
-            rules={[{ required: true, message: "请选择目标阶段" }]}
+        {/* 上传文件弹窗 */}
+        <Modal
+          title={`上传文件 - ${selectedStage ? PROJECT_STAGES[selectedStage] : ""}`}
+          open={uploadModalOpen}
+          onOk={() => void handleUpload()}
+          onCancel={() => {
+            setUploadModalOpen(false);
+            setUploadFileList([]);
+          }}
+          okText="上传"
+          cancelText="取消"
+          okButtonProps={{ disabled: uploadFileList.length === 0 }}
+        >
+          <Upload.Dragger
+            multiple
+            fileList={uploadFileList}
+            onChange={({ fileList }) => setUploadFileList(fileList)}
+            beforeUpload={() => false}
           >
-            <Select placeholder="请选择目标阶段">
-              {(Object.keys(PROJECT_STAGES) as ProjectStage[]).map((key) => (
-                <Select.Option key={key} value={key}>
-                  {PROJECT_STAGES[key]}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+            <p className="ant-upload-hint">支持单个或批量上传</p>
+          </Upload.Dragger>
+        </Modal>
+
+        {/* 修改分类弹窗 */}
+        <Modal
+          title="修改文件分类"
+          open={categoryModalOpen}
+          onOk={() => void handleCategorizeConfirm()}
+          onCancel={() => setCategoryModalOpen(false)}
+          okText="确认"
+          cancelText="取消"
+        >
+          <Form form={categoryForm} layout="vertical">
+            <Form.Item
+              name="category"
+              label="文件分类"
+              rules={[{ required: true, message: "请选择文件分类" }]}
+            >
+              <Select placeholder="请选择文件分类">
+                {(Object.keys(FILE_CATEGORY_LABELS) as FileCategory[]).map(
+                  (key) => (
+                    <Select.Option key={key} value={key}>
+                      {FILE_CATEGORY_LABELS[key]}
+                    </Select.Option>
+                  ),
+                )}
+              </Select>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
     </div>
   );
 }
