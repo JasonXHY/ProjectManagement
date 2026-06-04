@@ -102,3 +102,59 @@ export async function deleteFile(id: number): Promise<void> {
     throw error;
   }
 }
+
+/** 分类结果 */
+export interface ClassificationResult {
+  category: string;
+  confidence: number;
+  summary: string;
+  file_type: string;
+}
+
+/**
+ * 对文件进行AI分类
+ */
+export async function classifyFile(
+  projectName: string,
+  stage: string,
+  fileName: string,
+): Promise<ClassificationResult> {
+  try {
+    const result = await invoke<ClassificationResult>("classify_file", {
+      projectName,
+      stage,
+      fileName,
+    });
+    return result;
+  } catch (error) {
+    console.error("Failed to classify file:", error);
+    throw error;
+  }
+}
+
+/**
+ * 创建文件（支持内容保存）
+ */
+export async function createFileWithContent(
+  request: CreateFileRequest & {
+    content?: string;
+    project_name?: string;
+    stage?: string;
+  },
+): Promise<File> {
+  try {
+    const file = await invoke<File>("create_file", {
+      projectId: request.project_id,
+      name: request.name,
+      path: request.path,
+      category: request.category,
+      content: request.content,
+      projectName: request.project_name,
+      stage: request.stage,
+    });
+    return file;
+  } catch (error) {
+    console.error("Failed to create file:", error);
+    throw error;
+  }
+}
