@@ -4,7 +4,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 /// 验证路径组件是否安全（防止路径遍历攻击）
 ///
 /// 拒绝包含 `..`、`/` 或 `\\` 的路径组件
-fn validate_path_component(component: &str) -> Result<(), String> {
+pub fn validate_path_component(component: &str) -> Result<(), String> {
     if component.contains("..") || component.contains('/') || component.contains('\\') {
         return Err(format!("非法路径组件: {}", component));
     }
