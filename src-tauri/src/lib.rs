@@ -27,6 +27,9 @@ pub fn run() {
             commands::file::create_file,
             commands::file::update_file_category,
             commands::file::delete_file,
+            commands::ai::chat_with_ai,
+            commands::ai::get_conversation_history,
+            commands::ai::clear_conversation_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
