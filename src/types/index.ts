@@ -22,15 +22,6 @@ export interface Conversation {
   token_count: number | null;
 }
 
-/** 消息信息 - 兼容前端组件使用 */
-export interface Message {
-  id: number | null;
-  role: "user" | "assistant";
-  content: string;
-  created_at: string | null;
-  token_count: number | null;
-}
-
 /** 项目阶段 */
 export type ProjectStage =
   | "blueprint"

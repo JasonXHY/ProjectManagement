@@ -10,37 +10,53 @@ pub fn get_files_by_project(
 ) -> Result<Vec<File>, String> {
     let conn = db.conn.lock().map_err(|e| e.to_string())?;
 
-    let mut sql = String::from(
-        "SELECT id, project_id, name, path, category, tags, version, content_hash, created_at, updated_at
-         FROM files WHERE project_id = ?1"
-    );
-
-    if let Some(stage) = stage {
-        sql.push_str(&format!(" AND category = '{}'", stage));
-    }
-
-    sql.push_str(" ORDER BY updated_at DESC");
-
-    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
-
-    let files = stmt
-        .query_map(rusqlite::params![project_id], |row| {
-            Ok(File {
-                id: row.get(0)?,
-                project_id: row.get(1)?,
-                name: row.get(2)?,
-                path: row.get(3)?,
-                category: row.get(4)?,
-                tags: row.get(5)?,
-                version: row.get(6)?,
-                content_hash: row.get(7)?,
-                created_at: row.get(8)?,
-                updated_at: row.get(9)?,
-            })
+    let map_row = |row: &rusqlite::Row| {
+        Ok(File {
+            id: row.get(0)?,
+            project_id: row.get(1)?,
+            name: row.get(2)?,
+            path: row.get(3)?,
+            category: row.get(4)?,
+            tags: row.get(5)?,
+            version: row.get(6)?,
+            content_hash: row.get(7)?,
+            created_at: row.get(8)?,
+            updated_at: row.get(9)?,
         })
-        .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+    };
+
+    let files: Vec<File> = match stage {
+        Some(ref stage) => {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT id, project_id, name, path, category, tags, version, content_hash, created_at, updated_at
+                     FROM files WHERE project_id = ?1 AND category = ?2
+                     ORDER BY updated_at DESC",
+                )
+                .map_err(|e| e.to_string())?;
+            let rows: Vec<File> = stmt
+                .query_map(rusqlite::params![project_id, stage], map_row)
+                .map_err(|e| e.to_string())?
+                .filter_map(|r| r.ok())
+                .collect();
+            rows
+        }
+        None => {
+            let mut stmt = conn
+                .prepare(
+                    "SELECT id, project_id, name, path, category, tags, version, content_hash, created_at, updated_at
+                     FROM files WHERE project_id = ?1
+                     ORDER BY updated_at DESC",
+                )
+                .map_err(|e| e.to_string())?;
+            let rows: Vec<File> = stmt
+                .query_map(rusqlite::params![project_id], map_row)
+                .map_err(|e| e.to_string())?
+                .filter_map(|r| r.ok())
+                .collect();
+            rows
+        }
+    };
 
     Ok(files)
 }

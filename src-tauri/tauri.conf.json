@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "my-tauri-app",
+  "productName": "项目管理助手",
   "version": "0.1.0",
-  "identifier": "com.kingdee.my-tauri-app",
+  "identifier": "com.kingdee.project-manager",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -12,9 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "my-tauri-app",
-        "width": 800,
-        "height": 600
+        "title": "项目管理助手",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true
       }
     ],
     "security": {
