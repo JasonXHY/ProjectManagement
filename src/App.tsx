@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { Layout, Typography, Button, Tooltip } from "antd";
-import { RobotOutlined, SettingOutlined } from "@ant-design/icons";
+import { Layout, Typography, Button, Tooltip, Breadcrumb } from "antd";
+import { RobotOutlined, SettingOutlined, HomeOutlined } from "@ant-design/icons";
 import ProjectList from "./components/ProjectList/ProjectList";
 import FileManager from "./components/FileManager/FileManager";
 import ChatWindow from "./components/Chat/ChatWindow";
@@ -11,16 +11,16 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 /** 页面类型 */
-type Page = "projects" | "files" | "chat" | "settings";
+type Page = "projects" | "project-home" | "chat" | "settings";
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  /** 进入文件管理页面 */
-  const handleManageProject = useCallback((project: Project) => {
+  /** 进入项目首页 */
+  const handleOpenProject = useCallback((project: Project) => {
     setSelectedProject(project);
-    setCurrentPage("files");
+    setCurrentPage("project-home");
   }, []);
 
   /** 返回项目列表 */
@@ -35,9 +35,9 @@ function App() {
     setCurrentPage("chat");
   }, [selectedProject]);
 
-  /** 从对话返回文件管理 */
-  const handleBackToFiles = useCallback(() => {
-    setCurrentPage("files");
+  /** 从对话返回项目首页 */
+  const handleBackToProjectHome = useCallback(() => {
+    setCurrentPage("project-home");
   }, []);
 
   /** 进入设置页面 */
@@ -47,8 +47,35 @@ function App() {
 
   /** 从设置返回 */
   const handleBackFromSettings = useCallback(() => {
-    setCurrentPage("projects");
-  }, []);
+    if (selectedProject) {
+      setCurrentPage("project-home");
+    } else {
+      setCurrentPage("projects");
+    }
+  }, [selectedProject]);
+
+  /** 渲染面包屑导航 */
+  const renderBreadcrumb = () => {
+    const items = [
+      {
+        title: <HomeOutlined onClick={handleBackToProjects} style={{ cursor: "pointer" }} />,
+      },
+    ];
+
+    if (selectedProject && currentPage !== "projects") {
+      items.push({
+        title: <span onClick={handleBackToProjects} style={{ cursor: "pointer" }}>{selectedProject.name}</span>,
+      });
+    }
+
+    if (currentPage === "chat") {
+      items.push({ title: <span>对话</span> });
+    } else if (currentPage === "settings") {
+      items.push({ title: <span>设置</span> });
+    }
+
+    return <Breadcrumb items={items} />;
+  };
 
   return (
     <Layout className="min-h-screen bg-gray-50">
@@ -59,21 +86,24 @@ function App() {
             项目管理助手
           </Title>
         </div>
-        <Tooltip title="设置">
-          <Button
-            type="text"
-            icon={<SettingOutlined className="text-lg" />}
-            onClick={handleOpenSettings}
-          />
-        </Tooltip>
+        <div className="flex items-center gap-2">
+          {renderBreadcrumb()}
+          <Tooltip title="设置">
+            <Button
+              type="text"
+              icon={<SettingOutlined className="text-lg" />}
+              onClick={handleOpenSettings}
+            />
+          </Tooltip>
+        </div>
       </Header>
       <Content className="p-6">
         <div className="max-w-6xl mx-auto">
           {currentPage === "projects" && (
-            <ProjectList onManage={handleManageProject} />
+            <ProjectList onManage={handleOpenProject} />
           )}
 
-          {currentPage === "files" && selectedProject && (
+          {currentPage === "project-home" && selectedProject && (
             <FileManager
               projectId={selectedProject.id!}
               projectName={selectedProject.name}
@@ -86,8 +116,8 @@ function App() {
             <ChatWindow
               projectId={selectedProject.id!}
               projectName={selectedProject.name}
-              onBack={handleBackToProjects}
-              onFiles={handleBackToFiles}
+              onBack={handleBackToProjectHome}
+              onFiles={handleBackToProjectHome}
             />
           )}
 
