@@ -1,6 +1,19 @@
 use std::path::Path;
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
+/// 验证路径组件是否安全（防止路径遍历攻击）
+///
+/// 拒绝包含 `..`、`/` 或 `\\` 的路径组件
+fn validate_path_component(component: &str) -> Result<(), String> {
+    if component.contains("..") || component.contains('/') || component.contains('\\') {
+        return Err(format!("非法路径组件: {}", component));
+    }
+    if component.is_empty() {
+        return Err("路径组件不能为空".to_string());
+    }
+    Ok(())
+}
+
 /// 保存文件到磁盘（使用绝对路径）
 ///
 /// # Arguments
@@ -22,6 +35,11 @@ pub fn save_file(
     // 解码base64内容
     let content = BASE64.decode(content_base64)
         .map_err(|e| format!("base64解码失败: {}", e))?;
+
+    // 验证路径组件，防止路径遍历攻击
+    validate_path_component(project_name)?;
+    validate_path_component(stage)?;
+    validate_path_component(file_name)?;
 
     // 构建绝对文件路径: app_data_dir/projects/{project_name}/{stage}/{file_name}
     let file_path = app_data_dir
@@ -59,11 +77,14 @@ pub fn file_exists(file_path: &Path) -> bool {
     file_path.exists()
 }
 
-/// 删除文件
+/// 删除文件（幂等操作：文件不存在时记录日志但不报错）
 pub fn delete_file(file_path: &Path) -> Result<(), String> {
     if file_path.exists() {
         std::fs::remove_file(file_path)
             .map_err(|e| format!("删除文件失败: {}", e))?;
+        eprintln!("[FILE_STORAGE] 已删除文件: {}", file_path.display());
+    } else {
+        eprintln!("[FILE_STORAGE] 文件不存在，跳过删除: {}", file_path.display());
     }
     Ok(())
 }
