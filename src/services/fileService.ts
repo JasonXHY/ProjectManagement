@@ -158,3 +158,66 @@ export async function createFileWithContent(
     throw error;
   }
 }
+
+/**
+ * 直接上传文件（AI自动分类，无需确认）
+ */
+export async function uploadFileWithAutoClassify(
+  projectId: number,
+  projectName: string,
+  file: globalThis.File
+): Promise<File> {
+  try {
+    // 读取文件内容
+    const content = await readFileAsBase64(file);
+
+    // 创建文件（AI会自动分类）
+    const result = await createFileWithContent({
+      project_id: projectId,
+      name: file.name,
+      path: `/projects/${projectId}/${file.name}`,
+      content: content,
+      project_name: projectName,
+      stage: "auto",  // 表示自动分类
+    });
+
+    return result;
+  } catch (error) {
+    console.error("Failed to upload file:", error);
+    throw error;
+  }
+}
+
+/**
+ * 读取文件为base64
+ */
+function readFileAsBase64(file: globalThis.File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 更新文件分类（手动调整）
+ */
+export async function updateFileCategoryManual(
+  fileId: number,
+  category: string
+): Promise<void> {
+  try {
+    await invoke("update_file_category", {
+      id: fileId,
+      category: category,
+      manualCategory: category,  // 标记为手动调整
+    });
+  } catch (error) {
+    console.error("Failed to update file category:", error);
+    throw error;
+  }
+}
