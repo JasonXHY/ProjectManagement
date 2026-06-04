@@ -2,6 +2,7 @@
 mod commands;
 mod config;
 mod db;
+mod services;
 
 use config::AppConfig;
 use db::Database;
