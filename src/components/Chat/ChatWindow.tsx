@@ -5,7 +5,6 @@ import {
   ClearOutlined,
   CommentOutlined,
   ArrowLeftOutlined,
-  FolderOutlined,
 } from "@ant-design/icons";
 import type { Conversation } from "../../types";
 import { chat, getHistory, clearHistory } from "../../services/aiService";
@@ -19,7 +18,6 @@ interface ChatWindowProps {
   projectId: number;
   projectName?: string;
   onBack?: () => void;
-  onFiles?: () => void;
 }
 
 /**
@@ -30,7 +28,6 @@ export default function ChatWindow({
   projectId,
   projectName,
   onBack,
-  onFiles,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<Conversation[]>([]);
   const messagesRef = useRef<Conversation[]>([]);
@@ -152,9 +149,6 @@ export default function ChatWindow({
         <div className="flex items-center gap-2">
           <Button type="text" icon={<ArrowLeftOutlined />} onClick={onBack}>
             返回项目列表
-          </Button>
-          <Button type="text" icon={<FolderOutlined />} onClick={onFiles}>
-            文件管理
           </Button>
           <CommentOutlined className="text-blue-500" />
           <Text strong>{projectName || "项目对话"}</Text>

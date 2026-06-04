@@ -117,7 +117,6 @@ function App() {
               projectId={selectedProject.id!}
               projectName={selectedProject.name}
               onBack={handleBackToProjectHome}
-              onFiles={handleBackToProjectHome}
             />
           )}
 
