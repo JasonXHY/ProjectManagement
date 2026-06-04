@@ -15,14 +15,17 @@ import {
   createFile,
   updateFileCategory,
   deleteFile,
+  classifyFile,
 } from "../../services/fileService";
-import type { FileCategory } from "../../services/fileService";
+import type { FileCategory, ClassificationResult } from "../../services/fileService";
 import StageList from "./StageList";
 import FileList from "./FileList";
+import ClassifyModal from "./ClassifyModal";
 
 /** 文件管理页面属性 */
 interface FileManagerProps {
   projectId: number;
+  projectName?: string;
   onBack?: () => void;
   onChat?: () => void;
 }
@@ -33,6 +36,7 @@ interface FileManagerProps {
  */
 export default function FileManager({
   projectId,
+  projectName,
   onBack,
   onChat,
 }: FileManagerProps) {
@@ -47,6 +51,14 @@ export default function FileManager({
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
 
   const [categoryForm] = Form.useForm<{ category: FileCategory }>();
+
+  // AI分类相关状态
+  const [classifyModalOpen, setClassifyModalOpen] = useState(false);
+  const [classifyLoading, setClassifyLoading] = useState(false);
+  const [classification, setClassification] = useState<ClassificationResult | null>(null);
+  const [classifyFileName, setClassifyFileName] = useState("");
+  const [classifyQueue, setClassifyQueue] = useState<UploadFile[]>([]);
+  const [classifyIndex, setClassifyIndex] = useState(0);
 
   /** 加载文件列表 */
   const loadFiles = useCallback(async () => {
@@ -70,42 +82,18 @@ export default function FileManager({
     setSelectedStage(stage);
   };
 
-  /** 处理文件上传 */
+  /** 处理文件上传 - 集成AI分类 */
   const handleUpload = async () => {
     if (!selectedStage || uploadFileList.length === 0) return;
 
-    let successCount = 0;
-    let failCount = 0;
+    // 收集要上传的文件
+    const filesToUpload = uploadFileList.filter((f) => f.originFileObj);
+    if (filesToUpload.length === 0) return;
 
-    for (const file of uploadFileList) {
-      if (file.originFileObj) {
-        try {
-          await createFile({
-            project_id: projectId,
-            name: file.name ?? "未知文件",
-            path: `/projects/${projectId}/${file.name}`,
-            category: selectedStage as FileCategory,
-          });
-          successCount++;
-        } catch {
-          failCount++;
-        }
-      }
-    }
-
-    if (failCount === 0) {
-      message.success(`成功上传 ${successCount} 个文件`);
-    } else if (successCount === 0) {
-      message.error(`全部 ${failCount} 个文件上传失败`);
-    } else {
-      message.warning(
-        `上传完成：${successCount} 个成功，${failCount} 个失败`,
-      );
-    }
-
-    setUploadModalOpen(false);
-    setUploadFileList([]);
-    await loadFiles();
+    // 设置分类队列并开始第一个文件的分类
+    setClassifyQueue(filesToUpload);
+    setClassifyIndex(0);
+    await handleClassifyFile(filesToUpload[0]);
   };
 
   /** 处理预览 */
@@ -168,6 +156,94 @@ export default function FileManager({
       setCategoryModalOpen(false);
     } catch {
       message.error("修改分类失败");
+    }
+  };
+
+  /** 处理单个文件的AI分类 */
+  const handleClassifyFile = async (file: UploadFile) => {
+    const name = file.name ?? "未知文件";
+    setClassifyFileName(name);
+    setClassifyModalOpen(true);
+    setClassifyLoading(true);
+    setClassification(null);
+
+    try {
+      if (!projectName || !selectedStage) {
+        throw new Error("项目信息不完整");
+      }
+      const result = await classifyFile(projectName, selectedStage, name);
+      setClassification(result);
+    } catch (err) {
+      console.error("AI分类失败:", err);
+      message.warning("AI分类失败，请稍后手动设置分类");
+    } finally {
+      setClassifyLoading(false);
+    }
+  };
+
+  /** 处理分类确认 */
+  const handleClassifyConfirm = async (category: string) => {
+    const currentFile = classifyQueue[classifyIndex];
+    if (currentFile) {
+      try {
+        await createFile({
+          project_id: projectId,
+          name: currentFile.name ?? "未知文件",
+          path: `/projects/${projectId}/${currentFile.name}`,
+          category: category as FileCategory,
+        });
+      } catch {
+        message.error(`文件 ${currentFile.name} 保存失败`);
+      }
+    }
+
+    const nextIndex = classifyIndex + 1;
+    if (nextIndex < classifyQueue.length) {
+      setClassifyIndex(nextIndex);
+      await handleClassifyFile(classifyQueue[nextIndex]);
+    } else {
+      // 所有文件处理完成
+      setClassifyModalOpen(false);
+      setClassifyQueue([]);
+      setClassifyIndex(0);
+      setClassification(null);
+      setUploadModalOpen(false);
+      setUploadFileList([]);
+      message.success("文件上传完成");
+      await loadFiles();
+    }
+  };
+
+  /** 处理分类取消 */
+  const handleClassifyCancel = async () => {
+    // 取消当前文件的分类，使用默认分类（当前阶段）保存
+    const currentFile = classifyQueue[classifyIndex];
+    if (currentFile && selectedStage) {
+      try {
+        await createFile({
+          project_id: projectId,
+          name: currentFile.name ?? "未知文件",
+          path: `/projects/${projectId}/${currentFile.name}`,
+          category: selectedStage as FileCategory,
+        });
+      } catch {
+        message.error(`文件 ${currentFile.name} 保存失败`);
+      }
+    }
+
+    const nextIndex = classifyIndex + 1;
+    if (nextIndex < classifyQueue.length) {
+      setClassifyIndex(nextIndex);
+      await handleClassifyFile(classifyQueue[nextIndex]);
+    } else {
+      setClassifyModalOpen(false);
+      setClassifyQueue([]);
+      setClassifyIndex(0);
+      setClassification(null);
+      setUploadModalOpen(false);
+      setUploadFileList([]);
+      message.success("文件上传完成");
+      await loadFiles();
     }
   };
 
@@ -321,6 +397,16 @@ export default function FileManager({
             </Form.Item>
           </Form>
         </Modal>
+
+        {/* AI分类确认弹窗 */}
+        <ClassifyModal
+          visible={classifyModalOpen}
+          fileName={classifyFileName}
+          classification={classification}
+          loading={classifyLoading}
+          onConfirm={(category) => void handleClassifyConfirm(category)}
+          onCancel={() => void handleClassifyCancel()}
+        />
       </div>
     </div>
   );

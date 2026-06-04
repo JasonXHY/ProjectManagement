@@ -58,6 +58,7 @@ function App() {
           {currentPage === "files" && selectedProject && (
             <FileManager
               projectId={selectedProject.id!}
+              projectName={selectedProject.name}
               onBack={handleBackToProjects}
               onChat={handleOpenChat}
             />
