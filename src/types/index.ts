@@ -43,6 +43,52 @@ export const PROJECT_STAGES: Record<ProjectStage, string> = {
   ended: "结束",
 };
 
+/** 项目阶段（新） */
+export type ProjectStageNew =
+  | "presale"
+  | "startup"
+  | "requirement"
+  | "solution"
+  | "build"
+  | "test"
+  | "launch"
+  | "acceptance"
+  | "customer_success"
+  | "close";
+
+/** 项目阶段常量（新） */
+export const PROJECT_STAGES_NEW: Record<ProjectStageNew, string> = {
+  presale: "售前",
+  startup: "启动",
+  requirement: "需求",
+  solution: "方案",
+  build: "构建",
+  test: "测试",
+  launch: "上线",
+  acceptance: "验收",
+  customer_success: "转客户成功",
+  close: "关闭",
+};
+
+/** 项目阶段列表（新） */
+export const PROJECT_STAGE_LIST_NEW: ProjectStageNew[] = [
+  "presale",
+  "startup",
+  "requirement",
+  "solution",
+  "build",
+  "test",
+  "launch",
+  "acceptance",
+  "customer_success",
+  "close",
+];
+
+/** 文件信息（扩展） */
+export interface FileExtended extends File {
+  manual_category?: string | null;  // 用户手动调整的分类
+}
+
 /** 项目信息 - 与后端模型匹配 */
 export interface Project {
   id: number | null;
