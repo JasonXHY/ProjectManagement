@@ -1,4 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// 应用配置
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AppConfig {
     /// 智谱AI API Key
     pub zhipu_api_key: String,

@@ -58,6 +58,9 @@ pub fn run() {
             commands::ai::get_conversation_history,
             commands::ai::clear_conversation_history,
             commands::classify::classify_file,
+            commands::config::get_config,
+            commands::config::save_config,
+            commands::config::reset_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
