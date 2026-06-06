@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   Form,
   Input,
   Button,
-  Space,
+  Select,
+  Tabs,
   Typography,
   message,
   Spin,
+  Space,
   Popconfirm,
 } from "antd";
 import {
@@ -16,9 +18,12 @@ import {
   ArrowLeftOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
-import PromptEditor from "./PromptEditor";
-import { getConfig, saveConfig, resetConfig } from "../../services/configService";
-import type { AppConfig } from "../../types";
+import { configService } from "../../services/configService";
+import {
+  ZHIPU_PROVIDER,
+  MIMO_PROVIDER,
+  type AIProvider,
+} from "../../types";
 
 const { Title, Text } = Typography;
 
@@ -29,36 +34,38 @@ interface SettingsPageProps {
 
 /**
  * 设置页面
- * 包含AI配置和分类Prompt配置
+ * 包含AI模型配置和文件提取配置
  */
 export default function SettingsPage({ onBack }: SettingsPageProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [initialValues, setInitialValues] = useState<AppConfig | null>(null);
+  const [provider, setProvider] = useState<AIProvider>("zhipu");
 
   /** 加载配置 */
-  const loadConfig = useCallback(async () => {
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
     setLoading(true);
     try {
-      const config = await getConfig();
-      setInitialValues(config);
-      form.setFieldsValue(config);
+      const result = await configService.get();
+      if (result.success && result.data) {
+        form.setFieldsValue(result.data);
+        setProvider((result.data.ai_provider as AIProvider) || "zhipu");
+      }
     } catch (error) {
       message.error("加载配置失败");
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [form]);
-
-  useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
+  };
 
   /** 保存配置 */
   const handleSave = async () => {
-    let values;
+    let values: Record<string, string>;
     try {
       values = await form.validateFields();
     } catch {
@@ -67,9 +74,12 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
 
     setSaving(true);
     try {
-      await saveConfig(values as AppConfig);
-      message.success("配置已保存");
-      setInitialValues(values as AppConfig);
+      const result = await configService.update(values);
+      if (result.success) {
+        message.success("保存成功");
+      } else {
+        message.error(result.error || "保存失败");
+      }
     } catch (error) {
       message.error("保存配置失败");
       console.error(error);
@@ -82,34 +92,55 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
   const handleReset = async () => {
     setLoading(true);
     try {
-      const config = await resetConfig();
-      setInitialValues(config);
-      form.setFieldsValue(config);
-      message.success("已恢复默认配置");
+      // 清空所有字段
+      form.resetFields();
+      setProvider("zhipu");
+      message.success("已重置表单（请保存以生效）");
     } catch (error) {
-      message.error("恢复默认配置失败");
+      message.error("重置失败");
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  /** 检查是否有未保存的更改 */
-  const hasChanges = () => {
-    if (!initialValues) return false;
-    const currentValues = form.getFieldsValue();
-    return JSON.stringify(currentValues) !== JSON.stringify(initialValues);
+  /** 供应商切换 */
+  const handleProviderChange = (value: AIProvider) => {
+    setProvider(value);
+    if (value === "zhipu") {
+      form.setFieldsValue({
+        ai_model: ZHIPU_PROVIDER.models[0],
+        ai_base_url: ZHIPU_PROVIDER.baseUrl,
+      });
+    } else if (value === "mimo") {
+      form.setFieldsValue({
+        ai_model: MIMO_PROVIDER.models[0],
+        ai_base_url: MIMO_PROVIDER.baseUrl,
+      });
+    }
   };
+
+  /** 获取模型选项 */
+  const getModelOptions = () => {
+    if (provider === "zhipu") {
+      return ZHIPU_PROVIDER.models.map((m) => ({ value: m, label: m }));
+    } else if (provider === "mimo") {
+      return MIMO_PROVIDER.models.map((m) => ({ value: m, label: m }));
+    }
+    return [];
+  };
+
+  const extractionOptions = [
+    { value: "local", label: "本地提取" },
+    { value: "cloud", label: "云端分析" },
+  ];
 
   return (
     <div>
       {/* 页面头部 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={onBack}
-          >
+          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
             返回
           </Button>
           <SettingOutlined className="text-xl text-gray-600" />
@@ -134,7 +165,6 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             icon={<SaveOutlined />}
             onClick={handleSave}
             loading={saving}
-            disabled={!hasChanges()}
           >
             保存
           </Button>
@@ -142,52 +172,98 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
       </div>
 
       <Spin spinning={loading}>
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={initialValues || {}}
-        >
-          {/* AI配置区域 */}
-          <Card title="AI 配置" className="mb-4 shadow-sm">
-            <Text type="secondary" className="block mb-4">
-              配置智谱AI接口参数，用于文件智能分类功能。
-            </Text>
-            <Form.Item
-              name="zhipu_api_key"
-              label="API Key"
-              rules={[{ required: true, message: "请输入API Key" }]}
-            >
-              <Input.Password placeholder="请输入智谱AI的API Key" />
-            </Form.Item>
-            <Form.Item
-              name="zhipu_api_url"
-              label="API 端点"
-              rules={[{ required: true, message: "请输入API端点" }]}
-            >
-              <Input placeholder="https://open.bigmodel.cn/api/paas/v4/chat/completions" />
-            </Form.Item>
-            <Form.Item
-              name="model_name"
-              label="模型名称"
-              rules={[{ required: true, message: "请输入模型名称" }]}
-            >
-              <Input placeholder="glm-4-flash" />
-            </Form.Item>
-          </Card>
+        <Form form={form} layout="vertical">
+          <Tabs
+            items={[
+              {
+                key: "ai",
+                label: "AI模型配置",
+                children: (
+                  <Card>
+                    <Text type="secondary" className="block mb-4">
+                      配置AI模型供应商和接口参数，用于智能分析功能。
+                    </Text>
+                    <Form.Item label="模型供应商" name="ai_provider">
+                      <Select
+                        onChange={handleProviderChange}
+                        options={[
+                          { value: "zhipu", label: "智谱AI" },
+                          { value: "mimo", label: "小米MiMo" },
+                          { value: "custom", label: "自定义" },
+                        ]}
+                      />
+                    </Form.Item>
 
-          {/* 分类Prompt配置区域 */}
-          <Card title="分类 Prompt 配置" className="shadow-sm">
-            <Text type="secondary" className="block mb-4">
-              配置AI分类文件时使用的提示词，可使用变量动态替换内容。
-            </Text>
-            <Form.Item
-              name="classification_prompt"
-              label="分类提示词"
-              rules={[{ required: true, message: "请输入分类提示词" }]}
-            >
-              <PromptEditor rows={10} />
-            </Form.Item>
-          </Card>
+                    <Form.Item label="模型" name="ai_model">
+                      {provider === "custom" ? (
+                        <Input placeholder="输入模型名称" />
+                      ) : (
+                        <Select options={getModelOptions()} />
+                      )}
+                    </Form.Item>
+
+                    <Form.Item
+                      label="API Key"
+                      name="ai_api_key"
+                      rules={[{ required: true, message: "请输入API Key" }]}
+                    >
+                      <Input.Password placeholder="输入API Key" />
+                    </Form.Item>
+
+                    <Form.Item label="API地址" name="ai_base_url">
+                      <Input
+                        placeholder="API地址"
+                        disabled={provider !== "custom"}
+                      />
+                    </Form.Item>
+                  </Card>
+                ),
+              },
+              {
+                key: "extraction",
+                label: "文件提取配置",
+                children: (
+                  <Card>
+                    <Text type="secondary" className="block mb-4">
+                      配置不同文件类型的提取方式。本地提取更快，云端分析更准确。
+                    </Text>
+                    <Form.Item label="TXT/MD文件" name="extraction_txt">
+                      <Select options={extractionOptions} />
+                    </Form.Item>
+
+                    <Form.Item label="PDF（文字版）" name="extraction_pdf_text">
+                      <Select options={extractionOptions} />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="PDF（扫描版）"
+                      name="extraction_pdf_scanned"
+                    >
+                      <Select
+                        options={[{ value: "cloud", label: "云端分析（必须）" }]}
+                        disabled
+                      />
+                    </Form.Item>
+
+                    <Form.Item label="Word文档" name="extraction_word">
+                      <Select options={extractionOptions} />
+                    </Form.Item>
+
+                    <Form.Item label="Excel表格" name="extraction_excel">
+                      <Select options={extractionOptions} />
+                    </Form.Item>
+
+                    <Form.Item label="图片" name="extraction_image">
+                      <Select
+                        options={[{ value: "cloud", label: "云端分析（必须）" }]}
+                        disabled
+                      />
+                    </Form.Item>
+                  </Card>
+                ),
+              },
+            ]}
+          />
         </Form>
       </Spin>
     </div>
