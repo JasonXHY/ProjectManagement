@@ -15,6 +15,9 @@ export interface FileRecord {
   created_at: string
 }
 
+// Column whitelist to prevent SQL injection via dynamic key names
+const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed'] as const
+
 export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>) {
   const db = getDatabase()
   const stmt = db.prepare(`
@@ -49,8 +52,15 @@ export function getUnanalyzedFiles(projectId: number): FileRecord[] {
 
 export function updateFile(id: number, data: Partial<FileRecord>) {
   const db = getDatabase()
-  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ')
-  const values = Object.values(data)
+
+  // Filter to only allowed fields to prevent SQL injection
+  const allowedKeys = Object.keys(data).filter(k => ALLOWED_FILE_FIELDS.includes(k as typeof ALLOWED_FILE_FIELDS[number]))
+
+  if (allowedKeys.length === 0) return
+
+  const fields = allowedKeys.map(k => `${k} = ?`).join(', ')
+  const values = allowedKeys.map(k => (data as Record<string, unknown>)[k])
+
   db.prepare(`UPDATE files SET ${fields} WHERE id = ?`).run(...values, id)
 }
 

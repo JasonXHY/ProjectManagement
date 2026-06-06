@@ -11,7 +11,10 @@ export interface Project {
   updated_at: string
 }
 
-export function createProject(name: string, categoryType: string, customStages?: string[]) {
+// Column whitelist to prevent SQL injection via dynamic key names
+const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'ai_suggested_stage'] as const
+
+export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[]) {
   const db = getDatabase()
   const stmt = db.prepare(`
     INSERT INTO projects (name, category_type, custom_stages)
@@ -33,15 +36,26 @@ export function getProject(id: number): Project | undefined {
 
 export function updateProject(id: number, data: Partial<Project>) {
   const db = getDatabase()
-  const fields = Object.keys(data).map(k => `${k} = ?`).join(', ')
-  const values = Object.values(data)
+
+  // Filter to only allowed fields to prevent SQL injection
+  const allowedKeys = Object.keys(data).filter(k => ALLOWED_PROJECT_FIELDS.includes(k as typeof ALLOWED_PROJECT_FIELDS[number]))
+
+  if (allowedKeys.length === 0) return
+
+  const fields = allowedKeys.map(k => `${k} = ?`).join(', ')
+  const values = allowedKeys.map(k => (data as Record<string, unknown>)[k])
+
   db.prepare(`UPDATE projects SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
     .run(...values, id)
 }
 
 export function deleteProject(id: number) {
   const db = getDatabase()
-  db.prepare('DELETE FROM projects WHERE id = ?').run(id)
-  db.prepare('DELETE FROM files WHERE project_id = ?').run(id)
-  db.prepare('DELETE FROM conversations WHERE project_id = ?').run(id)
+
+  // Wrap in transaction to ensure atomicity
+  db.transaction(() => {
+    db.prepare('DELETE FROM files WHERE project_id = ?').run(id)
+    db.prepare('DELETE FROM conversations WHERE project_id = ?').run(id)
+    db.prepare('DELETE FROM projects WHERE id = ?').run(id)
+  })()
 }

@@ -1,5 +1,10 @@
 import { getDatabase } from './index'
 
+export interface Message {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
+
 export interface Conversation {
   id: number
   project_id: number
@@ -29,7 +34,7 @@ export function getConversation(id: number): Conversation | undefined {
   return db.prepare('SELECT * FROM conversations WHERE id = ?').get(id) as Conversation | undefined
 }
 
-export function updateConversationMessages(id: number, messages: any[]) {
+export function updateConversationMessages(id: number, messages: Message[]) {
   const db = getDatabase()
   db.prepare('UPDATE conversations SET messages = ? WHERE id = ?')
     .run(JSON.stringify(messages), id)
