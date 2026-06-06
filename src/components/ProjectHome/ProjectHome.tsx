@@ -1,32 +1,41 @@
-import { useState } from "react";
-import { Card, Button, Space, Typography } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import type { Project, ProjectStageNew } from "../../types";
-import StageNav from "./StageNav";
-import SummaryCards from "./SummaryCards";
-import FileDropZone from "./FileDropZone";
+import { useState, useEffect } from 'react'
+import { Layout, Button, Space, Typography } from 'antd'
+import { ArrowLeftOutlined, MessageOutlined } from '@ant-design/icons'
+import { Project, FileRecord } from '../../types'
+import StageNav from './StageNav'
+import FileDropZone from './FileDropZone'
+import SummaryCards from './SummaryCards'
+import { fileService } from '../../services/fileService'
 
-const { Title } = Typography;
+const { Sider, Content } = Layout
+const { Title } = Typography
 
 interface ProjectHomeProps {
-  project: Project;
-  onBack: () => void;
-  onChat: () => void;
+  project: Project
+  onBack: () => void
+  onChat: () => void
 }
 
-export default function ProjectHome({
-  project,
-  onBack,
-  onChat,
-}: ProjectHomeProps) {
-  const [selectedStage, setSelectedStage] = useState<ProjectStageNew | null>(
-    null
-  );
+export default function ProjectHome({ project, onBack, onChat }: ProjectHomeProps) {
+  const [files, setFiles] = useState<FileRecord[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
-  /** 处理文件上传完成 */
-  const handleUploadComplete = () => {
-    // 刷新文件列表
-  };
+  useEffect(() => {
+    loadFiles()
+  }, [project, selectedCategory])
+
+  const loadFiles = async () => {
+    let result
+    if (selectedCategory && selectedCategory !== '所有文件') {
+      result = await fileService.listByCategory(project.id, selectedCategory)
+    } else {
+      result = await fileService.list(project.id)
+    }
+
+    if (result.success && result.data) {
+      setFiles(result.data)
+    }
+  }
 
   return (
     <div>
@@ -38,36 +47,29 @@ export default function ProjectHome({
         <Title level={3} className="!mb-0">
           {project.name}
         </Title>
+        <Button icon={<MessageOutlined />} onClick={onChat}>
+          AI对话
+        </Button>
       </Space>
 
       {/* 主要内容区 */}
-      <div style={{ display: "flex", gap: 16, height: "calc(100vh - 200px)" }}>
-        {/* 左侧导航 */}
-        <Card
-          bodyStyle={{ padding: 0 }}
-          style={{ width: 150, flexShrink: 0, overflow: "auto" }}
-        >
+      <Layout style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <Sider width={200} style={{ background: '#fff' }}>
           <StageNav
-            selectedStage={selectedStage}
-            onSelectStage={setSelectedStage}
+            project={project}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
           />
-        </Card>
-
-        {/* 右侧内容 */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* 上半部分：摘要卡片 */}
-          <SummaryCards onChat={onChat} />
-
-          {/* 下半部分：文件拖拽区 */}
-          <Card style={{ flex: 1 }}>
-            <FileDropZone
-              projectId={project.id!}
-              projectName={project.name}
-              onUploadComplete={handleUploadComplete}
-            />
-          </Card>
-        </div>
-      </div>
+        </Sider>
+        <Content style={{ padding: 24 }}>
+          <SummaryCards projectId={project.id} fileCount={files.length} />
+          <FileDropZone
+            projectId={project.id}
+            files={files}
+            onFilesChange={loadFiles}
+          />
+        </Content>
+      </Layout>
     </div>
-  );
+  )
 }

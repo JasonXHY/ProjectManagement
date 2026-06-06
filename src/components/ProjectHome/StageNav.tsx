@@ -1,52 +1,78 @@
-import { Menu } from "antd";
-import {
-  ShopOutlined,
-  RocketOutlined,
-  FileTextOutlined,
-  SolutionOutlined,
-  BuildOutlined,
-  BugOutlined,
-  CloudUploadOutlined,
-  CheckCircleOutlined,
-  CustomerServiceOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
-import type { ProjectStageNew } from "../../types";
-import { PROJECT_STAGES_NEW, PROJECT_STAGE_LIST_NEW } from "../../types";
+import { useState, useEffect } from 'react'
+import { Menu, Button, Input, Modal } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
+import { Project, DEFAULT_STAGES } from '../../types'
 
 interface StageNavProps {
-  selectedStage: ProjectStageNew | null;
-  onSelectStage: (stage: ProjectStageNew) => void;
+  project: Project
+  selectedCategory: string | null
+  onSelectCategory: (category: string) => void
 }
 
-/** 阶段图标映射 */
-const STAGE_ICONS: Record<ProjectStageNew, React.ReactNode> = {
-  presale: <ShopOutlined />,
-  startup: <RocketOutlined />,
-  requirement: <FileTextOutlined />,
-  solution: <SolutionOutlined />,
-  build: <BuildOutlined />,
-  test: <BugOutlined />,
-  launch: <CloudUploadOutlined />,
-  acceptance: <CheckCircleOutlined />,
-  customer_success: <CustomerServiceOutlined />,
-  close: <CloseCircleOutlined />,
-};
+export default function StageNav({ project, selectedCategory, onSelectCategory }: StageNavProps) {
+  const [categories, setCategories] = useState<string[]>([])
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [editingCategory, setEditingCategory] = useState('')
 
-export default function StageNav({ selectedStage, onSelectStage }: StageNavProps) {
-  const menuItems = PROJECT_STAGE_LIST_NEW.map((stage) => ({
-    key: stage,
-    icon: STAGE_ICONS[stage],
-    label: PROJECT_STAGES_NEW[stage],
-  }));
+  useEffect(() => {
+    loadCategories()
+  }, [project])
+
+  const loadCategories = async () => {
+    if (project.category_type === 'stage') {
+      const stages = project.custom_stages
+        ? JSON.parse(project.custom_stages)
+        : DEFAULT_STAGES
+      setCategories(stages)
+    } else {
+      // 按内容或智能分类时，从文件中获取分类列表
+      setCategories(['所有文件']) // 临时实现
+    }
+  }
+
+  const handleAddCategory = () => {
+    if (editingCategory && !categories.includes(editingCategory)) {
+      setCategories([...categories, editingCategory])
+      setEditModalVisible(false)
+      setEditingCategory('')
+    }
+  }
+
+  const menuItems = categories.map(cat => ({
+    key: cat,
+    label: cat
+  }))
 
   return (
-    <Menu
-      mode="inline"
-      selectedKeys={selectedStage ? [selectedStage] : []}
-      onClick={({ key }) => onSelectStage(key as ProjectStageNew)}
-      items={menuItems}
-      style={{ height: "100%", borderRight: 0 }}
-    />
-  );
+    <div style={{ width: 200, borderRight: '1px solid #f0f0f0', padding: '16px 0' }}>
+      <div style={{ padding: '0 16px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <strong>分类</strong>
+        <Button
+          type="text"
+          size="small"
+          icon={<PlusOutlined />}
+          onClick={() => setEditModalVisible(true)}
+        />
+      </div>
+      <Menu
+        mode="inline"
+        selectedKeys={selectedCategory ? [selectedCategory] : []}
+        items={menuItems}
+        onClick={({ key }) => onSelectCategory(key)}
+      />
+
+      <Modal
+        title="添加分类"
+        open={editModalVisible}
+        onOk={handleAddCategory}
+        onCancel={() => setEditModalVisible(false)}
+      >
+        <Input
+          value={editingCategory}
+          onChange={e => setEditingCategory(e.target.value)}
+          placeholder="输入分类名称"
+        />
+      </Modal>
+    </div>
+  )
 }

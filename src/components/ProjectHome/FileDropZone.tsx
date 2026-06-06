@@ -1,62 +1,123 @@
-import { useState, useCallback } from "react";
-import { Upload, message, Typography } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
-import type { UploadFile } from "antd/es/upload";
-
-const { Dragger } = Upload;
-const { Text } = Typography;
+import { useState } from 'react'
+import { Upload, message, Table, Button, Space, Popconfirm } from 'antd'
+import { InboxOutlined, DeleteOutlined, RobotOutlined } from '@ant-design/icons'
+import { FileRecord } from '../../types'
+import { fileService } from '../../services/fileService'
+import { aiService } from '../../services/aiService'
 
 interface FileDropZoneProps {
-  projectId: number;
-  projectName: string;
-  onUploadComplete: () => void;
+  projectId: number
+  files: FileRecord[]
+  onFilesChange: () => void
 }
 
-export default function FileDropZone({
-  projectId,
-  projectName,
-  onUploadComplete,
-}: FileDropZoneProps) {
-  const [uploading, setUploading] = useState(false);
+export default function FileDropZone({ projectId, files, onFilesChange }: FileDropZoneProps) {
+  const [uploading, setUploading] = useState(false)
+  const [classifying, setClassifying] = useState<number | null>(null)
 
-  /** 处理文件上传 */
-  const handleUpload = useCallback(
-    async (file: UploadFile) => {
-      if (!file.originFileObj) return false;
+  const handleUpload = async (file: File) => {
+    setUploading(true)
+    const result = await fileService.upload(projectId, file)
+    setUploading(false)
 
-      setUploading(true);
-      try {
-        // 调用AI自动分类上传
-        // await uploadFileWithAutoClassify(projectId, projectName, file.originFileObj);
-        message.success(`文件 ${file.name} 上传成功`);
-        onUploadComplete();
-      } catch (error) {
-        message.error(`文件 ${file.name} 上传失败`);
-      } finally {
-        setUploading(false);
-      }
-      return false;
+    if (result.success) {
+      message.success(`${file.name} 上传成功`)
+      onFilesChange()
+    } else {
+      message.error(result.error || '上传失败')
+    }
+
+    return false // 阻止antd默认上传
+  }
+
+  const handleDelete = async (id: number) => {
+    const result = await fileService.delete(id)
+    if (result.success) {
+      message.success('删除成功')
+      onFilesChange()
+    } else {
+      message.error(result.error || '删除失败')
+    }
+  }
+
+  const handleClassify = async (fileId: number) => {
+    setClassifying(fileId)
+    const result = await aiService.classify(fileId)
+    setClassifying(null)
+
+    if (result.success) {
+      message.success(`分类结果：${result.data}`)
+      onFilesChange()
+    } else {
+      message.error(result.error || '分类失败')
+    }
+  }
+
+  const columns = [
+    {
+      title: '文件名',
+      dataIndex: 'filename',
+      key: 'filename'
     },
-    [projectId, projectName, onUploadComplete]
-  );
+    {
+      title: '类型',
+      dataIndex: 'file_type',
+      key: 'file_type'
+    },
+    {
+      title: '大小',
+      dataIndex: 'file_size',
+      key: 'file_size',
+      render: (size: number) => size ? `${(size / 1024).toFixed(1)} KB` : '-'
+    },
+    {
+      title: '分类',
+      dataIndex: 'category',
+      key: 'category',
+      render: (category: string) => category || <span style={{ color: '#999' }}>未分类</span>
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_: any, record: FileRecord) => (
+        <Space>
+          <Button
+            icon={<RobotOutlined />}
+            loading={classifying === record.id}
+            onClick={() => handleClassify(record.id)}
+          >
+            AI分类
+          </Button>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
+            <Button danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ]
 
   return (
-    <Dragger
-      multiple
-      showUploadList={false}
-      beforeUpload={handleUpload}
-      disabled={uploading}
-      style={{ padding: "40px 0" }}
-    >
-      <p className="ant-upload-drag-icon">
-        <InboxOutlined />
-      </p>
-      <p className="ant-upload-text">
-        <Text strong>拖拽文件到此处上传</Text>
-      </p>
-      <p className="ant-upload-hint">
-        <Text type="secondary">AI将自动分类文件到对应阶段</Text>
-      </p>
-    </Dragger>
-  );
+    <div>
+      <Upload.Dragger
+        multiple
+        beforeUpload={handleUpload}
+        showUploadList={false}
+        disabled={uploading}
+      >
+        <p className="ant-upload-drag-icon">
+          <InboxOutlined />
+        </p>
+        <p className="ant-upload-text">点击或拖拽文件到此处上传</p>
+        <p className="ant-upload-hint">支持所有常见文件格式</p>
+      </Upload.Dragger>
+
+      <Table
+        columns={columns}
+        dataSource={files}
+        rowKey="id"
+        style={{ marginTop: 16 }}
+        pagination={{ pageSize: 10 }}
+      />
+    </div>
+  )
 }
