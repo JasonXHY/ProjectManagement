@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Layout, Button, Space, Typography } from 'antd'
+import { Layout, Button, Space, Typography, message } from 'antd'
 import { ArrowLeftOutlined, MessageOutlined } from '@ant-design/icons'
 import { Project, FileRecord } from '../../types'
 import StageNav from './StageNav'
@@ -34,6 +34,8 @@ export default function ProjectHome({ project, onBack, onChat }: ProjectHomeProp
 
     if (result.success && result.data) {
       setFiles(result.data)
+    } else {
+      message.error('加载文件列表失败')
     }
   }
 

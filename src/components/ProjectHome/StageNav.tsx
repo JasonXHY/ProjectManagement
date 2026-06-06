@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Menu, Button, Input, Modal } from 'antd'
+import { Menu, Button, Input, Modal, message } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { Project, DEFAULT_STAGES } from '../../types'
+import { projectService } from '../../services/projectService'
 
 interface StageNavProps {
   project: Project
@@ -20,19 +21,33 @@ export default function StageNav({ project, selectedCategory, onSelectCategory }
 
   const loadCategories = async () => {
     if (project.category_type === 'stage') {
-      const stages = project.custom_stages
-        ? JSON.parse(project.custom_stages)
-        : DEFAULT_STAGES
-      setCategories(stages)
+      try {
+        const stages = project.custom_stages
+          ? JSON.parse(project.custom_stages)
+          : DEFAULT_STAGES
+        setCategories(stages)
+      } catch {
+        setCategories(DEFAULT_STAGES)
+      }
     } else {
       // 按内容或智能分类时，从文件中获取分类列表
       setCategories(['所有文件']) // 临时实现
     }
   }
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (editingCategory && !categories.includes(editingCategory)) {
-      setCategories([...categories, editingCategory])
+      const newCategories = [...categories, editingCategory]
+      setCategories(newCategories)
+
+      const result = await projectService.update(project.id, {
+        custom_stages: JSON.stringify(newCategories)
+      })
+
+      if (!result.success) {
+        message.error('保存分类失败')
+      }
+
       setEditModalVisible(false)
       setEditingCategory('')
     }

@@ -79,7 +79,7 @@ export default function FileDropZone({ projectId, files, onFilesChange }: FileDr
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: FileRecord) => (
+      render: (_: unknown, record: FileRecord) => (
         <Space>
           <Button
             icon={<RobotOutlined />}
