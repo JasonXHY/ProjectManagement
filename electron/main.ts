@@ -1,7 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import path from 'path'
 import { initDatabase } from './database'
 import { initDefaultSettings } from './database/settings'
+import { registerProjectHandlers } from './ipc/project-handlers'
+import { registerFileHandlers } from './ipc/file-handlers'
+import { registerSettingsHandlers } from './ipc/settings-handlers'
+import { registerAIHandlers } from './ipc/ai-handlers'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -26,6 +30,13 @@ function createWindow() {
 app.whenReady().then(() => {
   initDatabase()
   initDefaultSettings()
+
+  // 注册IPC处理器
+  registerProjectHandlers()
+  registerFileHandlers()
+  registerSettingsHandlers()
+  registerAIHandlers()
+
   createWindow()
 })
 
