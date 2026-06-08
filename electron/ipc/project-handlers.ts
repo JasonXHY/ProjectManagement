@@ -1,29 +1,31 @@
 import { ipcMain, app } from 'electron'
 import * as projectDb from '../database/projects'
+import { sanitizeFileName, resolveProjectPath, createProjectDirectory } from '../utils/project-path'
 import fs from 'fs/promises'
 import path from 'path'
 
-// 默认阶段列表（与 src/types 中的 DEFAULT_STAGES 保持一致）
+// 默认11个阶段
 const DEFAULT_STAGES = [
-  '启动', '调研', '规划', '设计', '开发',
-  '测试', '部署', '运维', '评估', '归档'
+  '首页', '售前', '启动', '需求', '方案',
+  '构建', '测试', '上线', '验收', '转客户成功', '关闭'
 ]
 
 export function registerProjectHandlers() {
   ipcMain.handle('project:create', async (_, name: string, categoryType: string, customStages?: string[]) => {
     const id = projectDb.createProject(name, categoryType as any, customStages)
 
-    // 创建项目文件夹
-    const projectPath = path.join(app.getPath('userData'), 'projects', String(id))
-    await fs.mkdir(projectPath, { recursive: true })
+    // 创建项目文件夹（使用项目名称作为目录名）
+    const projectPath = await createProjectDirectory(id, name)
 
     // 根据分类方式创建子文件夹
     if (categoryType === 'stage') {
       const stages = customStages || DEFAULT_STAGES
       for (const stage of stages) {
-        await fs.mkdir(path.join(projectPath, stage), { recursive: true })
+        const stageDir = path.join(projectPath, sanitizeFileName(stage))
+        await fs.mkdir(stageDir, { recursive: true })
       }
     }
+    // 按内容/智能分类时，文件夹由AI分类后动态创建
 
     // 创建.ai目录
     await fs.mkdir(path.join(projectPath, '.ai'), { recursive: true })
@@ -50,9 +52,11 @@ export function registerProjectHandlers() {
   })
 
   ipcMain.handle('project:delete', async (_, id: number) => {
-    // 删除项目文件夹
-    const projectPath = path.join(app.getPath('userData'), 'projects', String(id))
-    await fs.rm(projectPath, { recursive: true, force: true })
+    // 查找并删除项目文件夹
+    const projectPath = await resolveProjectPath(id)
+    if (projectPath) {
+      await fs.rm(projectPath, { recursive: true, force: true })
+    }
 
     projectDb.deleteProject(id)
     return { success: true }

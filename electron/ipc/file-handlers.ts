@@ -1,28 +1,22 @@
 import { ipcMain, app } from 'electron'
-import * as fileDb from '../database/files'
-import { getDatabase } from '../database'
+import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById } from '../database/files'
 import { FileExtractor } from '../services/file-extractor'
+import { resolveProjectPath } from '../utils/project-path'
 import fs from 'fs/promises'
 import path from 'path'
 
-function rowsToObjectArray(results: any[]): Record<string, any>[] {
-  if (!results || !results[0] || !results[0].values) return []
-  const columns = results[0].columns
-  return results[0].values.map((row: any[]) => {
-    const obj: Record<string, any> = {}
-    columns.forEach((col: string, i: number) => {
-      obj[col] = row[i]
-    })
-    return obj
-  })
-}
-
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
-    const projectPath = path.join(app.getPath('userData'), 'projects', String(projectId))
+    const projectPath = await resolveProjectPath(projectId)
+    if (!projectPath) {
+      throw new Error('项目文件夹不存在')
+    }
+
+    // Sanitize filename to prevent path traversal attacks
+    const safeName = path.basename(fileData.name)
 
     // 保存文件
-    const filePath = path.join(projectPath, fileData.name)
+    const filePath = path.join(projectPath, safeName)
     await fs.writeFile(filePath, Buffer.from(fileData.content))
 
     // 获取文件信息
@@ -37,9 +31,9 @@ export function registerFileHandlers() {
     }
 
     // 创建数据库记录
-    const id = fileDb.createFile(projectId, {
+    const id = createFile(projectId, {
       project_id: projectId,
-      filename: fileData.name,
+      filename: safeName,
       original_path: null,
       stored_path: filePath,
       category: null,
@@ -54,27 +48,38 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:list', async (_, projectId: number) => {
-    const files = fileDb.listFiles(projectId)
+    const files = listFiles(projectId)
     return { success: true, data: files }
   })
 
   ipcMain.handle('file:listByCategory', async (_, projectId: number, category: string) => {
-    const files = fileDb.getFilesByCategory(projectId, category)
+    const files = getFilesByCategory(projectId, category)
     return { success: true, data: files }
   })
 
   ipcMain.handle('file:delete', async (_, id: number) => {
-    const db = getDatabase()
-    const results = db.exec('SELECT * FROM files WHERE id = ?', [id])
-    const rows = rowsToObjectArray(results)
-    const file = rows[0] as any
-
-    if (file) {
-      // 删除物理文件
-      await fs.rm(file.stored_path, { force: true })
-      fileDb.deleteFile(id)
+    const file = getFileById(id)
+    if (!file) {
+      throw new Error('文件不存在')
     }
 
+    // Validate path safety — ensure stored_path is within the projects root
+    const projectsRoot = path.join(app.getPath('userData'), 'projects')
+    const resolvedPath = path.resolve(file.stored_path)
+    if (!resolvedPath.startsWith(path.resolve(projectsRoot))) {
+      throw new Error('文件路径无效')
+    }
+
+    // 删除物理文件
+    try {
+      await fs.rm(resolvedPath, { force: true })
+    } catch (err) {
+      console.error('删除物理文件失败:', err)
+      // Continue to delete database record even if physical file removal fails
+    }
+
+    // 删除数据库记录
+    deleteFile(id)
     return { success: true }
   })
 }

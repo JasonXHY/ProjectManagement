@@ -1,10 +1,23 @@
 import { ipcMain, app } from 'electron'
-import { aiService } from '../services/ai-service'
+import { getAIService } from '../services/ai-service'
 import * as fileDb from '../database/files'
 import * as projectDb from '../database/projects'
 import { getDatabase } from '../database'
+import { resolveProjectPath } from '../utils/project-path'
 import fs from 'fs/promises'
 import path from 'path'
+
+function rowsToObjectArray(results: any[]): Record<string, any>[] {
+  if (!results || !results[0] || !results[0].values) return []
+  const columns = results[0].columns
+  return results[0].values.map((row: any[]) => {
+    const obj: Record<string, any> = {}
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i]
+    })
+    return obj
+  })
+}
 
 export function registerAIHandlers() {
   ipcMain.handle('ai:chat', async (_, projectId: number, message: string, contextFileIds: number[]) => {
@@ -12,7 +25,10 @@ export function registerAIHandlers() {
     const contextContents: string[] = []
 
     // 添加项目MD摘要
-    const projectPath = path.join(app.getPath('userData'), 'projects', String(projectId))
+    const projectPath = await resolveProjectPath(projectId)
+    if (!projectPath) {
+      return { success: false, error: '项目文件夹不存在' }
+    }
     const summaryPath = path.join(projectPath, '.ai', 'project-summary.md')
     try {
       const summary = await fs.readFile(summaryPath, 'utf-8')
@@ -24,7 +40,9 @@ export function registerAIHandlers() {
     // 添加用户选择的文件
     for (const fileId of contextFileIds) {
       const db = getDatabase()
-      const file = db.prepare('SELECT * FROM files WHERE id = ?').get(fileId) as any
+      const results = db.exec('SELECT * FROM files WHERE id = ?', [fileId])
+      const rows = rowsToObjectArray(results)
+      const file = rows[0]
       if (file?.content_extracted) {
         contextContents.push(`[${file.filename}]\n${file.content_extracted}`)
       }
@@ -36,13 +54,16 @@ export function registerAIHandlers() {
       { role: 'user' as const, content: `项目上下文：\n${contextContents.join('\n\n')}\n\n用户问题：${message}` }
     ]
 
+    const aiService = getAIService()
     const response = await aiService.chat(messages)
     return { success: true, data: response.content }
   })
 
   ipcMain.handle('ai:classify', async (_, fileId: number) => {
     const db = getDatabase()
-    const file = db.prepare('SELECT * FROM files WHERE id = ?').get(fileId) as any
+    const results = db.exec('SELECT * FROM files WHERE id = ?', [fileId])
+    const rows = rowsToObjectArray(results)
+    const file = rows[0] as any
 
     if (!file) {
       return { success: false, error: '文件不存在' }
@@ -60,6 +81,7 @@ export function registerAIHandlers() {
       { role: 'user' as const, content: `文件名：${file.filename}\n文件内容：\n${content.substring(0, 2000)}` }
     ]
 
+    const aiService = getAIService()
     const response = await aiService.chat(messages)
     const category = response.content.trim()
 
@@ -79,14 +101,15 @@ export function registerAIHandlers() {
     const unanalyzedFiles = fileDb.getUnanalyzedFiles(projectId)
 
     // 读取已有的MD摘要
-    const projectPath = path.join(app.getPath('userData'), 'projects', String(projectId))
+    const projectPath = await resolveProjectPath(projectId)
+    if (!projectPath) {
+      return { success: false, error: '项目文件夹不存在' }
+    }
     const summaryPath = path.join(projectPath, '.ai', 'project-summary.md')
     let existingSummary = ''
     try {
       existingSummary = await fs.readFile(summaryPath, 'utf-8')
-    } catch {
-      // 文件不存在，忽略
-    }
+    } catch {}
 
     // 构建文件内容
     const fileContents = unanalyzedFiles.map(f => `[${f.filename}]\n${f.content_extracted || '（无法提取内容）'}`).join('\n\n')
@@ -106,6 +129,7 @@ ${existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : ''}
       { role: 'user' as const, content: `项目名称：${project.name}\n当前阶段：${project.current_stage}\n\n需要分析的新文件：\n${fileContents}` }
     ]
 
+    const aiService = getAIService()
     const response = await aiService.chat(messages)
 
     // 保存MD文件
