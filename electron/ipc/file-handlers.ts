@@ -1,8 +1,12 @@
 import { ipcMain, app } from 'electron'
-import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById } from '../database/files'
+import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById, updateFile } from '../database/files'
+import { getProject } from '../database/projects'
 import { FileExtractor } from '../services/file-extractor'
 import { resolveProjectPath } from '../utils/project-path'
+import { getAIService } from '../services/ai-service'
+import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from './ai-handlers'
 import fs from 'fs/promises'
+import fsSync from 'fs'
 import path from 'path'
 
 export function registerFileHandlers() {
@@ -43,6 +47,54 @@ export function registerFileHandlers() {
       content_extracted: contentExtracted,
       is_analyzed: false
     })
+
+    // --- 自动 AI 分类（异步，不阻塞上传） ---
+    if (contentExtracted) {
+      const project = getProject(projectId)
+      if (project) {
+        const promptTemplate = project.category_type === 'stage'
+          ? CLASSIFY_PROMPT_STAGES
+          : CLASSIFY_PROMPT_CONTENT
+
+        const classifyPrompt = promptTemplate.replace('{content}', contentExtracted.substring(0, 2000))
+
+        getAIService().chat([
+          { role: 'user', content: classifyPrompt }
+        ]).then(async (result) => {
+          // 解析AI返回的JSON
+          let category: string
+          try {
+            const jsonMatch = result.content.match(/\{[\s\S]*\}/)
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0])
+              category = parsed.category || '未分类'
+            } else {
+              category = result.content.trim() || '未分类'
+            }
+          } catch {
+            category = result.content.trim() || '未分类'
+          }
+
+          // 更新文件的category字段
+          updateFile(id, { category })
+
+          // 移动文件到对应文件夹
+          const targetDir = path.join(projectPath, category)
+          if (!fsSync.existsSync(targetDir)) {
+            fsSync.mkdirSync(targetDir, { recursive: true })
+          }
+          const targetPath = path.join(targetDir, safeName)
+          fsSync.renameSync(filePath, targetPath)
+
+          // 更新数据库中的stored_path
+          updateFile(id, { stored_path: targetPath })
+
+          console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${category}"`)
+        }).catch(err => {
+          console.error('[AI分类] 分类失败:', err)
+        })
+      }
+    }
 
     return { success: true, data: id }
   })
