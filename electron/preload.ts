@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('ai:chat', projectId, message, contextFileIds),
     classify: (fileId: number) => ipcRenderer.invoke('ai:classify', fileId),
     analyze: (projectId: number) => ipcRenderer.invoke('ai:analyze', projectId),
+    getHistory: (projectId: number) => ipcRenderer.invoke('ai:get-history', projectId),
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),

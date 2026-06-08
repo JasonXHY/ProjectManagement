@@ -11,5 +11,9 @@ export const aiService = {
 
   async analyze(projectId: number) {
     return window.api.ai.analyze(projectId)
+  },
+
+  async getHistory(projectId: number) {
+    return window.api.ai.getHistory(projectId)
   }
 }

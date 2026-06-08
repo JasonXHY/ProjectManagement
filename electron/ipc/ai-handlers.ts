@@ -1,8 +1,8 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain } from 'electron'
 import { getAIService } from '../services/ai-service'
 import * as fileDb from '../database/files'
 import * as projectDb from '../database/projects'
-import { getDatabase } from '../database'
+import * as conversationDb from '../database/conversations'
 import { resolveProjectPath } from '../utils/project-path'
 import fs from 'fs/promises'
 import path from 'path'
@@ -46,18 +46,6 @@ export const CLASSIFY_PROMPT_CONTENT = `你是一个专业的文档分类专家�
   "summary": "文档内容摘要（50字以内）"
 }`
 
-function rowsToObjectArray(results: any[]): Record<string, any>[] {
-  if (!results || !results[0] || !results[0].values) return []
-  const columns = results[0].columns
-  return results[0].values.map((row: any[]) => {
-    const obj: Record<string, any> = {}
-    columns.forEach((col: string, i: number) => {
-      obj[col] = row[i]
-    })
-    return obj
-  })
-}
-
 export function registerAIHandlers() {
   ipcMain.handle('ai:chat', async (_, projectId: number, message: string, contextFileIds: number[]) => {
     // 获取上下文文件内容
@@ -78,10 +66,7 @@ export function registerAIHandlers() {
 
     // 添加用户选择的文件
     for (const fileId of contextFileIds) {
-      const db = getDatabase()
-      const results = db.exec('SELECT * FROM files WHERE id = ?', [fileId])
-      const rows = rowsToObjectArray(results)
-      const file = rows[0]
+      const file = fileDb.getFileById(fileId)
       if (file?.content_extracted) {
         contextContents.push(`[${file.filename}]\n${file.content_extracted}`)
       }
@@ -95,14 +80,17 @@ export function registerAIHandlers() {
 
     const aiService = getAIService()
     const response = await aiService.chat(messages)
+
+    // 保存对话记录到数据库
+    const tokenCount = response.usage?.total_tokens || 0
+    conversationDb.saveChatMessage(projectId, 'user', message, 0)
+    conversationDb.saveChatMessage(projectId, 'assistant', response.content, tokenCount)
+
     return { success: true, data: response.content }
   })
 
   ipcMain.handle('ai:classify', async (_, fileId: number, categoryType?: 'stage' | 'content') => {
-    const db = getDatabase()
-    const results = db.exec('SELECT * FROM files WHERE id = ?', [fileId])
-    const rows = rowsToObjectArray(results)
-    const file = rows[0] as any
+    const file = fileDb.getFileById(fileId)
 
     if (!file) {
       return { success: false, error: '文件不存在' }
@@ -116,7 +104,7 @@ export function registerAIHandlers() {
 
     // 根据分类方式选择 prompt
     const promptTemplate = categoryType === 'content' ? CLASSIFY_PROMPT_CONTENT : CLASSIFY_PROMPT_STAGES
-    const classifyPrompt = promptTemplate.replace('{content}', content.substring(0, 2000))
+    const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
 
     // 调用AI分类
     const messages = [
@@ -198,5 +186,15 @@ ${existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : ''}
     }
 
     return { success: true, data: response.content }
+  })
+
+  ipcMain.handle('ai:get-history', async (_, projectId: number) => {
+    try {
+      const messages = conversationDb.getChatHistory(projectId)
+      return { success: true, data: messages }
+    } catch (error) {
+      console.error('[AI] 获取对话历史失败:', error)
+      return { success: false, error: '获取对话历史失败' }
+    }
   })
 }

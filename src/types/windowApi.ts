@@ -20,6 +20,7 @@ declare global {
         chat: (projectId: number, message: string, contextFileIds: number[]) => Promise<{ success: boolean, data?: string, error?: string }>
         classify: (fileId: number) => Promise<{ success: boolean, data?: string, error?: string }>
         analyze: (projectId: number) => Promise<{ success: boolean, data?: string, error?: string }>
+        getHistory: (projectId: number) => Promise<{ success: boolean, data?: Array<{ id: number, project_id: number, role: string, content: string, token_count: number, created_at: string }>, error?: string }>
       }
       settings: {
         get: () => Promise<{ success: boolean, data?: Record<string, string>, error?: string }>
