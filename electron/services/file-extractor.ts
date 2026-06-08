@@ -1,7 +1,8 @@
-import * as fs from 'fs'
+import { promises as fsPromises } from 'fs'
 import * as path from 'path'
 import mammoth from 'mammoth'
 import * as XLSX from 'xlsx'
+import { PDFParse } from 'pdf-parse'
 
 export class FileExtractor {
   /**
@@ -40,7 +41,7 @@ export class FileExtractor {
    * 提取文本文件内容
    */
   private static async extractText(filePath: string): Promise<string> {
-    return fs.readFileSync(filePath, 'utf-8')
+    return await fsPromises.readFile(filePath, 'utf-8')
   }
 
   /**
@@ -48,8 +49,7 @@ export class FileExtractor {
    * 使用 pdf-parse v2 API
    */
   private static async extractPDF(filePath: string): Promise<string> {
-    const { PDFParse } = require('pdf-parse')
-    const buffer = fs.readFileSync(filePath)
+    const buffer = await fsPromises.readFile(filePath)
     const parser = new PDFParse({ data: buffer })
     try {
       const result = await parser.getText()
@@ -63,7 +63,7 @@ export class FileExtractor {
    * 提取Word文档内容
    */
   private static async extractWord(filePath: string): Promise<string> {
-    const buffer = fs.readFileSync(filePath)
+    const buffer = await fsPromises.readFile(filePath)
     const result = await mammoth.extractRawText({ buffer })
     return result.value
   }
@@ -72,7 +72,7 @@ export class FileExtractor {
    * 提取Excel内容
    */
   private static async extractExcel(filePath: string): Promise<string> {
-    const buffer = fs.readFileSync(filePath)
+    const buffer = await fsPromises.readFile(filePath)
     const workbook = XLSX.read(buffer, { type: 'buffer' })
     const allText: string[] = []
 
