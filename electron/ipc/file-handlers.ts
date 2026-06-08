@@ -1,8 +1,21 @@
 import { ipcMain, app } from 'electron'
 import * as fileDb from '../database/files'
 import { getDatabase } from '../database'
+import { FileExtractor } from '../services/file-extractor'
 import fs from 'fs/promises'
 import path from 'path'
+
+function rowsToObjectArray(results: any[]): Record<string, any>[] {
+  if (!results || !results[0] || !results[0].values) return []
+  const columns = results[0].columns
+  return results[0].values.map((row: any[]) => {
+    const obj: Record<string, any> = {}
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i]
+    })
+    return obj
+  })
+}
 
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
@@ -15,6 +28,14 @@ export function registerFileHandlers() {
     // 获取文件信息
     const stats = await fs.stat(filePath)
 
+    // 提取文件内容
+    let contentExtracted: string | null = null
+    try {
+      contentExtracted = await FileExtractor.extract(filePath)
+    } catch (error) {
+      console.error('文件内容提取失败:', error)
+    }
+
     // 创建数据库记录
     const id = fileDb.createFile(projectId, {
       project_id: projectId,
@@ -25,7 +46,7 @@ export function registerFileHandlers() {
       stage: null,
       file_type: fileData.type,
       file_size: stats.size,
-      content_extracted: null,
+      content_extracted: contentExtracted,
       is_analyzed: false
     })
 
@@ -44,7 +65,9 @@ export function registerFileHandlers() {
 
   ipcMain.handle('file:delete', async (_, id: number) => {
     const db = getDatabase()
-    const file = db.prepare('SELECT * FROM files WHERE id = ?').get(id) as any
+    const results = db.exec('SELECT * FROM files WHERE id = ?', [id])
+    const rows = rowsToObjectArray(results)
+    const file = rows[0] as any
 
     if (file) {
       // 删除物理文件
