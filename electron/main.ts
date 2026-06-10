@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import path from 'path'
-import { initDatabase } from './database'
+import { initDatabase, closeDatabase } from './database'
 import { initDefaultSettings } from './database/settings'
 import { registerProjectHandlers } from './ipc/project-handlers'
 import { registerFileHandlers } from './ipc/file-handlers'
@@ -23,12 +23,16 @@ function createWindow() {
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:1234')
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    // __dirname 是 electron/dist/，需要向上两级到项目根目录
+    const indexPath = path.join(__dirname, '../../dist/index.html')
+    console.log('Loading index from:', indexPath)
+    mainWindow.loadFile(indexPath)
   }
 }
 
-app.whenReady().then(() => {
-  initDatabase()
+app.whenReady().then(async () => {
+  // 初始化数据库（异步）
+  await initDatabase()
   initDefaultSettings()
 
   // 注册IPC处理器
@@ -41,7 +45,12 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  closeDatabase()
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  closeDatabase()
 })

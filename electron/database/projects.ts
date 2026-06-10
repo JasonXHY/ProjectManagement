@@ -1,4 +1,4 @@
-import { getDatabase } from './index'
+import { getDatabase, saveDatabase } from './index'
 
 export interface Project {
   id: number
@@ -14,24 +14,45 @@ export interface Project {
 // Column whitelist to prevent SQL injection via dynamic key names
 const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'ai_suggested_stage'] as const
 
-export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[]) {
+function rowsToObjectArray(results: any[]): Record<string, any>[] {
+  if (!results || !results[0] || !results[0].values) return []
+  const columns = results[0].columns
+  return results[0].values.map((row: any[]) => {
+    const obj: Record<string, any> = {}
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i]
+    })
+    return obj
+  })
+}
+
+export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[]): number {
   const db = getDatabase()
-  const stmt = db.prepare(`
-    INSERT INTO projects (name, category_type, custom_stages)
-    VALUES (?, ?, ?)
-  `)
-  const result = stmt.run(name, categoryType, customStages ? JSON.stringify(customStages) : null)
-  return result.lastInsertRowid
+  db.run(
+    `INSERT INTO projects (name, category_type, custom_stages) VALUES (?, ?, ?)`,
+    [name, categoryType, customStages ? JSON.stringify(customStages) : null]
+  )
+
+  // 获取最后插入的ID（必须在saveDatabase之前）
+  const results = db.exec('SELECT last_insert_rowid() as id')
+  const id = results[0].values[0][0] as number
+
+  saveDatabase()
+
+  return id
 }
 
 export function listProjects(): Project[] {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM projects ORDER BY created_at DESC').all() as Project[]
+  const results = db.exec('SELECT * FROM projects ORDER BY created_at DESC')
+  return rowsToObjectArray(results) as Project[]
 }
 
 export function getProject(id: number): Project | undefined {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as Project | undefined
+  const results = db.exec('SELECT * FROM projects WHERE id = ?', [id])
+  const rows = rowsToObjectArray(results)
+  return rows[0] as Project | undefined
 }
 
 export function updateProject(id: number, data: Partial<Project>) {
@@ -43,19 +64,26 @@ export function updateProject(id: number, data: Partial<Project>) {
   if (allowedKeys.length === 0) return
 
   const fields = allowedKeys.map(k => `${k} = ?`).join(', ')
-  const values = allowedKeys.map(k => (data as Record<string, unknown>)[k])
+  const values = allowedKeys.map(k => (data as Record<string, unknown>)[k] as string | number | null)
 
-  db.prepare(`UPDATE projects SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-    .run(...values, id)
+  db.run(`UPDATE projects SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [...values, id])
+  saveDatabase()
 }
 
 export function deleteProject(id: number) {
   const db = getDatabase()
 
   // Wrap in transaction to ensure atomicity
-  db.transaction(() => {
-    db.prepare('DELETE FROM files WHERE project_id = ?').run(id)
-    db.prepare('DELETE FROM conversations WHERE project_id = ?').run(id)
-    db.prepare('DELETE FROM projects WHERE id = ?').run(id)
-  })()
+  db.run('BEGIN TRANSACTION')
+  try {
+    db.run('DELETE FROM files WHERE project_id = ?', [id])
+    db.run('DELETE FROM conversations WHERE project_id = ?', [id])
+    db.run('DELETE FROM chat_messages WHERE project_id = ?', [id])
+    db.run('DELETE FROM projects WHERE id = ?', [id])
+    db.run('COMMIT')
+  } catch (e) {
+    db.run('ROLLBACK')
+    throw e
+  }
+  saveDatabase()
 }

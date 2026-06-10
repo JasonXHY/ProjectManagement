@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Card,
   Form,
   Input,
   Button,
@@ -9,23 +8,25 @@ import {
   Typography,
   message,
   Spin,
-  Space,
-  Popconfirm,
 } from "antd";
 import {
   SaveOutlined,
   UndoOutlined,
-  ArrowLeftOutlined,
-  SettingOutlined,
+  RobotOutlined,
+  FileOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import { configService } from "../../services/configService";
 import {
   ZHIPU_PROVIDER,
   MIMO_PROVIDER,
+  DEFAULT_CLASSIFY_PROMPT_STAGES,
+  DEFAULT_CLASSIFY_PROMPT_CONTENT,
+  DEFAULT_ANALYZE_PROMPT,
   type AIProvider,
 } from "../../types";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 /** SettingsPage 组件属性 */
 interface SettingsPageProps {
@@ -41,6 +42,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [provider, setProvider] = useState<AIProvider>("zhipu");
+  const [activeTab, setActiveTab] = useState("ai");
 
   /** 加载配置 */
   useEffect(() => {
@@ -92,7 +94,6 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
   const handleReset = async () => {
     setLoading(true);
     try {
-      // 清空所有字段
       form.resetFields();
       setProvider("zhipu");
       message.success("已重置表单（请保存以生效）");
@@ -136,136 +137,245 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
   ];
 
   return (
-    <div>
-      {/* 页面头部 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Button icon={<ArrowLeftOutlined />} onClick={onBack}>
-            返回
-          </Button>
-          <SettingOutlined className="text-xl text-gray-600" />
-          <Title level={3} className="!mb-0">
-            设置
-          </Title>
-        </div>
-        <Space>
-          <Popconfirm
-            title="确定恢复默认配置？"
-            description="当前修改将丢失"
-            onConfirm={handleReset}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button icon={<UndoOutlined />} loading={loading}>
-              恢复默认
-            </Button>
-          </Popconfirm>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleSave}
-            loading={saving}
-          >
-            保存
-          </Button>
-        </Space>
-      </div>
-
+    <div style={{ padding: '24px', maxWidth: '720px', margin: '0 auto' }}>
       <Spin spinning={loading}>
+        {/* Tab 导航 */}
+        <div
+          style={{
+            display: 'flex',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+            padding: '4px',
+            marginBottom: '24px',
+            background: '#F3F4F6',
+          }}
+        >
+          {[
+            { key: 'ai', label: 'AI模型', icon: <RobotOutlined /> },
+            { key: 'extraction', label: '文件提取', icon: <FileOutlined /> },
+            { key: 'prompt', label: 'Prompt配置', icon: <EditOutlined /> },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500,
+                transition: 'all 150ms',
+                background: activeTab === tab.key ? '#FFFFFF' : 'transparent',
+                color: activeTab === tab.key ? '#4F46E5' : '#6B7280',
+                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+              }}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <Form form={form} layout="vertical">
-          <Tabs
-            items={[
-              {
-                key: "ai",
-                label: "AI模型配置",
-                children: (
-                  <Card>
-                    <Text type="secondary" className="block mb-4">
-                      配置AI模型供应商和接口参数，用于智能分析功能。
-                    </Text>
-                    <Form.Item label="模型供应商" name="ai_provider">
-                      <Select
-                        onChange={handleProviderChange}
-                        options={[
-                          { value: "zhipu", label: "智谱AI" },
-                          { value: "mimo", label: "小米MiMo" },
-                          { value: "custom", label: "自定义" },
-                        ]}
-                      />
-                    </Form.Item>
+          {/* AI模型配置 */}
+          {activeTab === 'ai' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+                AI模型配置
+              </div>
+              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                配置AI模型供应商和接口参数，用于智能分析功能。
+              </div>
 
-                    <Form.Item label="模型" name="ai_model">
-                      {provider === "custom" ? (
-                        <Input placeholder="输入模型名称" />
-                      ) : (
-                        <Select options={getModelOptions()} />
-                      )}
-                    </Form.Item>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                <Form.Item label="模型供应商" name="ai_provider">
+                  <Select
+                    onChange={handleProviderChange}
+                    options={[
+                      { value: "zhipu", label: "智谱AI" },
+                      { value: "mimo", label: "小米MiMo" },
+                      { value: "custom", label: "自定义" },
+                    ]}
+                  />
+                </Form.Item>
 
-                    <Form.Item
-                      label="API Key"
-                      name="ai_api_key"
-                      rules={[{ required: true, message: "请输入API Key" }]}
-                    >
-                      <Input.Password placeholder="输入API Key" />
-                    </Form.Item>
+                <Form.Item label="模型" name="ai_model">
+                  {provider === "custom" ? (
+                    <Input placeholder="输入模型名称" />
+                  ) : (
+                    <Select options={getModelOptions()} />
+                  )}
+                </Form.Item>
+              </div>
 
-                    <Form.Item label="API地址" name="ai_base_url">
-                      <Input
-                        placeholder="API地址"
-                        disabled={provider !== "custom"}
-                      />
-                    </Form.Item>
-                  </Card>
-                ),
-              },
-              {
-                key: "extraction",
-                label: "文件提取配置",
-                children: (
-                  <Card>
-                    <Text type="secondary" className="block mb-4">
-                      配置不同文件类型的提取方式。本地提取更快，云端分析更准确。
-                    </Text>
-                    <Form.Item label="TXT/MD文件" name="extraction_txt">
-                      <Select options={extractionOptions} />
-                    </Form.Item>
+              <Form.Item
+                label="API Key"
+                name="ai_api_key"
+                rules={[{ required: true, message: "请输入API Key" }]}
+              >
+                <Input.Password placeholder="输入API Key" />
+              </Form.Item>
 
-                    <Form.Item label="PDF（文字版）" name="extraction_pdf_text">
-                      <Select options={extractionOptions} />
-                    </Form.Item>
+              <Form.Item label="API地址" name="ai_base_url">
+                <Input placeholder="API地址" />
+              </Form.Item>
+            </div>
+          )}
 
-                    <Form.Item
-                      label="PDF（扫描版）"
-                      name="extraction_pdf_scanned"
-                    >
-                      <Select
-                        options={[{ value: "cloud", label: "云端分析（必须）" }]}
-                        disabled
-                      />
-                    </Form.Item>
+          {/* 文件提取配置 */}
+          {activeTab === 'extraction' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+                文件提取配置
+              </div>
+              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                配置不同文件类型的提取方式。本地提取更快，云端分析更准确。
+              </div>
 
-                    <Form.Item label="Word文档" name="extraction_word">
-                      <Select options={extractionOptions} />
-                    </Form.Item>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                <Form.Item label="TXT/MD文件" name="extraction_txt">
+                  <Select options={extractionOptions} />
+                </Form.Item>
 
-                    <Form.Item label="Excel表格" name="extraction_excel">
-                      <Select options={extractionOptions} />
-                    </Form.Item>
+                <Form.Item label="PDF（文字版）" name="extraction_pdf_text">
+                  <Select options={extractionOptions} />
+                </Form.Item>
 
-                    <Form.Item label="图片" name="extraction_image">
-                      <Select
-                        options={[{ value: "cloud", label: "云端分析（必须）" }]}
-                        disabled
-                      />
-                    </Form.Item>
-                  </Card>
-                ),
-              },
-            ]}
-          />
+                <Form.Item label="PDF（扫描版）" name="extraction_pdf_scanned">
+                  <Select
+                    options={[{ value: "cloud", label: "云端分析（必须）" }]}
+                    disabled
+                  />
+                </Form.Item>
+
+                <Form.Item label="Word文档" name="extraction_word">
+                  <Select options={extractionOptions} />
+                </Form.Item>
+
+                <Form.Item label="Excel表格" name="extraction_excel">
+                  <Select options={extractionOptions} />
+                </Form.Item>
+
+                <Form.Item label="图片" name="extraction_image">
+                  <Select
+                    options={[{ value: "cloud", label: "云端分析（必须）" }]}
+                    disabled
+                  />
+                </Form.Item>
+              </div>
+            </div>
+          )}
+
+          {/* Prompt配置 */}
+          {activeTab === 'prompt' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+                Prompt配置
+              </div>
+              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                配置AI分类和分析的Prompt模板。使用 {'{content}'} 作为文件内容占位符。
+              </div>
+
+              <Form.Item
+                label="文件分类Prompt（按阶段）"
+                name="classify_prompt_stages"
+                initialValue={DEFAULT_CLASSIFY_PROMPT_STAGES}
+              >
+                <Input.TextArea
+                  rows={8}
+                  placeholder="请输入文件分类Prompt模板..."
+                  style={{
+                    fontFamily: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New", monospace',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="文件分类Prompt（按内容）"
+                name="classify_prompt_content"
+                initialValue={DEFAULT_CLASSIFY_PROMPT_CONTENT}
+              >
+                <Input.TextArea
+                  rows={8}
+                  placeholder="请输入文件分类Prompt模板..."
+                  style={{
+                    fontFamily: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New", monospace',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="项目分析Prompt"
+                name="analyze_prompt"
+                initialValue={DEFAULT_ANALYZE_PROMPT}
+              >
+                <Input.TextArea
+                  rows={8}
+                  placeholder="请输入项目分析Prompt模板..."
+                  style={{
+                    fontFamily: '"SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New", monospace',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                  }}
+                />
+              </Form.Item>
+            </div>
+          )}
         </Form>
       </Spin>
+
+      {/* 保存按钮 */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+        <Button
+          icon={<UndoOutlined />}
+          onClick={handleReset}
+          loading={loading}
+        >
+          重置
+        </Button>
+        <Button
+          type="primary"
+          icon={<SaveOutlined />}
+          onClick={handleSave}
+          loading={saving}
+        >
+          保存配置
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,22 +1,37 @@
-import { getDatabase } from './index'
+import { getDatabase, saveDatabase } from './index'
+
+function rowsToObjectArray(results: any[]): Record<string, any>[] {
+  if (!results || !results[0] || !results[0].values) return []
+  const columns = results[0].columns
+  return results[0].values.map((row: any[]) => {
+    const obj: Record<string, any> = {}
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i]
+    })
+    return obj
+  })
+}
 
 export function getSetting(key: string): string | null {
   const db = getDatabase()
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined
-  return row?.value ?? null
+  const results = db.exec('SELECT value FROM settings WHERE key = ?', [key])
+  const rows = rowsToObjectArray(results)
+  return rows[0]?.value ?? null
 }
 
 export function setSetting(key: string, value: string) {
   const db = getDatabase()
-  db.prepare(`
-    INSERT OR REPLACE INTO settings (key, value, updated_at)
-    VALUES (?, ?, CURRENT_TIMESTAMP)
-  `).run(key, value)
+  db.run(
+    `INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)`,
+    [key, value]
+  )
+  saveDatabase()
 }
 
 export function getAllSettings(): Record<string, string> {
   const db = getDatabase()
-  const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[]
+  const results = db.exec('SELECT key, value FROM settings')
+  const rows = rowsToObjectArray(results) as { key: string; value: string }[]
   return rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {})
 }
 

@@ -1,0 +1,270 @@
+/* Ant Design 样式覆盖文件 */
+/* 此文件专门处理 ConfigProvider 无法覆盖的样式 */
+/* 每个覆盖必须写明注释说明为什么需要覆盖 */
+
+/* Input 输入框聚焦光晕效果 */
+/* 原因：AntD 默认的蓝色光晕需要替换为主色光晕 */
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* Textarea 聚焦光晕效果 */
+.ant-input:focus,
+textarea.ant-input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* Select 聚焦光晕效果 */
+.ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
+}
+
+/* Menu 导航项选中指示条 */
+/* 原因：需要在选中项左侧添加 3px 宽的主色指示条 */
+.ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--color-primary);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Upload.Dragger 拖拽区样式覆盖 */
+/* 原因：需要自定义虚线边框和拖拽态样式 */
+.ant-upload-drag {
+  border: 2px dashed var(--border-default) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--bg-surface) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.ant-upload-drag:hover {
+  border-color: var(--color-primary) !important;
+  background: #FAFAFF !important;
+}
+
+.ant-upload-drag-hover {
+  border-color: var(--color-primary) !important;
+  background: var(--color-primary-light) !important;
+  border-style: solid !important;
+}
+
+/* Drawer 面板样式覆盖 */
+/* 原因：需要自定义宽度和动画 */
+.ant-drawer-content-wrapper {
+  width: 240px !important;
+}
+
+.ant-drawer-body {
+  padding: 0 !important;
+}
+
+/* Table 表头样式覆盖 */
+/* 原因：需要自定义表头背景色和文字颜色 */
+.ant-table-thead > tr > th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+}
+
+/* Table 行 hover 效果 */
+.ant-table-tbody > tr:hover > td {
+  background: var(--bg-hover) !important;
+}
+
+/* Modal 弹窗样式覆盖 */
+/* 原因：需要自定义标题区背景透明 */
+.ant-modal-header {
+  background: transparent !important;
+}
+
+/* Card 卡片样式覆盖 */
+/* 原因：需要自定义内边距 */
+.ant-card {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border-default) !important;
+}
+
+/* Button 按钮样式覆盖 */
+/* 原因：需要移除默认阴影 */
+.ant-btn-primary {
+  box-shadow: none !important;
+}
+
+.ant-btn-default {
+  box-shadow: none !important;
+}
+
+.ant-btn-dangerous {
+  box-shadow: none !important;
+}
+
+/* Tag 标签样式覆盖 */
+/* 原因：需要自定义药丸形和无边框样式 */
+.ant-tag {
+  border: none !important;
+  border-radius: var(--radius-full) !important;
+  padding: 2px 10px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+/* Empty 空状态样式覆盖 */
+/* 原因：需要自定义空状态样式 */
+.ant-empty-description {
+  color: var(--text-placeholder) !important;
+  font-size: 14px !important;
+}
+
+/* Tabs 标签页样式覆盖 */
+/* 原因：需要自定义标签页样式 */
+.ant-tabs-tab {
+  font-size: 14px !important;
+}
+
+.ant-tabs-tab-active {
+  font-weight: 500 !important;
+}
+
+/* Form 表单样式覆盖 */
+/* 原因：需要自定义表单标签样式 */
+.ant-form-item-label > label {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+}
+
+/* Dropdown 下拉菜单样式覆盖 */
+/* 原因：需要自定义下拉菜单阴影 */
+.ant-dropdown-menu {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Tooltip 提示框样式覆盖 */
+/* 原因：需要自定义提示框阴影 */
+.ant-tooltip-inner {
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Switch 开关样式覆盖 */
+/* 原因：需要自定义开关颜色 */
+.ant-switch-checked {
+  background: var(--color-primary) !important;
+}
+
+/* Radio 单选框样式覆盖 */
+/* 原因：需要自定义选中颜色 */
+.ant-radio-checked .ant-radio-inner {
+  border-color: var(--color-primary) !important;
+}
+
+.ant-radio-checked .ant-radio-inner::after {
+  background-color: var(--color-primary) !important;
+}
+
+/* Checkbox 复选框样式覆盖 */
+/* 原因：需要自定义选中颜色 */
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Progress 进度条样式覆盖 */
+/* 原因：需要自定义进度条颜色 */
+.ant-progress-bg {
+  background: var(--color-primary) !important;
+}
+
+/* Badge 徽标样式覆盖 */
+/* 原因：需要自定义徽标颜色 */
+.ant-badge-count {
+  background: var(--color-primary) !important;
+}
+
+/* Pagination 分页样式覆盖 */
+/* 原因：需要自定义分页颜色 */
+.ant-pagination-item-active {
+  border-color: var(--color-primary) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--color-primary) !important;
+}
+
+/* Breadcrumb 面包屑样式覆盖 */
+/* 原因：需要自定义面包屑样式 */
+.ant-breadcrumb-link {
+  color: var(--text-secondary) !important;
+}
+
+.ant-breadcrumb-link:hover {
+  color: var(--color-primary) !important;
+}
+
+/* Step 步骤条样式覆盖 */
+/* 原因：需要自定义步骤条颜色 */
+.ant-steps-item-process .ant-steps-item-icon {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Alert 警告提示样式覆盖 */
+/* 原因：需要自定义警告提示样式 */
+.ant-alert-info {
+  background: var(--color-info-light) !important;
+  border-color: var(--color-info) !important;
+}
+
+.ant-alert-success {
+  background: var(--color-success-light) !important;
+  border-color: var(--color-success) !important;
+}
+
+.ant-alert-warning {
+  background: var(--color-warning-light) !important;
+  border-color: var(--color-warning) !important;
+}
+
+.ant-alert-error {
+  background: var(--color-error-light) !important;
+  border-color: var(--color-error) !important;
+}
+
+/* Message 消息提示样式覆盖 */
+/* 原因：需要自定义消息提示样式 */
+.ant-message-notice-content {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Notification 通知样式覆盖 */
+/* 原因：需要自定义通知样式 */
+.ant-notification-notice {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+/* Popover 气泡卡片样式覆盖 */
+/* 原因：需要自定义气泡卡片样式 */
+.ant-popover-inner {
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Tour 旅游提示样式覆盖 */
+/* 原因：需要自定义旅游提示样式 */
+.ant-tour-inner {
+  box-shadow: var(--shadow-xl) !important;
+}
+
+/* App 应用容器样式覆盖 */
+/* 原因：需要自定义应用容器样式 */
+.ant-app {
+  color: var(--text-primary) !important;
+}

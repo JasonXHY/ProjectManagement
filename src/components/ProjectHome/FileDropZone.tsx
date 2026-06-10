@@ -46,7 +46,8 @@ export default function FileDropZone({ projectId, files, onFilesChange }: FileDr
     setClassifying(null)
 
     if (result.success) {
-      message.success(`分类结果：${result.data}`)
+      const category = typeof result.data === 'object' && result.data ? result.data.category : result.data
+      message.success(`分类结果：${category}`)
       onFilesChange()
     } else {
       message.error(result.error || '分类失败')

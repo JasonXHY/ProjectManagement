@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('api', {
     list: (projectId: number) => ipcRenderer.invoke('file:list', projectId),
     listByCategory: (projectId: number, category: string) => ipcRenderer.invoke('file:listByCategory', projectId, category),
     delete: (id: number) => ipcRenderer.invoke('file:delete', id),
+    getSummary: (projectId: number) => ipcRenderer.invoke('file:getSummary', projectId),
+    openFolder: (projectId: number) => ipcRenderer.invoke('file:openFolder', projectId),
   },
   ai: {
     chat: (projectId: number, message: string, contextFileIds: number[]) =>
@@ -21,6 +23,7 @@ contextBridge.exposeInMainWorld('api', {
     classify: (fileId: number) => ipcRenderer.invoke('ai:classify', fileId),
     analyze: (projectId: number) => ipcRenderer.invoke('ai:analyze', projectId),
     getHistory: (projectId: number) => ipcRenderer.invoke('ai:get-history', projectId),
+    clearHistory: (projectId: number) => ipcRenderer.invoke('ai:clear-history', projectId),
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),

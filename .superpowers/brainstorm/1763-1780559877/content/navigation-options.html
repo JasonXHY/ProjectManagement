@@ -1,0 +1,53 @@
+<h2>导航栏设计方案</h2>
+<p class="subtitle">请选择你偏好的导航结构</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>顶部导航 + 面包屑</h3>
+      <p>顶部显示主导航，内容区显示面包屑路径</p>
+      <div class="mockup">
+        <div class="mock-nav">项目管理助手 | 文件管理 | 对话 | 设置</div>
+        <div style="padding: 10px; background: #f5f5f5; margin-top: 10px;">
+          <span style="color: #666;">项目列表 > 项目A > 文件管理</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>顶部标签页导航</h3>
+      <p>类似浏览器标签页，每个页面一个标签</p>
+      <div class="mockup">
+        <div class="mock-nav">
+          <span style="background: #e3f2fd; padding: 5px 10px; border-radius: 4px 4px 0 0;">项目列表</span>
+          <span style="padding: 5px 10px;">文件管理</span>
+          <span style="padding: 5px 10px;">对话</span>
+          <span style="padding: 5px 10px; margin-left: auto;">⚙️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>侧边栏导航</h3>
+      <p>左侧固定导航栏，右侧显示内容</p>
+      <div class="mockup">
+        <div style="display: flex;">
+          <div class="mock-sidebar" style="width: 150px;">
+            <div style="padding: 10px; background: #e3f2fd;">项目列表</div>
+            <div style="padding: 10px;">文件管理</div>
+            <div style="padding: 10px;">对话</div>
+            <div style="padding: 10px; margin-top: auto;">设置</div>
+          </div>
+          <div class="mock-content" style="flex: 1;">主内容区</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

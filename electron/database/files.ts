@@ -1,4 +1,4 @@
-import { getDatabase } from './index'
+import { getDatabase, saveDatabase } from './index'
 
 export interface FileRecord {
   id: number
@@ -18,36 +18,50 @@ export interface FileRecord {
 // Column whitelist to prevent SQL injection via dynamic key names
 const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed'] as const
 
-export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>) {
+export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] {
+  if (!results || !results[0] || !results[0].values) return []
+  const columns = results[0].columns
+  return results[0].values.map((row: any[]) => {
+    const obj: Record<string, any> = {}
+    columns.forEach((col: string, i: number) => {
+      obj[col] = row[i]
+    })
+    return obj as T
+  })
+}
+
+export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>): number {
   const db = getDatabase()
-  const stmt = db.prepare(`
-    INSERT INTO files (project_id, filename, original_path, stored_path, category, stage, file_type, file_size, content_extracted, is_analyzed)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-  const result = stmt.run(
-    projectId, data.filename, data.original_path, data.stored_path,
-    data.category, data.stage, data.file_type, data.file_size,
-    data.content_extracted, data.is_analyzed
+  db.run(
+    `INSERT INTO files (project_id, filename, original_path, stored_path, category, stage, file_type, file_size, content_extracted, is_analyzed)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [projectId, data.filename, data.original_path, data.stored_path,
+     data.category, data.stage, data.file_type, data.file_size,
+     data.content_extracted, data.is_analyzed ? 1 : 0]
   )
-  return result.lastInsertRowid
+  saveDatabase()
+
+  // 获取最后插入的ID
+  const results = db.exec('SELECT last_insert_rowid() as id')
+  return results[0].values[0][0] as number
 }
 
 export function listFiles(projectId: number): FileRecord[] {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM files WHERE project_id = ? ORDER BY created_at DESC')
-    .all(projectId) as FileRecord[]
+  const results = db.exec('SELECT * FROM files WHERE project_id = ? ORDER BY created_at DESC', [projectId])
+  return rowsToObjectArray<FileRecord>(results)
 }
 
 export function getFilesByCategory(projectId: number, category: string): FileRecord[] {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM files WHERE project_id = ? AND category = ?')
-    .all(projectId, category) as FileRecord[]
+  const results = db.exec('SELECT * FROM files WHERE project_id = ? AND category = ?', [projectId, category])
+  return rowsToObjectArray<FileRecord>(results)
 }
 
 export function getUnanalyzedFiles(projectId: number): FileRecord[] {
   const db = getDatabase()
-  return db.prepare('SELECT * FROM files WHERE project_id = ? AND is_analyzed = FALSE')
-    .all(projectId) as FileRecord[]
+  const results = db.exec('SELECT * FROM files WHERE project_id = ? AND is_analyzed = 0', [projectId])
+  return rowsToObjectArray<FileRecord>(results)
 }
 
 export function updateFile(id: number, data: Partial<FileRecord>) {
@@ -59,12 +73,26 @@ export function updateFile(id: number, data: Partial<FileRecord>) {
   if (allowedKeys.length === 0) return
 
   const fields = allowedKeys.map(k => `${k} = ?`).join(', ')
-  const values = allowedKeys.map(k => (data as Record<string, unknown>)[k])
+  const values = allowedKeys.map(k => {
+    const val = (data as Record<string, unknown>)[k]
+    // Convert boolean to number for SQLite
+    if (typeof val === 'boolean') return val ? 1 : 0
+    return val as string | number | null
+  })
 
-  db.prepare(`UPDATE files SET ${fields} WHERE id = ?`).run(...values, id)
+  db.run(`UPDATE files SET ${fields} WHERE id = ?`, [...values, id])
+  saveDatabase()
+}
+
+export function getFileById(id: number): FileRecord | null {
+  const db = getDatabase()
+  const results = db.exec('SELECT * FROM files WHERE id = ?', [id])
+  const rows = rowsToObjectArray<FileRecord>(results)
+  return rows[0] || null
 }
 
 export function deleteFile(id: number) {
   const db = getDatabase()
-  db.prepare('DELETE FROM files WHERE id = ?').run(id)
+  db.run('DELETE FROM files WHERE id = ?', [id])
+  saveDatabase()
 }

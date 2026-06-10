@@ -15,5 +15,9 @@ export const aiService = {
 
   async getHistory(projectId: number) {
     return window.api.ai.getHistory(projectId)
+  },
+
+  async clearHistory(projectId: number) {
+    return window.api.ai.clearHistory(projectId)
   }
 }

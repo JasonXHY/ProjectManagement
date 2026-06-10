@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目列表页 - 视觉原型</title>
+<style>
+/* ========== 设计 Token ========== */
+:root {
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-primary-active: #3730A3;
+  --color-primary-light: #EEF2FF;
+  --color-accent: #F59E0B;
+  --color-accent-light: #FEF3C7;
+  --color-success: #10B981; --color-success-light: #D1FAE5;
+  --color-warning: #F59E0B; --color-warning-light: #FEF3C7;
+  --color-error: #EF4444; --color-error-light: #FEE2E2;
+  --color-info: #3B82F6; --color-info-light: #DBEAFE;
+  --bg-app: #F8F7F4;
+  --bg-surface: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --bg-hover: #F9FAFB;
+  --border-default: #E5E7EB;
+  --border-light: #F3F4F6;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-placeholder: #9CA3AF;
+  --text-disabled: #D1D5DB;
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: var(--bg-app); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+
+/* ========== 全局布局 ========== */
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+.header {
+  height: 56px; background: var(--bg-surface); border-bottom: 1px solid var(--border-default);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo { width: 28px; height: 28px; background: var(--color-primary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 600; }
+.header-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ========== 按钮 ========== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 36px; padding: 0 16px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  border: none; outline: none; white-space: nowrap;
+}
+.btn-primary { background: var(--color-primary); color: white; }
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:active { background: var(--color-primary-active); }
+.btn-secondary { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-default); }
+.btn-secondary:hover { background: var(--bg-hover); border-color: #D1D5DB; }
+.btn-text { background: transparent; color: var(--text-secondary); border: none; }
+.btn-text:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-sm { height: 30px; padding: 0 12px; font-size: 13px; }
+.btn-icon { width: 36px; padding: 0; }
+.btn-icon.btn-sm { width: 30px; }
+
+/* ========== 输入框 ========== */
+.input {
+  height: 36px; padding: 0 12px; border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); font-size: 14px; color: var(--text-primary);
+  background: var(--bg-surface); outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+.input::placeholder { color: var(--text-placeholder); }
+.input-search { width: 240px; padding-left: 36px; }
+.input-wrapper { position: relative; }
+.input-wrapper .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-placeholder); font-size: 14px; }
+
+/* ========== 下拉选择 ========== */
+.select {
+  height: 36px; padding: 0 32px 0 12px; border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); font-size: 14px; color: var(--text-primary);
+  background: var(--bg-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") no-repeat right 12px center;
+  -webkit-appearance: none; appearance: none; cursor: pointer; outline: none;
+  transition: border-color 150ms;
+}
+.select:focus { border-color: var(--color-primary); }
+
+/* ========== 视图切换 ========== */
+.view-toggle {
+  display: inline-flex; border: 1px solid var(--border-default); border-radius: var(--radius-sm); overflow: hidden;
+}
+.view-toggle-item {
+  width: 36px; height: 34px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-placeholder); background: var(--bg-surface);
+  transition: all 150ms;
+  border: none; outline: none;
+}
+.view-toggle-item:not(:last-child) { border-right: 1px solid var(--border-default); }
+.view-toggle-item.active { background: var(--color-primary-light); color: var(--color-primary); }
+.view-toggle-item:hover:not(.active) { background: var(--bg-hover); color: var(--text-secondary); }
+
+/* ========== 工具栏 ========== */
+.toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+}
+.toolbar-left { display: flex; align-items: center; gap: 12px; }
+.toolbar-right { display: flex; align-items: center; gap: 12px; }
+
+/* ========== 项目卡片网格 ========== */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.project-card {
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); padding: 0; overflow: hidden;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.project-card:hover { border-color: #D1D5DB; box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.card-accent { height: 4px; }
+.card-accent-presale { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.card-accent-active { background: linear-gradient(90deg, #4F46E5, #6366F1); }
+.card-accent-closed { background: #D1D5DB; }
+
+.card-body { padding: 16px 20px 20px; }
+.card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.card-name { font-size: 16px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
+
+.tag {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  border-radius: var(--radius-full); font-size: 12px; font-weight: 500;
+  white-space: nowrap;
+}
+.tag-presale { color: #92400E; background: #FEF3C7; }
+.tag-active { color: #3730A3; background: #EEF2FF; }
+.tag-closed { color: #374151; background: #F3F4F6; }
+
+.card-meta { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.card-meta-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.card-meta-icon { width: 14px; text-align: center; flex-shrink: 0; }
+.card-category-tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; background: var(--bg-secondary); border-radius: var(--radius-sm); font-size: 11px; color: var(--text-secondary); }
+
+.card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px; border-top: 1px solid var(--border-light);
+}
+.card-time { font-size: 12px; color: var(--text-placeholder); }
+.card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 150ms; }
+.project-card:hover .card-actions { opacity: 1; }
+
+/* ========== 空状态 ========== */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 24px; text-align: center;
+}
+.empty-icon {
+  width: 80px; height: 80px; margin-bottom: 24px;
+  background: var(--bg-secondary); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-disabled); font-size: 32px;
+}
+.empty-title { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+.empty-desc { font-size: 14px; color: var(--text-placeholder); margin-bottom: 24px; max-width: 360px; }
+
+/* ========== 新建项目弹窗 ========== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--bg-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  width: 480px; max-width: 90vw; overflow: hidden;
+}
+.modal-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border-default);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-secondary); border: none; background: none; transition: all 150ms; }
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; }
+
+.form-group { margin-bottom: 20px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+.form-hint { font-size: 12px; color: var(--text-placeholder); margin-top: 4px; }
+.form-input { width: 100%; }
+.form-select { width: 100%; }
+
+/* ========== 分类方式选择卡片 ========== */
+.category-options { display: flex; flex-direction: column; gap: 8px; }
+.category-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  cursor: pointer; transition: all 150ms;
+}
+.category-option:hover { background: var(--bg-hover); }
+.category-option.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
+.category-radio { width: 18px; height: 18px; border: 2px solid var(--border-default); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 150ms; }
+.category-option.selected .category-radio { border-color: var(--color-primary); }
+.category-option.selected .category-radio::after { content: ''; width: 8px; height: 8px; background: var(--color-primary); border-radius: 50%; }
+.category-option-text { flex: 1; }
+.category-option-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.category-option-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* ========== SVG图标辅助 ========== */
+.icon { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; }
+.icon-sm { width: 14px; height: 14px; }
+.icon-lg { width: 20px; height: 20px; }
+
+/* ========== 动画 ========== */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.project-card { animation: fadeInUp 300ms ease-out both; }
+.project-card:nth-child(1) { animation-delay: 0ms; }
+.project-card:nth-child(2) { animation-delay: 50ms; }
+.project-card:nth-child(3) { animation-delay: 100ms; }
+.project-card:nth-child(4) { animation-delay: 150ms; }
+.project-card:nth-child(5) { animation-delay: 200ms; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ========== Header ========== -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">PM</div>
+      <span class="header-title">项目管理助手</span>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-text btn-icon" title="设置" onclick="alert('进入设置页')">
+        <svg class="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========== Content ========== -->
+  <div class="content">
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="input-wrapper">
+          <svg class="search-icon icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" class="input input-search" placeholder="搜索项目名称...">
+        </div>
+        <select class="select">
+          <option>全部状态</option>
+          <option>售前</option>
+          <option>进行中</option>
+          <option>关闭</option>
+        </select>
+        <select class="select">
+          <option>按更新时间排序</option>
+          <option>按创建时间排序</option>
+          <option>按名称排序</option>
+        </select>
+      </div>
+      <div class="toolbar-right">
+        <div class="view-toggle">
+          <button class="view-toggle-item active" title="卡片视图">
+            <svg class="icon" fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+          </button>
+          <button class="view-toggle-item" title="列表视图">
+            <svg class="icon" fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-primary" onclick="document.getElementById('createModal').classList.remove('hidden')">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          新建项目
+        </button>
+      </div>
+    </div>
+
+    <!-- 项目卡片网格 -->
+    <div class="card-grid">
+      <!-- 卡片 1 -->
+      <div class="project-card">
+        <div class="card-accent card-accent-active"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <div class="card-name">智慧城市数据平台</div>
+            <span class="tag tag-active">进行中</span>
+          </div>
+          <div class="card-meta">
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span>23 个文件</span>
+              <span style="margin: 0 4px; color: var(--border-default)">|</span>
+              <span class="card-category-tag">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                按阶段分类
+              </span>
+            </div>
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>当前阶段: 构建</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-time">2 小时前更新</span>
+            <div class="card-actions">
+              <button class="btn btn-text btn-sm btn-icon" title="编辑">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </button>
+              <button class="btn btn-text btn-sm btn-icon" title="删除" style="color: var(--color-error)">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 2 -->
+      <div class="project-card">
+        <div class="card-accent card-accent-presale"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <div class="card-name">银行核心系统升级</div>
+            <span class="tag tag-presale">售前</span>
+          </div>
+          <div class="card-meta">
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span>8 个文件</span>
+              <span style="margin: 0 4px; color: var(--border-default)">|</span>
+              <span class="card-category-tag">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                按内容分类
+              </span>
+            </div>
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>AI 自动识别分类</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-time">1 天前更新</span>
+            <div class="card-actions">
+              <button class="btn btn-text btn-sm btn-icon" title="编辑"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="btn btn-text btn-sm btn-icon" title="删除" style="color: var(--color-error)"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 3 -->
+      <div class="project-card">
+        <div class="card-accent card-accent-active"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <div class="card-name">ERP 系统实施项目</div>
+            <span class="tag tag-active">进行中</span>
+          </div>
+          <div class="card-meta">
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span>45 个文件</span>
+              <span style="margin: 0 4px; color: var(--border-default)">|</span>
+              <span class="card-category-tag">
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                智能分类
+              </span>
+            </div>
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>当前阶段: 测试</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-time">3 天前更新</span>
+            <div class="card-actions">
+              <button class="btn btn-text btn-sm btn-icon" title="编辑"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="btn btn-text btn-sm btn-icon" title="删除" style="color: var(--color-error)"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 4 -->
+      <div class="project-card">
+        <div class="card-accent card-accent-closed"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <div class="card-name">OA 办公系统</div>
+            <span class="tag tag-closed">关闭</span>
+          </div>
+          <div class="card-meta">
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span>12 个文件</span>
+              <span style="margin: 0 4px; color: var(--border-default)">|</span>
+              <span class="card-category-tag">按阶段分类</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-time">2 周前更新</span>
+            <div class="card-actions">
+              <button class="btn btn-text btn-sm btn-icon" title="编辑"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="btn btn-text btn-sm btn-icon" title="删除" style="color: var(--color-error)"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 5 -->
+      <div class="project-card">
+        <div class="card-accent card-accent-active"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <div class="card-name">供应链管理平台</div>
+            <span class="tag tag-active">进行中</span>
+          </div>
+          <div class="card-meta">
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <span>31 个文件</span>
+              <span style="margin: 0 4px; color: var(--border-default)">|</span>
+              <span class="card-category-tag">按阶段分类</span>
+            </div>
+            <div class="card-meta-row">
+              <svg class="card-meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>当前阶段: 需求</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-time">5 小时前更新</span>
+            <div class="card-actions">
+              <button class="btn btn-text btn-sm btn-icon" title="编辑"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+              <button class="btn btn-text btn-sm btn-icon" title="删除" style="color: var(--color-error)"><svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 空状态 (取消注释可查看效果) -->
+    <!--
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+      </div>
+      <div class="empty-title">还没有项目</div>
+      <div class="empty-desc">创建你的第一个项目，开始用 AI 智能管理你的项目文件和文档</div>
+      <button class="btn btn-primary" style="height: 42px; padding: 0 24px; font-size: 15px;">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        创建第一个项目
+      </button>
+    </div>
+    -->
+  </div>
+</div>
+
+<!-- ========== 新建项目弹窗 ========== -->
+<div class="modal-overlay hidden" id="createModal" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">新建项目</span>
+      <button class="modal-close" onclick="document.getElementById('createModal').classList.add('hidden')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">项目名称</label>
+        <input type="text" class="input form-input" placeholder="输入项目名称">
+      </div>
+      <div class="form-group">
+        <label class="form-label">文件分类方式</label>
+        <div class="category-options">
+          <div class="category-option selected" onclick="selectCategory(this)">
+            <div class="category-radio"></div>
+            <div class="category-option-text">
+              <div class="category-option-title">按阶段分类</div>
+              <div class="category-option-desc">默认 11 个项目阶段，文件自动归类到对应阶段</div>
+            </div>
+          </div>
+          <div class="category-option" onclick="selectCategory(this)">
+            <div class="category-radio"></div>
+            <div class="category-option-text">
+              <div class="category-option-title">按内容分类</div>
+              <div class="category-option-desc">AI 自动识别文件内容，创建合适的分类类别</div>
+            </div>
+          </div>
+          <div class="category-option" onclick="selectCategory(this)">
+            <div class="category-radio"></div>
+            <div class="category-option-text">
+              <div class="category-option-title">智能分类</div>
+              <div class="category-option-desc">AI 动态分析和调整分类，跨文件自动优化</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('createModal').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary">创建</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectCategory(el) {
+  document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+</body>
+</html>

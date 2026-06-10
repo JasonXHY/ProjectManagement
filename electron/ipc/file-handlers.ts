@@ -6,14 +6,13 @@ import { resolveProjectPath } from '../utils/project-path'
 import { getAIService } from '../services/ai-service'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from './ai-handlers'
 import fs from 'fs/promises'
-import fsSync from 'fs'
 import path from 'path'
 
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
     const projectPath = await resolveProjectPath(projectId)
     if (!projectPath) {
-      throw new Error('项目文件夹不存在')
+      return { success: false, error: '项目文件夹不存在' }
     }
 
     // Sanitize filename to prevent path traversal attacks
@@ -56,7 +55,7 @@ export function registerFileHandlers() {
           ? CLASSIFY_PROMPT_STAGES
           : CLASSIFY_PROMPT_CONTENT
 
-        const classifyPrompt = promptTemplate.replace('{content}', contentExtracted.substring(0, 2000))
+        const classifyPrompt = promptTemplate.replace(/\{content\}/g, contentExtracted.substring(0, 2000))
 
         getAIService().chat([
           { role: 'user', content: classifyPrompt }
@@ -75,21 +74,20 @@ export function registerFileHandlers() {
             category = result.content.trim() || '未分类'
           }
 
-          // 更新文件的category字段
-          updateFile(id, { category })
+          // 先移动文件，成功后再更新数据库（事务性保护）
+          try {
+            const targetDir = path.join(projectPath, category)
+            await fs.mkdir(targetDir, { recursive: true })
+            const targetPath = path.join(targetDir, safeName)
+            await fs.rename(filePath, targetPath)
 
-          // 移动文件到对应文件夹
-          const targetDir = path.join(projectPath, category)
-          if (!fsSync.existsSync(targetDir)) {
-            fsSync.mkdirSync(targetDir, { recursive: true })
+            // 文件移动成功后，更新数据库（一次性更新 category 和 stored_path）
+            updateFile(id, { category, stored_path: targetPath })
+
+            console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${category}"`)
+          } catch (err) {
+            console.error('[AI分类] 文件移动或更新失败:', err)
           }
-          const targetPath = path.join(targetDir, safeName)
-          fsSync.renameSync(filePath, targetPath)
-
-          // 更新数据库中的stored_path
-          updateFile(id, { stored_path: targetPath })
-
-          console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${category}"`)
         }).catch(err => {
           console.error('[AI分类] 分类失败:', err)
         })
@@ -132,6 +130,30 @@ export function registerFileHandlers() {
 
     // 删除数据库记录
     deleteFile(id)
+    return { success: true }
+  })
+
+  ipcMain.handle('file:getSummary', async (_, projectId: number) => {
+    const projectPath = await resolveProjectPath(projectId)
+    if (!projectPath) {
+      return { success: false, error: '项目文件夹不存在' }
+    }
+    const summaryPath = path.join(projectPath, '.ai', 'project-summary.md')
+    try {
+      const content = await fs.readFile(summaryPath, 'utf-8')
+      return { success: true, data: content }
+    } catch {
+      return { success: false, error: '摘要文件不存在' }
+    }
+  })
+
+  ipcMain.handle('file:openFolder', async (_, projectId: number) => {
+    const projectPath = await resolveProjectPath(projectId)
+    if (!projectPath) {
+      return { success: false, error: '项目文件夹不存在' }
+    }
+    const { shell } = require('electron')
+    shell.openPath(projectPath)
     return { success: true }
   })
 }
