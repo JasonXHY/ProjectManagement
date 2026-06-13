@@ -35,6 +35,11 @@ export function registerSettingsHandlers() {
       if (!valueValidation.valid) {
         return { success: false, error: valueValidation.error }
       }
+
+      // 后端防线：拒绝写入掩码值，防止覆盖真实API Key
+      if (key.endsWith('_api_key') && value === 'sk-***') {
+        continue;
+      }
       
       settingsDb.setSetting(key, value)
     }

@@ -98,6 +98,14 @@ export default function SettingsPage(_props: SettingsPageProps) {
       return;
     }
 
+    // 剔除未改动的API Key掩码字段，防止覆盖真实Key
+    const SECRET_FIELDS = ['ai_api_key', 'classify_api_key', 'zhipu_api_key', 'mimo_api_key'] as const;
+    for (const f of SECRET_FIELDS) {
+      if (values[f] === 'sk-***' || values[f] === undefined) {
+        delete values[f];
+      }
+    }
+
     setSaving(true);
     try {
       const result = await configService.update({ ...values, custom_stages: JSON.stringify(customStages) });

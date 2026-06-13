@@ -130,9 +130,14 @@ export function registerProjectHandlers() {
       return { success: false, error: dataValidation.error }
     }
 
-    // Cast custom_stages to string since the DB stores it as JSON-serialized string
-    projectDb.updateProject(id, data as unknown as Partial<projectDb.Project>)
-    return { success: true }
+    try {
+      // Cast custom_stages to string since the DB stores it as JSON-serialized string
+      projectDb.updateProject(id, data as unknown as Partial<projectDb.Project>)
+      return { success: true }
+    } catch (error) {
+      console.error('[项目更新] 失败:', error)
+      return handleIpcError(error)
+    }
   })
 
   ipcMain.handle('project:delete', async (_, id: number) => {
@@ -151,15 +156,20 @@ export function registerProjectHandlers() {
       return { success: false, error: existsValidation.error }
     }
 
-    // 先删除数据库记录（确保即使文件系统删除失败，数据库也不会留下孤儿记录）
-    projectDb.deleteProject(id)
+    try {
+      // 先删除数据库记录（确保即使文件系统删除失败，数据库也不会留下孤儿记录）
+      projectDb.deleteProject(id)
 
-    // 再删除文件系统
-    const projectPath = await resolveProjectPath(id)
-    if (projectPath) {
-      await fs.rm(projectPath, { recursive: true, force: true })
+      // 再删除文件系统
+      const projectPath = await resolveProjectPath(id)
+      if (projectPath) {
+        await fs.rm(projectPath, { recursive: true, force: true })
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('[项目删除] 失败:', error)
+      return handleIpcError(error)
     }
-
-    return { success: true }
   })
 }

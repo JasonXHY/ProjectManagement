@@ -8,6 +8,9 @@ import { registerSettingsHandlers } from './ipc/settings-handlers'
 import { registerAIHandlers } from './ipc/ai-handlers'
 import { SignatureDetector } from './services/signature-detector'
 
+// 使用 app.isPackaged 判断环境，比 process.env.NODE_ENV 更可靠
+const isDev = !app.isPackaged
+
 let mainWindow: BrowserWindow | null = null
 
 process.on('uncaughtException', (error) => {
@@ -30,12 +33,16 @@ function createWindow() {
     }
   })
 
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev) {
     mainWindow.loadURL('http://localhost:1234')
   } else {
     const indexPath = path.join(__dirname, '../../dist/index.html')
     console.log('Loading index from:', indexPath)
     mainWindow.loadFile(indexPath)
+  }
+
+  // 仅在开发模式下打开DevTools
+  if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   }
 
@@ -43,20 +50,21 @@ function createWindow() {
 }
 
 function setupSecurityHeaders() {
-  if (process.env.NODE_ENV !== 'production') return
-
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self'",
-    "object-src 'none'",
-    "frame-src 'none'",
-    "connect-src 'self'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ')
+  // 使用 isDev 判断，打包后的应用会启用CSP
+  const csp = isDev
+    ? "default-src 'self' http://localhost:1234 'unsafe-inline'; connect-src 'self' ws://localhost:1234 https:"
+    : [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob:",
+        "font-src 'self'",
+        "object-src 'none'",
+        "frame-src 'none'",
+        "connect-src 'self' https:",  // 允许AI厂商HTTPS连接
+        "base-uri 'self'",
+        "form-action 'self'"
+      ].join('; ')
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

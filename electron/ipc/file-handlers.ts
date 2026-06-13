@@ -12,6 +12,9 @@ import { handleIpcError } from '../utils/errors'
 import fs from 'fs/promises'
 import path from 'path'
 
+// 50MB文件大小限制
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
     const projectIdValidation = validateRequired(projectId, 'projectId')
@@ -44,60 +47,66 @@ export function registerFileHandlers() {
       return { success: false, error: fileTypeValidation.error }
     }
 
-    const projectPath = await resolveProjectPath(projectId)
-    if (!projectPath) {
-      return { success: false, error: '项目文件夹不存在' }
+    // 后端50MB校验
+    if (fileData.content.byteLength > MAX_UPLOAD_BYTES) {
+      return { success: false, error: `文件超过50MB限制（${(fileData.content.byteLength / 1048576).toFixed(1)}MB）` }
     }
 
-    // Sanitize filename to prevent path traversal attacks
-    const safeName = path.basename(fileData.name)
-
-    // 保存文件
-    const filePath = path.join(projectPath, safeName)
-    await fs.writeFile(filePath, Buffer.from(fileData.content))
-
-    // 获取文件信息
-    const stats = await fs.stat(filePath)
-
-    // 提取文件内容
-    let contentExtracted: string | null = null
     try {
-      const extractionSettings: Record<string, string> = {}
-      for (const key of ['extraction_txt', 'extraction_pdf_text', 'extraction_pdf_scanned', 'extraction_word', 'extraction_excel', 'extraction_image']) {
-        const val = getSetting(key)
-        if (val) extractionSettings[key] = val
+      const projectPath = await resolveProjectPath(projectId)
+      if (!projectPath) {
+        return { success: false, error: '项目文件夹不存在' }
       }
-      contentExtracted = await FileExtractor.extract(filePath, extractionSettings)
-    } catch (error) {
-      console.error('文件内容提取失败:', error)
-    }
 
-    // 创建数据库记录
-    const id = createFile(projectId, {
-      project_id: projectId,
-      filename: safeName,
-      original_path: null,
-      stored_path: filePath,
-      category: null,
-      stage: null,
-      file_type: fileData.type,
-      file_size: stats.size,
-      content_extracted: contentExtracted,
-      is_analyzed: false,
-      has_signature: false
-    })
+      // Sanitize filename to prevent path traversal attacks
+      const safeName = path.basename(fileData.name)
 
-    // 异步检测签字（不阻塞上传）
-    const ext = safeName.split('.').pop()?.toLowerCase()
-    if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext || '')) {
-      SignatureDetector.detectSignature(filePath).then(hasSignature => {
-        if (hasSignature) {
-          updateFile(id, { has_signature: true })
-          console.log(`[签字检测] 文件 "${safeName}" 检测到签字`)
+      // 保存文件
+      const filePath = path.join(projectPath, safeName)
+      await fs.writeFile(filePath, Buffer.from(fileData.content))
+
+      // 获取文件信息
+      const stats = await fs.stat(filePath)
+
+      // 提取文件内容
+      let contentExtracted: string | null = null
+      try {
+        const extractionSettings: Record<string, string> = {}
+        for (const key of ['extraction_txt', 'extraction_pdf_text', 'extraction_pdf_scanned', 'extraction_word', 'extraction_excel', 'extraction_image']) {
+          const val = getSetting(key)
+          if (val) extractionSettings[key] = val
         }
-      }).catch(err => {
-        console.error('[签字检测] 检测失败:', err)
+        contentExtracted = await FileExtractor.extract(filePath, extractionSettings)
+      } catch (error) {
+        console.error('文件内容提取失败:', error)
+      }
+
+      // 创建数据库记录
+      const id = createFile(projectId, {
+        project_id: projectId,
+        filename: safeName,
+        original_path: null,
+        stored_path: filePath,
+        category: null,
+        stage: null,
+        file_type: fileData.type,
+        file_size: stats.size,
+        content_extracted: contentExtracted,
+        is_analyzed: false,
+        has_signature: false
       })
+
+      // 异步检测签字（不阻塞上传）
+      const ext = safeName.split('.').pop()?.toLowerCase()
+      if (['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(ext || '')) {
+        SignatureDetector.detectSignature(filePath).then(hasSignature => {
+          if (hasSignature) {
+            updateFile(id, { has_signature: true })
+            console.log(`[签字检测] 文件 "${safeName}" 检测到签字`)
+          }
+        }).catch(err => {
+          console.error('[签字检测] 检测失败:', err)
+        })
     }
 
     // --- 自动 AI 分类（异步，不阻塞上传） ---
@@ -148,6 +157,10 @@ export function registerFileHandlers() {
     }
 
     return { success: true, data: id }
+    } catch (error) {
+      console.error('[文件上传] 失败:', error)
+      return handleIpcError(error)
+    }
   })
 
   ipcMain.handle('file:list', async (_, projectId: number) => {
@@ -303,8 +316,8 @@ export function registerFileHandlers() {
       return { success: true }
     } catch (err) {
       console.error('[文件分类] 移动失败:', err)
-      updateFile(id, { category })
-      return { success: true }
+      // 文件移动失败，不更新分类信息，返回错误
+      return { success: false, error: '文件移动失败，分类未应用', code: 'MOVE_FAILED' }
     }
   })
 

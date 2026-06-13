@@ -128,75 +128,76 @@ export function registerAIHandlers() {
       }
     }
 
-    const file = fileDb.getFileById(fileId)
-
-    if (!file) {
-      return { success: false, error: '文件不存在' }
-    }
-
-    // 读取文件内容
-    let content = file.content_extracted
-    if (!content) {
-      content = await fs.readFile(file.stored_path, 'utf-8').catch(() => '')
-    }
-
-    // 根据分类方式选择 prompt（优先使用用户自定义的）
-    const settings = (await import('../database/settings')).getAllSettings()
-    let promptTemplate: string
-    if (categoryType === 'content') {
-      promptTemplate = settings.classify_prompt_content || CLASSIFY_PROMPT_CONTENT
-    } else {
-      promptTemplate = settings.classify_prompt_stages || CLASSIFY_PROMPT_STAGES
-    }
-    const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
-
-    // 调用AI分类
-    const messages = [
-      { role: 'user' as const, content: classifyPrompt }
-    ]
-
-    const aiService = getAIService()
-    const response = await aiService.chat(messages)
-
-    // 解析AI返回的JSON
-    let category: string
-    let fileStage: string | null = null
-    let summary: string | null = null
-    let keyInfo: Record<string, string> | null = null
     try {
-      const jsonMatch = response.content.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0])
-        category = parsed.category || '未分类'
-        fileStage = parsed.stage || null
-        summary = parsed.summary || null
-        keyInfo = parsed.key_info || null
+      const file = fileDb.getFileById(fileId)
+
+      if (!file) {
+        return { success: false, error: '文件不存在' }
+      }
+
+      // 读取文件内容
+      let content = file.content_extracted
+      if (!content) {
+        content = await fs.readFile(file.stored_path, 'utf-8').catch(() => '')
+      }
+
+      // 根据分类方式选择 prompt（优先使用用户自定义的）
+      const settings = (await import('../database/settings')).getAllSettings()
+      let promptTemplate: string
+      if (categoryType === 'content') {
+        promptTemplate = settings.classify_prompt_content || CLASSIFY_PROMPT_CONTENT
       } else {
+        promptTemplate = settings.classify_prompt_stages || CLASSIFY_PROMPT_STAGES
+      }
+      const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
+
+      // 调用AI分类
+      const messages = [
+        { role: 'user' as const, content: classifyPrompt }
+      ]
+
+      const aiService = getAIService()
+      const response = await aiService.chat(messages)
+
+      // 解析AI返回的JSON
+      let category: string
+      let fileStage: string | null = null
+      let summary: string | null = null
+      let keyInfo: Record<string, string> | null = null
+      try {
+        const jsonMatch = response.content.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0])
+          category = parsed.category || '未分类'
+          fileStage = parsed.stage || null
+          summary = parsed.summary || null
+          keyInfo = parsed.key_info || null
+        } else {
+          category = response.content.trim() || '未分类'
+        }
+      } catch {
         category = response.content.trim() || '未分类'
       }
-    } catch {
-      category = response.content.trim() || '未分类'
-    }
 
-    // 合并关键信息到项目 metadata
-    if (keyInfo) {
-      try {
-        const project = projectDb.getProject(file.project_id)
-        if (project) {
-          const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-          const mergedMetadata: Record<string, string> = { ...existingMetadata }
-          for (const [key, value] of Object.entries(keyInfo)) {
-            if (typeof value === 'string' && value.trim()) {
-              mergedMetadata[key] = value.trim()
+      // 合并关键信息到项目 metadata
+      if (keyInfo) {
+        try {
+          const project = projectDb.getProject(file.project_id)
+          if (project) {
+            const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+            const mergedMetadata: Record<string, string> = { ...existingMetadata }
+            for (const [key, value] of Object.entries(keyInfo)) {
+              if (typeof value === 'string' && value.trim()) {
+                mergedMetadata[key] = value.trim()
+              }
             }
-          }
-          projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
+            projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
 
-          // 同步写入 MD 文件
-          const projectPath = await resolveProjectPath(file.project_id)
-          if (projectPath) {
-            const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-            const infoMd = `# 项目关键信息
+            // 同步写入 MD 文件
+            const projectPath = await resolveProjectPath(file.project_id)
+            if (projectPath) {
+              const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+              const infoMd = `# 项目关键信息
 
 | 字段 | 值 |
 |------|-----|
@@ -207,50 +208,54 @@ export function registerAIHandlers() {
 | 客户地址 | ${mergedMetadata.customer_address || '-'} |
 | 项目名称 | ${mergedMetadata.project_name || '-'} |
 `
-            await fs.mkdir(path.dirname(infoPath), { recursive: true })
-            await fs.writeFile(infoPath, infoMd, 'utf-8')
+              await fs.mkdir(path.dirname(infoPath), { recursive: true })
+              await fs.writeFile(infoPath, infoMd, 'utf-8')
+            }
           }
-        }
-      } catch (err) {
-        console.error('[AI] 关键信息保存失败:', err)
-      }
-    }
-
-    // 移动文件到对应分类文件夹（与file:upload保持一致）
-    const project = projectDb.getProject(file.project_id)
-    if (project) {
-      const projectPath = await resolveProjectPath(file.project_id)
-      if (projectPath) {
-        try {
-          const targetDir = path.join(projectPath, category)
-          const resolvedTarget = path.resolve(targetDir)
-
-          // 路径安全校验：确保目标目录在项目目录内
-          if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
-            console.error('[AI分类] 路径安全校验失败，category可能包含路径穿越:', category)
-            fileDb.updateFile(fileId, { category: '未分类', content_extracted: content })
-            return { success: true, data: { category: '未分类', stage: null, summary } }
-          }
-
-          await fs.mkdir(targetDir, { recursive: true })
-          const targetPath = path.join(targetDir, path.basename(file.stored_path))
-          await fs.rename(file.stored_path, targetPath)
-
-          // 文件移动成功后，更新数据库（一次性更新 category、stored_path 和 content_extracted）
-          fileDb.updateFile(fileId, { category, stored_path: targetPath, content_extracted: content })
         } catch (err) {
-          // 文件移动失败，仍然更新分类信息
-          console.error('[AI分类] 文件移动失败:', err)
+          console.error('[AI] 关键信息保存失败:', err)
+        }
+      }
+
+      // 移动文件到对应分类文件夹（与file:upload保持一致）
+      const project = projectDb.getProject(file.project_id)
+      if (project) {
+        const projectPath = await resolveProjectPath(file.project_id)
+        if (projectPath) {
+          try {
+            const targetDir = path.join(projectPath, category)
+            const resolvedTarget = path.resolve(targetDir)
+
+            // 路径安全校验：确保目标目录在项目目录内
+            if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
+              console.error('[AI分类] 路径安全校验失败，category可能包含路径穿越:', category)
+              fileDb.updateFile(fileId, { category: '未分类', content_extracted: content })
+              return { success: true, data: { category: '未分类', stage: null, summary } }
+            }
+
+            await fs.mkdir(targetDir, { recursive: true })
+            const targetPath = path.join(targetDir, path.basename(file.stored_path))
+            await fs.rename(file.stored_path, targetPath)
+
+            // 文件移动成功后，更新数据库（一次性更新 category、stored_path 和 content_extracted）
+            fileDb.updateFile(fileId, { category, stored_path: targetPath, content_extracted: content })
+          } catch (err) {
+            // 文件移动失败，不更新分类信息，返回错误
+            console.error('[AI分类] 文件移动失败:', err)
+            return { success: false, error: '文件移动失败，分类未应用', code: 'MOVE_FAILED' }
+          }
+        } else {
           fileDb.updateFile(fileId, { category, content_extracted: content })
         }
       } else {
         fileDb.updateFile(fileId, { category, content_extracted: content })
       }
-    } else {
-      fileDb.updateFile(fileId, { category, content_extracted: content })
-    }
 
-    return { success: true, data: { category, stage: fileStage, summary } }
+      return { success: true, data: { category, stage: fileStage, summary } }
+    } catch (error) {
+      console.error('[AI] 分类失败:', error)
+      return handleIpcError(error)
+    }
   })
 
   ipcMain.handle('ai:analyze', async (_, projectId: number) => {
@@ -269,73 +274,74 @@ export function registerAIHandlers() {
       return { success: false, error: projectExistsValidation.error }
     }
 
-    const project = projectDb.getProject(projectId)
-    if (!project) {
-      return { success: false, error: '项目不存在' }
-    }
-
-    // 获取未分析的文件
-    const unanalyzedFiles = fileDb.getUnanalyzedFiles(projectId)
-
-    // 读取已有的MD摘要
-    const projectPath = await resolveProjectPath(projectId)
-    if (!projectPath) {
-      return { success: false, error: '项目文件夹不存在' }
-    }
-    const summaryPath = path.join(projectPath, '.ai', 'project-summary.md')
-    let existingSummary = ''
     try {
-      existingSummary = await fs.readFile(summaryPath, 'utf-8')
-    } catch {
-      // 文件不存在，忽略
-    }
+      const project = projectDb.getProject(projectId)
+      if (!project) {
+        return { success: false, error: '项目不存在' }
+      }
 
-    // 构建文件内容
-    const fileContents = unanalyzedFiles.map(f => `[${f.filename}]\n${f.content_extracted || '（无法提取内容）'}`).join('\n\n')
+      // 获取未分析的文件
+      const unanalyzedFiles = fileDb.getUnanalyzedFiles(projectId)
 
-    // 调用AI分析（优先使用用户自定义的）
-    const analyzeSettings = (await import('../database/settings')).getAllSettings()
-    const analyzeSystemPrompt = analyzeSettings.analyze_prompt || ANALYZE_SYSTEM_PROMPT
-    const analyzePrompt = analyzeSystemPrompt.replace('{existingSummary}', existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : '')
-    const messages = [
-      { role: 'system' as const, content: analyzePrompt },
-      { role: 'user' as const, content: `项目名称：${project.name}\n当前阶段：${project.current_stage}\n\n需要分析的新文件：\n${fileContents}` }
-    ]
+      // 读取已有的MD摘要
+      const projectPath = await resolveProjectPath(projectId)
+      if (!projectPath) {
+        return { success: false, error: '项目文件夹不存在' }
+      }
+      const summaryPath = path.join(projectPath, '.ai', 'project-summary.md')
+      let existingSummary = ''
+      try {
+        existingSummary = await fs.readFile(summaryPath, 'utf-8')
+      } catch {
+        // 文件不存在，忽略
+      }
 
-    const aiService = getAIService()
-    const response = await aiService.chat(messages)
+      // 构建文件内容
+      const fileContents = unanalyzedFiles.map(f => `[${f.filename}]\n${f.content_extracted || '（无法提取内容）'}`).join('\n\n')
 
-    // 保存MD文件
-    await fs.mkdir(path.dirname(summaryPath), { recursive: true })
-    await fs.writeFile(summaryPath, response.content, 'utf-8')
-
-    // 提取关键信息
-    try {
-      const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
-      const extractMessages = [
-        { role: 'user' as const, content: extractPrompt }
+      // 调用AI分析（优先使用用户自定义的）
+      const analyzeSettings = (await import('../database/settings')).getAllSettings()
+      const analyzeSystemPrompt = analyzeSettings.analyze_prompt || ANALYZE_SYSTEM_PROMPT
+      const analyzePrompt = analyzeSystemPrompt.replace('{existingSummary}', existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : '')
+      const messages = [
+        { role: 'system' as const, content: analyzePrompt },
+        { role: 'user' as const, content: `项目名称：${project.name}\n当前阶段：${project.current_stage}\n\n需要分析的新文件：\n${fileContents}` }
       ]
-      const extractResponse = await aiService.chat(extractMessages)
 
-      const jsonMatch = extractResponse.content.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        const newInfo = JSON.parse(jsonMatch[0])
+      const aiService = getAIService()
+      const response = await aiService.chat(messages)
 
-        // 合并：新信息覆盖旧信息，空字符串不覆盖
-        const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-        const mergedMetadata: Record<string, string> = { ...existingMetadata }
-        for (const [key, value] of Object.entries(newInfo)) {
-          if (typeof value === 'string' && value.trim()) {
-            mergedMetadata[key] = value.trim()
+      // 保存MD文件
+      await fs.mkdir(path.dirname(summaryPath), { recursive: true })
+      await fs.writeFile(summaryPath, response.content, 'utf-8')
+
+      // 提取关键信息
+      try {
+        const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+        const extractMessages = [
+          { role: 'user' as const, content: extractPrompt }
+        ]
+        const extractResponse = await aiService.chat(extractMessages)
+
+        const jsonMatch = extractResponse.content.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const newInfo = JSON.parse(jsonMatch[0])
+
+          // 合并：新信息覆盖旧信息，空字符串不覆盖
+          const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+          const mergedMetadata: Record<string, string> = { ...existingMetadata }
+          for (const [key, value] of Object.entries(newInfo)) {
+            if (typeof value === 'string' && value.trim()) {
+              mergedMetadata[key] = value.trim()
+            }
           }
-        }
 
-        // 保存到数据库
-        projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
+          // 保存到数据库
+          projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
 
-        // 保存MD文件
-        const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-        const infoMd = `# 项目关键信息
+          // 保存MD文件
+          const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+          const infoMd = `# 项目关键信息
 
 | 字段 | 值 |
 |------|-----|
@@ -346,52 +352,56 @@ export function registerAIHandlers() {
 | 客户地址 | ${mergedMetadata.customer_address || '-'} |
 | 项目名称 | ${mergedMetadata.project_name || '-'} |
 `
-        await fs.writeFile(infoPath, infoMd, 'utf-8')
-      }
-    } catch (err) {
-      console.error('[AI] 关键信息提取失败:', err)
-    }
-
-    // 提取里程碑
-    try {
-      const extractMilestonesPrompt = EXTRACT_MILESTONES_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
-      const extractMilestonesMessages = [
-        { role: 'user' as const, content: extractMilestonesPrompt }
-      ]
-      const extractMilestonesResponse = await aiService.chat(extractMilestonesMessages)
-
-      const jsonMatch = extractMilestonesResponse.content.match(/\[[\s\S]*\]/)
-      if (jsonMatch) {
-        const newMilestones = JSON.parse(jsonMatch[0])
-
-        // 合并已有里程碑
-        const existingMilestones = project.milestones ? JSON.parse(project.milestones) : []
-        const mergedMilestones = [...existingMilestones]
-
-        for (const milestone of newMilestones) {
-          const exists = mergedMilestones.some(
-            (m: { date: string; title: string }) => m.date === milestone.date && m.title === milestone.title
-          )
-          if (!exists && milestone.date && milestone.title) {
-            mergedMilestones.push(milestone)
-          }
+          await fs.writeFile(infoPath, infoMd, 'utf-8')
         }
-
-        // 按日期排序
-        mergedMilestones.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
-        projectDb.updateProject(projectId, { milestones: JSON.stringify(mergedMilestones) })
+      } catch (err) {
+        console.error('[AI] 关键信息提取失败:', err)
       }
-    } catch (err) {
-      console.error('[AI] 里程碑提取失败:', err)
-    }
 
-    // 更新文件的分析状态
-    for (const file of unanalyzedFiles) {
-      fileDb.updateFile(file.id, { is_analyzed: true })
-    }
+      // 提取里程碑
+      try {
+        const extractMilestonesPrompt = EXTRACT_MILESTONES_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+        const extractMilestonesMessages = [
+          { role: 'user' as const, content: extractMilestonesPrompt }
+        ]
+        const extractMilestonesResponse = await aiService.chat(extractMilestonesMessages)
 
-    return { success: true, data: response.content }
+        const jsonMatch = extractMilestonesResponse.content.match(/\[[\s\S]*\]/)
+        if (jsonMatch) {
+          const newMilestones = JSON.parse(jsonMatch[0])
+
+          // 合并已有里程碑
+          const existingMilestones = project.milestones ? JSON.parse(project.milestones) : []
+          const mergedMilestones = [...existingMilestones]
+
+          for (const milestone of newMilestones) {
+            const exists = mergedMilestones.some(
+              (m: { date: string; title: string }) => m.date === milestone.date && m.title === milestone.title
+            )
+            if (!exists && milestone.date && milestone.title) {
+              mergedMilestones.push(milestone)
+            }
+          }
+
+          // 按日期排序
+          mergedMilestones.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+          projectDb.updateProject(projectId, { milestones: JSON.stringify(mergedMilestones) })
+        }
+      } catch (err) {
+        console.error('[AI] 里程碑提取失败:', err)
+      }
+
+      // 更新文件的分析状态
+      for (const file of unanalyzedFiles) {
+        fileDb.updateFile(file.id, { is_analyzed: true })
+      }
+
+      return { success: true, data: response.content }
+    } catch (error) {
+      console.error('[AI] 分析失败:', error)
+      return handleIpcError(error)
+    }
   })
 
   ipcMain.handle('ai:get-history', async (_, projectId: number, sessionId?: string) => {
