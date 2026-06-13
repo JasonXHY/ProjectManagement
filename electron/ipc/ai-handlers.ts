@@ -5,50 +5,61 @@ import * as projectDb from '../database/projects'
 import * as conversationDb from '../database/conversations'
 import { getDatabase, saveDatabase } from '../database'
 import { resolveProjectPath } from '../utils/project-path'
+import { validateRequired, validateType, validateProjectExists, validateFileExists, validateNumberArray } from '../utils/validators'
+import { handleIpcError } from '../utils/errors'
+import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT, EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
+import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
+import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
 import fs from 'fs/promises'
 import path from 'path'
 
-// --- AI 分类 Prompt 模板 ---
-
-export const CLASSIFY_PROMPT_STAGES = `你是一个专业的文档分类专家。请根据以下文档内容，判断它属于哪个阶段：
-
-阶段：
-- 首页：项目总览、导航页面
-- 售前：销售资料、客户沟通、报价单
-- 启动：项目启动会、章程、团队组建
-- 需求：需求文档、用户故事、用例
-- 方案：技术方案、架构设计、选型
-- 构建：开发文档、代码规范、接口定义
-- 测试：测试用例、测试报告、缺陷
-- 上线：部署文档、发布说明、运维
-- 验收：验收标准、验收报告、签字
-- 转客户成功：交接文档、培训资料、FAQ
-- 关闭：项目总结、复盘、归档
-
-文档内容：
-{content}
-
-请严格返回以下JSON格式，不要包含任何其他文字：
-{
-  "category": "阶段名称",
-  "confidence": 0.95,
-  "summary": "文档内容摘要（50字以内）"
-}`
-
-export const CLASSIFY_PROMPT_CONTENT = `你是一个专业的文档分类专家。请根据以下文档内容，判断它属于哪个类别（如：文档、代码、图片、表格、方案、报告、规范、工具等）：
-
-文档内容：
-{content}
-
-请严格返回以下JSON格式，不要包含任何其他文字：
-{
-  "category": "类别名称",
-  "confidence": 0.95,
-  "summary": "文档内容摘要（50字以内）"
-}`
-
 export function registerAIHandlers() {
-  ipcMain.handle('ai:chat', async (_, projectId: number, message: string, contextFileIds: number[]) => {
+  // 进度回传通道 - 用于批量分类时发送进度
+  ipcMain.on('ai:classifyProgress', (event, data: { current: number; total: number }) => {
+    event.sender.send('ai:classifyProgress', data)
+  })
+
+  ipcMain.handle('ai:chat', async (_, projectId: number, message: string, contextFileIds: number[], sessionId: string) => {
+    const projectIdValidation = validateRequired(projectId, 'projectId')
+    if (!projectIdValidation.valid) {
+      return { success: false, error: projectIdValidation.error }
+    }
+    
+    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
+    if (!projectIdTypeValidation.valid) {
+      return { success: false, error: projectIdTypeValidation.error }
+    }
+    
+    const projectExistsValidation = validateProjectExists(projectId)
+    if (!projectExistsValidation.valid) {
+      return { success: false, error: projectExistsValidation.error }
+    }
+    
+    const messageValidation = validateRequired(message, 'message')
+    if (!messageValidation.valid) {
+      return { success: false, error: messageValidation.error }
+    }
+    
+    const messageTypeValidation = validateType(message, 'string', 'message')
+    if (!messageTypeValidation.valid) {
+      return { success: false, error: messageTypeValidation.error }
+    }
+    
+    const contextFileIdsValidation = validateNumberArray(contextFileIds, 'contextFileIds')
+    if (!contextFileIdsValidation.valid) {
+      return { success: false, error: contextFileIdsValidation.error }
+    }
+    
+    const sessionIdValidation = validateRequired(sessionId, 'sessionId')
+    if (!sessionIdValidation.valid) {
+      return { success: false, error: sessionIdValidation.error }
+    }
+    
+    const sessionIdTypeValidation = validateType(sessionId, 'string', 'sessionId')
+    if (!sessionIdTypeValidation.valid) {
+      return { success: false, error: sessionIdTypeValidation.error }
+    }
+
     try {
       // 获取上下文文件内容
       const contextContents: string[] = []
@@ -76,7 +87,7 @@ export function registerAIHandlers() {
 
       // 构建消息
       const messages = [
-        { role: 'system' as const, content: '你是一个专业的项目管理助手。请根据提供的项目文件和上下文，帮助用户管理项目。' },
+        { role: 'system' as const, content: CHAT_SYSTEM_PROMPT },
         { role: 'user' as const, content: `项目上下文：\n${contextContents.join('\n\n')}\n\n用户问题：${message}` }
       ]
 
@@ -85,17 +96,38 @@ export function registerAIHandlers() {
 
       // 保存对话记录到数据库
       const tokenCount = response.usage?.total_tokens || 0
-      conversationDb.saveChatMessage(projectId, 'user', message, 0)
-      conversationDb.saveChatMessage(projectId, 'assistant', response.content, tokenCount)
+      conversationDb.saveChatMessage(projectId, sessionId, 'user', message, 0)
+      conversationDb.saveChatMessage(projectId, sessionId, 'assistant', response.content, tokenCount)
 
       return { success: true, data: response.content }
     } catch (error) {
       console.error('[AI] 对话失败:', error)
-      return { success: false, error: String(error) }
+      return handleIpcError(error)
     }
   })
 
   ipcMain.handle('ai:classify', async (_, fileId: number, categoryType?: 'stage' | 'content') => {
+    const fileIdValidation = validateRequired(fileId, 'fileId')
+    if (!fileIdValidation.valid) {
+      return { success: false, error: fileIdValidation.error }
+    }
+    
+    const fileIdTypeValidation = validateType(fileId, 'number', 'fileId')
+    if (!fileIdTypeValidation.valid) {
+      return { success: false, error: fileIdTypeValidation.error }
+    }
+    
+    const existsValidation = validateFileExists(fileId)
+    if (!existsValidation.valid) {
+      return { success: false, error: existsValidation.error }
+    }
+    
+    if (categoryType) {
+      if (categoryType !== 'stage' && categoryType !== 'content') {
+        return { success: false, error: 'categoryType 必须是 "stage" 或 "content"' }
+      }
+    }
+
     const file = fileDb.getFileById(fileId)
 
     if (!file) {
@@ -108,8 +140,14 @@ export function registerAIHandlers() {
       content = await fs.readFile(file.stored_path, 'utf-8').catch(() => '')
     }
 
-    // 根据分类方式选择 prompt
-    const promptTemplate = categoryType === 'content' ? CLASSIFY_PROMPT_CONTENT : CLASSIFY_PROMPT_STAGES
+    // 根据分类方式选择 prompt（优先使用用户自定义的）
+    const settings = (await import('../database/settings')).getAllSettings()
+    let promptTemplate: string
+    if (categoryType === 'content') {
+      promptTemplate = settings.classify_prompt_content || CLASSIFY_PROMPT_CONTENT
+    } else {
+      promptTemplate = settings.classify_prompt_stages || CLASSIFY_PROMPT_STAGES
+    }
     const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
 
     // 调用AI分类
@@ -122,13 +160,17 @@ export function registerAIHandlers() {
 
     // 解析AI返回的JSON
     let category: string
+    let fileStage: string | null = null
     let summary: string | null = null
+    let keyInfo: Record<string, string> | null = null
     try {
       const jsonMatch = response.content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0])
         category = parsed.category || '未分类'
+        fileStage = parsed.stage || null
         summary = parsed.summary || null
+        keyInfo = parsed.key_info || null
       } else {
         category = response.content.trim() || '未分类'
       }
@@ -136,13 +178,97 @@ export function registerAIHandlers() {
       category = response.content.trim() || '未分类'
     }
 
-    // 更新文件分类和内容摘要
-    fileDb.updateFile(fileId, { category, content_extracted: content })
+    // 合并关键信息到项目 metadata
+    if (keyInfo) {
+      try {
+        const project = projectDb.getProject(file.project_id)
+        if (project) {
+          const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+          const mergedMetadata: Record<string, string> = { ...existingMetadata }
+          for (const [key, value] of Object.entries(keyInfo)) {
+            if (typeof value === 'string' && value.trim()) {
+              mergedMetadata[key] = value.trim()
+            }
+          }
+          projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
 
-    return { success: true, data: { category, summary } }
+          // 同步写入 MD 文件
+          const projectPath = await resolveProjectPath(file.project_id)
+          if (projectPath) {
+            const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+            const infoMd = `# 项目关键信息
+
+| 字段 | 值 |
+|------|-----|
+| 项目编号 | ${mergedMetadata.project_code || '-'} |
+| 合同号 | ${mergedMetadata.contract_no || '-'} |
+| 客户联系人 | ${mergedMetadata.contact_person || '-'} |
+| 联系电话 | ${mergedMetadata.contact_phone || '-'} |
+| 客户地址 | ${mergedMetadata.customer_address || '-'} |
+| 项目名称 | ${mergedMetadata.project_name || '-'} |
+`
+            await fs.mkdir(path.dirname(infoPath), { recursive: true })
+            await fs.writeFile(infoPath, infoMd, 'utf-8')
+          }
+        }
+      } catch (err) {
+        console.error('[AI] 关键信息保存失败:', err)
+      }
+    }
+
+    // 移动文件到对应分类文件夹（与file:upload保持一致）
+    const project = projectDb.getProject(file.project_id)
+    if (project) {
+      const projectPath = await resolveProjectPath(file.project_id)
+      if (projectPath) {
+        try {
+          const targetDir = path.join(projectPath, category)
+          const resolvedTarget = path.resolve(targetDir)
+
+          // 路径安全校验：确保目标目录在项目目录内
+          if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
+            console.error('[AI分类] 路径安全校验失败，category可能包含路径穿越:', category)
+            fileDb.updateFile(fileId, { category: '未分类', content_extracted: content })
+            return { success: true, data: { category: '未分类', stage: null, summary } }
+          }
+
+          await fs.mkdir(targetDir, { recursive: true })
+          const targetPath = path.join(targetDir, path.basename(file.stored_path))
+          await fs.rename(file.stored_path, targetPath)
+
+          // 文件移动成功后，更新数据库（一次性更新 category、stored_path 和 content_extracted）
+          fileDb.updateFile(fileId, { category, stored_path: targetPath, content_extracted: content })
+        } catch (err) {
+          // 文件移动失败，仍然更新分类信息
+          console.error('[AI分类] 文件移动失败:', err)
+          fileDb.updateFile(fileId, { category, content_extracted: content })
+        }
+      } else {
+        fileDb.updateFile(fileId, { category, content_extracted: content })
+      }
+    } else {
+      fileDb.updateFile(fileId, { category, content_extracted: content })
+    }
+
+    return { success: true, data: { category, stage: fileStage, summary } }
   })
 
   ipcMain.handle('ai:analyze', async (_, projectId: number) => {
+    const projectIdValidation = validateRequired(projectId, 'projectId')
+    if (!projectIdValidation.valid) {
+      return { success: false, error: projectIdValidation.error }
+    }
+    
+    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
+    if (!projectIdTypeValidation.valid) {
+      return { success: false, error: projectIdTypeValidation.error }
+    }
+    
+    const projectExistsValidation = validateProjectExists(projectId)
+    if (!projectExistsValidation.valid) {
+      return { success: false, error: projectExistsValidation.error }
+    }
+
     const project = projectDb.getProject(projectId)
     if (!project) {
       return { success: false, error: '项目不存在' }
@@ -160,23 +286,19 @@ export function registerAIHandlers() {
     let existingSummary = ''
     try {
       existingSummary = await fs.readFile(summaryPath, 'utf-8')
-    } catch {}
+    } catch {
+      // 文件不存在，忽略
+    }
 
     // 构建文件内容
     const fileContents = unanalyzedFiles.map(f => `[${f.filename}]\n${f.content_extracted || '（无法提取内容）'}`).join('\n\n')
 
-    // 调用AI分析
+    // 调用AI分析（优先使用用户自定义的）
+    const analyzeSettings = (await import('../database/settings')).getAllSettings()
+    const analyzeSystemPrompt = analyzeSettings.analyze_prompt || ANALYZE_SYSTEM_PROMPT
+    const analyzePrompt = analyzeSystemPrompt.replace('{existingSummary}', existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : '')
     const messages = [
-      { role: 'system' as const, content: `你是一个项目分析助手。请根据提供的文件内容，生成或更新项目摘要。
-
-${existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : ''}
-
-请生成包含以下内容的Markdown格式摘要：
-1. 项目概述（名称、创建时间、当前阶段、文件数量）
-2. 文件清单（表格形式）
-3. 当前进展
-4. 关键问题
-5. 建议和风险` },
+      { role: 'system' as const, content: analyzePrompt },
       { role: 'user' as const, content: `项目名称：${project.name}\n当前阶段：${project.current_stage}\n\n需要分析的新文件：\n${fileContents}` }
     ]
 
@@ -184,7 +306,85 @@ ${existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : ''}
     const response = await aiService.chat(messages)
 
     // 保存MD文件
+    await fs.mkdir(path.dirname(summaryPath), { recursive: true })
     await fs.writeFile(summaryPath, response.content, 'utf-8')
+
+    // 提取关键信息
+    try {
+      const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+      const extractMessages = [
+        { role: 'user' as const, content: extractPrompt }
+      ]
+      const extractResponse = await aiService.chat(extractMessages)
+
+      const jsonMatch = extractResponse.content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const newInfo = JSON.parse(jsonMatch[0])
+
+        // 合并：新信息覆盖旧信息，空字符串不覆盖
+        const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+        const mergedMetadata: Record<string, string> = { ...existingMetadata }
+        for (const [key, value] of Object.entries(newInfo)) {
+          if (typeof value === 'string' && value.trim()) {
+            mergedMetadata[key] = value.trim()
+          }
+        }
+
+        // 保存到数据库
+        projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
+
+        // 保存MD文件
+        const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+        const infoMd = `# 项目关键信息
+
+| 字段 | 值 |
+|------|-----|
+| 项目编号 | ${mergedMetadata.project_code || '-'} |
+| 合同号 | ${mergedMetadata.contract_no || '-'} |
+| 客户联系人 | ${mergedMetadata.contact_person || '-'} |
+| 联系电话 | ${mergedMetadata.contact_phone || '-'} |
+| 客户地址 | ${mergedMetadata.customer_address || '-'} |
+| 项目名称 | ${mergedMetadata.project_name || '-'} |
+`
+        await fs.writeFile(infoPath, infoMd, 'utf-8')
+      }
+    } catch (err) {
+      console.error('[AI] 关键信息提取失败:', err)
+    }
+
+    // 提取里程碑
+    try {
+      const extractMilestonesPrompt = EXTRACT_MILESTONES_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+      const extractMilestonesMessages = [
+        { role: 'user' as const, content: extractMilestonesPrompt }
+      ]
+      const extractMilestonesResponse = await aiService.chat(extractMilestonesMessages)
+
+      const jsonMatch = extractMilestonesResponse.content.match(/\[[\s\S]*\]/)
+      if (jsonMatch) {
+        const newMilestones = JSON.parse(jsonMatch[0])
+
+        // 合并已有里程碑
+        const existingMilestones = project.milestones ? JSON.parse(project.milestones) : []
+        const mergedMilestones = [...existingMilestones]
+
+        for (const milestone of newMilestones) {
+          const exists = mergedMilestones.some(
+            (m: { date: string; title: string }) => m.date === milestone.date && m.title === milestone.title
+          )
+          if (!exists && milestone.date && milestone.title) {
+            mergedMilestones.push(milestone)
+          }
+        }
+
+        // 按日期排序
+        mergedMilestones.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+        projectDb.updateProject(projectId, { milestones: JSON.stringify(mergedMilestones) })
+      }
+    } catch (err) {
+      console.error('[AI] 里程碑提取失败:', err)
+    }
 
     // 更新文件的分析状态
     for (const file of unanalyzedFiles) {
@@ -194,25 +394,91 @@ ${existingSummary ? `已有的项目摘要：\n${existingSummary}\n\n` : ''}
     return { success: true, data: response.content }
   })
 
-  ipcMain.handle('ai:get-history', async (_, projectId: number) => {
+  ipcMain.handle('ai:get-history', async (_, projectId: number, sessionId?: string) => {
+    const projectIdValidation = validateRequired(projectId, 'projectId')
+    if (!projectIdValidation.valid) {
+      return { success: false, error: projectIdValidation.error }
+    }
+    
+    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
+    if (!projectIdTypeValidation.valid) {
+      return { success: false, error: projectIdTypeValidation.error }
+    }
+    
+    const projectExistsValidation = validateProjectExists(projectId)
+    if (!projectExistsValidation.valid) {
+      return { success: false, error: projectExistsValidation.error }
+    }
+    
+    if (sessionId) {
+      const sessionIdTypeValidation = validateType(sessionId, 'string', 'sessionId')
+      if (!sessionIdTypeValidation.valid) {
+        return { success: false, error: sessionIdTypeValidation.error }
+      }
+    }
+
     try {
-      const messages = conversationDb.getChatHistory(projectId)
+      const messages = conversationDb.getChatHistory(projectId, sessionId)
       return { success: true, data: messages }
     } catch (error) {
       console.error('[AI] 获取对话历史失败:', error)
-      return { success: false, error: '获取对话历史失败' }
+      return handleIpcError(error)
     }
   })
 
-  ipcMain.handle('ai:clear-history', async (_, projectId: number) => {
+  ipcMain.handle('ai:get-sessions', async (_, projectId: number) => {
+    const projectIdValidation = validateRequired(projectId, 'projectId')
+    if (!projectIdValidation.valid) {
+      return { success: false, error: projectIdValidation.error }
+    }
+    
+    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
+    if (!projectIdTypeValidation.valid) {
+      return { success: false, error: projectIdTypeValidation.error }
+    }
+    
+    const projectExistsValidation = validateProjectExists(projectId)
+    if (!projectExistsValidation.valid) {
+      return { success: false, error: projectExistsValidation.error }
+    }
+
+    try {
+      const sessions = conversationDb.getChatSessions(projectId)
+      return { success: true, data: sessions }
+    } catch (error) {
+      console.error('[AI] 获取会话列表失败:', error)
+      return handleIpcError(error)
+    }
+  })
+
+  ipcMain.handle('ai:clear-history', async (_, projectId: number, sessionId?: string) => {
+    const projectIdValidation = validateRequired(projectId, 'projectId')
+    if (!projectIdValidation.valid) {
+      return { success: false, error: projectIdValidation.error }
+    }
+    
+    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
+    if (!projectIdTypeValidation.valid) {
+      return { success: false, error: projectIdTypeValidation.error }
+    }
+    
+    const projectExistsValidation = validateProjectExists(projectId)
+    if (!projectExistsValidation.valid) {
+      return { success: false, error: projectExistsValidation.error }
+    }
+
     try {
       const db = getDatabase()
-      db.run('DELETE FROM chat_messages WHERE project_id = ?', [projectId])
+      if (sessionId) {
+        db.run('DELETE FROM chat_messages WHERE project_id = ? AND session_id = ?', [projectId, sessionId])
+      } else {
+        db.run('DELETE FROM chat_messages WHERE project_id = ?', [projectId])
+      }
       saveDatabase()
       return { success: true }
     } catch (error) {
       console.error('[AI] 清空对话历史失败:', error)
-      return { success: false, error: String(error) }
+      return handleIpcError(error)
     }
   })
 }

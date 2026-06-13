@@ -10,6 +10,7 @@ export default defineConfig({
     outDir: 'dist'
   },
   server: {
+    host: 'localhost',
     port: 1234,
     strictPort: true
   }

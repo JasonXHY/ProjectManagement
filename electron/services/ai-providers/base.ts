@@ -1,7 +1,7 @@
 // AI消息接口
 export interface AIMessage {
   role: 'system' | 'user' | 'assistant'
-  content: string
+  content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>
 }
 
 // AI响应接口
@@ -31,4 +31,5 @@ export interface OpenAIResponse {
 // AI供应商统一接口
 export interface AIProviderInterface {
   chat(messages: AIMessage[], model?: string): Promise<AIResponse>
+  vision?(imageBase64: string, prompt: string, model?: string): Promise<AIResponse>
 }

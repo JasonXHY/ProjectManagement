@@ -1,30 +1,20 @@
 import { getDatabase, saveDatabase } from './index'
+import { rowsToObjectArray } from './files'
 
 export interface Project {
   id: number
   name: string
-  category_type: 'stage' | 'content' | 'smart'
+  category_type: 'stage' | 'content'
   custom_stages: string | null
   current_stage: string
-  ai_suggested_stage: string | null
+  metadata: string | null
+  milestones: string | null
   created_at: string
   updated_at: string
 }
 
 // Column whitelist to prevent SQL injection via dynamic key names
-const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'ai_suggested_stage'] as const
-
-function rowsToObjectArray(results: any[]): Record<string, any>[] {
-  if (!results || !results[0] || !results[0].values) return []
-  const columns = results[0].columns
-  return results[0].values.map((row: any[]) => {
-    const obj: Record<string, any> = {}
-    columns.forEach((col: string, i: number) => {
-      obj[col] = row[i]
-    })
-    return obj
-  })
-}
+const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'metadata', 'milestones'] as const
 
 export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[]): number {
   const db = getDatabase()
@@ -77,7 +67,6 @@ export function deleteProject(id: number) {
   db.run('BEGIN TRANSACTION')
   try {
     db.run('DELETE FROM files WHERE project_id = ?', [id])
-    db.run('DELETE FROM conversations WHERE project_id = ?', [id])
     db.run('DELETE FROM chat_messages WHERE project_id = ?', [id])
     db.run('DELETE FROM projects WHERE id = ?', [id])
     db.run('COMMIT')

@@ -10,27 +10,22 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { Project, CategoryType, PROJECT_STATUS } from '../../types'
+import { Project, CategoryType, PROJECT_STATUS, Milestone } from '../../types'
 import { projectService } from '../../services/projectService'
+import { getStageStyle } from '../ProjectHome/projectHome.styles'
+import { formatTimeRelative } from '../../utils/time'
+import ProjectTimeline from './ProjectTimeline'
 
-/** 项目阶段样式映射 */
-const STAGE_STYLE: Record<string, { color: string; bg: string }> = {
-  '售前': { color: '#92400E', bg: '#FEF3C7' },
-  '启动': { color: '#065F46', bg: '#D1FAE5' },
-  '需求': { color: '#1E40AF', bg: '#DBEAFE' },
-  '方案': { color: '#92400E', bg: '#FEF3C7' },
-  '构建': { color: '#5B21B6', bg: '#EDE9FE' },
-  '测试': { color: '#9D174D', bg: '#FCE7F3' },
-  '上线': { color: '#065F46', bg: '#D1FAE5' },
-  '验收': { color: '#9D174D', bg: '#FCE7F3' },
-  '转客户成功': { color: '#374151', bg: '#F3F4F6' },
-  '关闭': { color: '#374151', bg: '#F3F4F6' },
-  '未分类': { color: '#6B7280', bg: '#F9FAFB' },
-}
-
-/** 获取阶段样式 */
-const getStageStyle = (stage: string) => {
-  return STAGE_STYLE[stage] || { color: '#6B7280', bg: '#F9FAFB' }
+/** 解析里程碑JSON */
+function parseMilestones(raw: string | null): Milestone[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed
+  } catch {
+    // ignore
+  }
+  return []
 }
 
 /** 项目列表页面属性 */
@@ -334,7 +329,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B7280' }}>
                   <FileTextOutlined style={{ width: '14px', textAlign: 'center' }} />
-                  <span>23 个文件</span>
+                  <span>文件</span>
                   <span style={{ margin: '0 4px', color: '#E5E7EB' }}>|</span>
                   <span
                     style={{
@@ -357,6 +352,18 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                 </div>
               </div>
 
+              {/* 甘特图进度 */}
+              {(() => {
+                const milestones = parseMilestones(project.milestones)
+                if (milestones.length === 0) return null
+                return (
+                  <div style={{ marginBottom: '16px' }}>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>进度</div>
+                    <ProjectTimeline milestones={milestones} currentStage={project.current_stage} />
+                  </div>
+                )
+              })()}
+
               {/* 底部 */}
               <div
                 style={{
@@ -368,7 +375,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                 }}
               >
                 <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                  {formatTime(project.updated_at)}
+                  {formatTimeRelative(project.updated_at)}
                 </span>
                 <div
                   style={{ display: 'flex', gap: '4px', opacity: 0, transition: 'opacity 150ms' }}
@@ -461,20 +468,6 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
       </Button>
     </div>
   )
-
-  /** 格式化时间 */
-  const formatTime = (date: string) => {
-    if (!date) return 'N/A'
-    const d = new Date(date.replace(' ', 'T') + 'Z')
-    const now = new Date()
-    const diff = now.getTime() - d.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    if (hours < 1) return '刚刚'
-    if (hours < 24) return `${hours}小时前`
-    const days = Math.floor(hours / 24)
-    if (days < 7) return `${days}天前`
-    return d.toLocaleDateString()
-  }
 
   return (
     <div style={{ padding: '24px' }}>
@@ -584,7 +577,6 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             {[
               { value: 'stage', title: '按阶段分类', desc: '默认 11 个项目阶段，文件自动归类到对应阶段' },
               { value: 'content', title: '按内容分类', desc: 'AI 自动识别文件内容，创建合适的分类类别' },
-              { value: 'smart', title: '智能分类', desc: 'AI 动态分析和调整分类，跨文件自动优化' },
             ].map((option) => (
               <div
                 key={option.value}

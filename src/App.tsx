@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
-import { Layout, Button, Breadcrumb, theme } from "antd";
+import { Layout, Button, Breadcrumb } from "antd";
 import {
-  RobotOutlined,
   SettingOutlined,
   HomeOutlined,
   ArrowLeftOutlined,
@@ -22,9 +21,6 @@ type Page = "projects" | "project-home" | "chat" | "settings" | "style-test";
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("projects");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
   /** 进入项目首页 */
   const handleOpenProject = useCallback((project: Project) => {
@@ -71,6 +67,11 @@ function App() {
   /** 从样式验证页返回 */
   const handleBackFromStyleTest = useCallback(() => {
     setCurrentPage("projects");
+  }, []);
+
+  /** 项目数据更新回调 */
+  const handleProjectUpdated = useCallback((updated: Project) => {
+    setSelectedProject(updated);
   }, []);
 
   /** 渲染面包屑导航 */
@@ -171,7 +172,7 @@ function App() {
                 {selectedProject.name}
               </div>
               <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
-                构建阶段 · 23 个文件
+                {selectedProject.current_stage}
               </div>
             </div>
           </div>
@@ -219,19 +220,7 @@ function App() {
           </div>
           <div className="flex items-center" style={{ gap: '8px' }}>
             {renderBreadcrumb()}
-            <Button
-              type="text"
-              danger
-              style={{ color: '#EF4444' }}
-            >
-              清空历史
-            </Button>
-            <Button
-              type="text"
-              style={{ color: '#6B7280' }}
-            >
-              文件面板
-            </Button>
+
           </div>
         </div>
       );
@@ -306,16 +295,13 @@ function App() {
         {currentPage === "project-home" && selectedProject && (
           <ProjectHome
             project={selectedProject}
-            onBack={handleBackToProjects}
-            onChat={handleOpenChat}
+            onProjectUpdated={handleProjectUpdated}
           />
         )}
 
         {currentPage === "chat" && selectedProject && (
           <ChatWindow
-            projectId={selectedProject.id!}
-            projectName={selectedProject.name}
-            onBack={handleBackToProjectHome}
+            projectId={selectedProject.id}
           />
         )}
 
@@ -323,7 +309,7 @@ function App() {
           <SettingsPage onBack={handleBackFromSettings} />
         )}
 
-        {currentPage === "style-test" && (
+        {currentPage === "style-test" && import.meta.env.DEV && (
           <StyleTest />
         )}
       </Content>

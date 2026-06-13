@@ -2,79 +2,28 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Input,
   Button,
-  Space,
-  Typography,
-  Spin,
   Modal,
-  Checkbox,
-  List,
-  Badge,
   message,
-  Upload,
-  Drawer,
 } from "antd";
 import {
   SendOutlined,
   ClearOutlined,
   CommentOutlined,
-  FileOutlined,
-  PaperClipOutlined,
-  InboxOutlined,
   RobotOutlined,
   UserOutlined,
-  DeleteOutlined,
-  FileTextOutlined,
-  EyeOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
-import type { ChatConversationMessage, FileRecord } from "../../types";
+import type { ChatConversationMessage } from "../../types";
 import { aiService } from "../../services/aiService";
-import { fileService } from "../../services/fileService";
-
-const { Text } = Typography;
+import { formatTime, formatSessionTime } from "../../utils/time";
 const { TextArea } = Input;
 
 /** 对话窗口属性 */
 interface ChatWindowProps {
   projectId: number;
-  projectName?: string;
-  onBack?: () => void;
 }
 
-/** 文件类型样式映射 */
-const FILE_TYPE_STYLE: Record<string, { color: string; bg: string }> = {
-  'pdf': { color: '#DC2626', bg: '#FEE2E2' },
-  'doc': { color: '#2563EB', bg: '#DBEAFE' },
-  'docx': { color: '#2563EB', bg: '#DBEAFE' },
-  'xls': { color: '#059669', bg: '#D1FAE5' },
-  'xlsx': { color: '#059669', bg: '#D1FAE5' },
-  'ppt': { color: '#D97706', bg: '#FEF3C7' },
-  'pptx': { color: '#D97706', bg: '#FEF3C7' },
-  'txt': { color: '#6B7280', bg: '#F3F4F6' },
-  'md': { color: '#7C3AED', bg: '#EDE9FE' },
-}
 
-/** 获取文件类型样式 */
-const getFileTypeStyle = (filename: string) => {
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
-  return FILE_TYPE_STYLE[ext] || { color: '#6B7280', bg: '#F3F4F6' }
-}
-
-/** 获取文件类型标签 */
-const getFileTypeLabel = (filename: string) => {
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
-  const labels: Record<string, string> = {
-    'pdf': 'PDF',
-    'doc': 'DOC',
-    'docx': 'DOC',
-    'xls': 'XLS',
-    'xlsx': 'XLS',
-    'ppt': 'PPT',
-    'pptx': 'PPT',
-    'txt': 'TXT',
-    'md': 'MD',
-  }
-  return labels[ext] || ext.toUpperCase()
-}
 
 /**
  * 对话窗口组件
@@ -82,99 +31,74 @@ const getFileTypeLabel = (filename: string) => {
  */
 export default function ChatWindow({
   projectId,
-  projectName,
-  onBack,
 }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatConversationMessage[]>([]);
   const messagesRef = useRef<ChatConversationMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [files, setFiles] = useState<FileRecord[]>([]);
-  const [selectedFileIds, setSelectedFileIds] = useState<number[]>([]);
-  const [showFilePanel, setShowFilePanel] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [uploading, setUploading] = useState(false);
 
-  /** 加载项目文件列表 */
-  const loadFiles = useCallback(async () => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string>(() => crypto.randomUUID());
+  const [sessions, setSessions] = useState<Array<{
+    session_id: string;
+    first_message: string;
+    message_count: number;
+    created_at: string;
+    updated_at: string;
+  }>>([]);
+  const [showSessionList, setShowSessionList] = useState(false);
+
+  /** 加载会话列表 */
+  const loadSessions = useCallback(async () => {
     try {
-      const result = await fileService.list(projectId);
+      const result = await aiService.getSessions(projectId);
       if (result.success && result.data) {
-        setFiles(result.data);
+        setSessions(result.data);
       }
     } catch (err) {
-      console.error("[ChatWindow] 加载文件列表失败:", err);
+      console.error("[ChatWindow] 加载会话列表失败:", err);
     }
   }, [projectId]);
 
-  /** 组件挂载时加载文件 */
+  /** 组件挂载时加载会话列表 */
   useEffect(() => {
-    loadFiles();
-  }, [loadFiles]);
+    loadSessions();
+  }, [loadSessions]);
 
   /** 加载对话历史 */
   useEffect(() => {
-    if (projectId) {
-      aiService.getHistory(projectId).then((result) => {
-        if (result.success && result.data) {
-          const historyMessages: ChatConversationMessage[] = result.data.map(
-            (msg) => ({
-              id: msg.id,
-              project_id: msg.project_id,
-              role: msg.role as "user" | "assistant",
-              content: msg.content,
-              created_at: msg.created_at,
-              token_count: msg.token_count,
-            })
-          );
-          messagesRef.current = historyMessages;
-          setMessages(historyMessages);
-        }
-      }).catch((err) => {
-        console.error("[ChatWindow] 加载对话历史失败:", err);
-      });
-    }
-  }, [projectId]);
+    if (!projectId) return
+    let cancelled = false
+    aiService.getHistory(projectId, currentSessionId).then((result) => {
+      if (cancelled) return
+      if (result.success && result.data) {
+        const historyMessages: ChatConversationMessage[] = result.data.map(
+          (msg) => ({
+            id: msg.id,
+            project_id: msg.project_id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            created_at: msg.created_at,
+            token_count: msg.token_count,
+          })
+        );
+        messagesRef.current = historyMessages;
+        setMessages(historyMessages);
+      }
+    }).catch((err) => {
+      if (!cancelled) console.error("[ChatWindow] 加载对话历史失败:", err);
+    });
+    return () => { cancelled = true }
+  }, [projectId, currentSessionId]);
 
   /** 自动滚动到底部 */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /** 切换文件选中状态 */
-  const handleFileToggle = useCallback((fileId: number, checked: boolean) => {
-    setSelectedFileIds((prev) =>
-      checked ? [...prev, fileId] : prev.filter((id) => id !== fileId)
-    );
-  }, []);
 
-  /** 全选/取消全选 */
-  const handleSelectAll = useCallback(
-    (checked: boolean) => {
-      setSelectedFileIds(checked ? files.map((f) => f.id) : []);
-    },
-    [files]
-  );
 
-  /** 上传文件 */
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const result = await fileService.upload(projectId, file);
-      if (result.success) {
-        message.success(`${file.name} 上传成功`);
-        loadFiles();
-      } else {
-        message.error(result.error || "上传失败");
-      }
-    } catch (error) {
-      message.error("上传失败");
-      console.error(error);
-    } finally {
-      setUploading(false);
-    }
-    return false; // 阻止antd默认上传
-  };
+
 
   /** 发送消息 */
   const handleSend = useCallback(async () => {
@@ -183,7 +107,7 @@ export default function ChatWindow({
 
     // 创建用户消息（临时）
     const userMessage: ChatConversationMessage = {
-      id: crypto.randomUUID() as unknown as number,
+      id: crypto.randomUUID(),
       project_id: projectId,
       role: "user",
       content,
@@ -199,13 +123,13 @@ export default function ChatWindow({
     setIsLoading(true);
 
     try {
-      // 调用 AI 服务，传递上下文文件 IDs
-      const result = await aiService.chat(projectId, content, selectedFileIds);
+      // 调用 AI 服务，传递上下文文件 IDs 和会话 ID
+      const result = await aiService.chat(projectId, content, [], currentSessionId);
 
       if (result.success && result.data) {
         // 显示 AI 回复
         const aiMessage: ChatConversationMessage = {
-          id: crypto.randomUUID() as unknown as number,
+          id: crypto.randomUUID(),
           project_id: projectId,
           role: "assistant",
           content: result.data,
@@ -237,24 +161,19 @@ export default function ChatWindow({
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue, isLoading, projectId, selectedFileIds]);
+  }, [inputValue, isLoading, projectId, currentSessionId]);
 
-  /** 清空历史 */
-  const handleClearHistory = useCallback(() => {
-    Modal.confirm({
-      title: "确认清空",
-      content: "确定要清空所有对话历史吗？此操作不可撤销。",
-      okText: "确认清空",
-      cancelText: "取消",
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        messagesRef.current = [];
-        setMessages([]);
-        await aiService.clearHistory(projectId);
-        message.success("对话历史已清空");
-      },
-    });
-  }, [projectId]);
+  /** 切换会话 */
+  const handleSessionSwitch = useCallback((sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    setShowSessionList(false);
+  }, []);
+
+  /** 创建新会话 */
+  const handleNewSession = useCallback(() => {
+    setCurrentSessionId(crypto.randomUUID());
+    setShowSessionList(false);
+  }, []);
 
   /** 处理回车键发送 */
   const handleKeyDown = useCallback(
@@ -267,18 +186,142 @@ export default function ChatWindow({
     [handleSend]
   );
 
-  const allSelected =
-    files.length > 0 && selectedFileIds.length === files.length;
+  /** 清空当前会话历史 */
+  const handleClearCurrentSession = useCallback(() => {
+    Modal.confirm({
+      title: "确认清空",
+      content: "确定要清空当前会话的对话历史吗？此操作不可撤销。",
+      okText: "确认清空",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        messagesRef.current = [];
+        setMessages([]);
+        await aiService.clearHistory(projectId, currentSessionId);
+        message.success("当前会话历史已清空");
+        setCurrentSessionId(crypto.randomUUID());
+        loadSessions();
+      },
+    });
+  }, [projectId, loadSessions]);
 
-  /** 格式化时间 */
-  const formatTime = (date: string) => {
-    if (!date) return ''
-    const d = new Date(date.replace(' ', 'T') + 'Z')
-    return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-  }
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 56px)' }}>
+      {/* 左侧：会话历史列表 */}
+      <div
+        style={{
+          width: showSessionList ? '280px' : '48px',
+          borderRight: '1px solid #E5E7EB',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+          overflow: 'hidden',
+          background: '#F9FAFB',
+        }}
+      >
+        {/* 会话列表头部 */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #E5E7EB',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: '48px',
+          }}
+        >
+          {showSessionList ? (
+            <>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
+                对话历史
+              </div>
+              <Button
+                type="text"
+                icon={<ClearOutlined />}
+                onClick={handleNewSession}
+                style={{ color: '#4F46E5' }}
+              />
+            </>
+          ) : (
+            <Button
+              type="text"
+              icon={<HistoryOutlined />}
+              onClick={() => setShowSessionList(true)}
+              style={{ width: '100%', justifyContent: 'flex-start' }}
+            />
+          )}
+        </div>
+
+        {/* 会话列表内容 */}
+        {showSessionList && (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+            {sessions.length === 0 ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  textAlign: 'center',
+                  padding: '24px',
+                  color: '#9CA3AF',
+                }}
+              >
+                <CommentOutlined style={{ marginBottom: '8px', fontSize: '24px' }} />
+                <div style={{ fontSize: '12px' }}>暂无对话历史</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {sessions.map((session) => (
+                  <div
+                    key={session.session_id}
+                    onClick={() => handleSessionSwitch(session.session_id)}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 150ms',
+                      background: currentSessionId === session.session_id ? '#EEF2FF' : 'transparent',
+                      border: currentSessionId === session.session_id ? '1px solid #C7D2FE' : '1px solid transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentSessionId !== session.session_id) {
+                        e.currentTarget.style.background = '#F3F4F6';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentSessionId !== session.session_id) {
+                        e.currentTarget.style.background = 'transparent';
+                      }
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: '#111827',
+                        marginBottom: '4px',
+                        lineHeight: 1.4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {session.first_message}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9CA3AF' }}>
+                      {session.message_count} 条消息 · {formatSessionTime(session.updated_at)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* 主对话区域 */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* 消息列表区域 */}
@@ -315,7 +358,7 @@ export default function ChatWindow({
                 开始对话
               </div>
               <div style={{ fontSize: '14px', color: '#9CA3AF', maxWidth: '320px', marginBottom: '24px' }}>
-                选择右侧文件作为上下文，向 AI 助手提问
+                向 AI 助手提问
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                 {['分析文档内容', '总结关键信息', '提取待办事项'].map((suggestion) => (
@@ -428,12 +471,7 @@ export default function ChatWindow({
 
         {/* 输入区域 */}
         <div style={{ padding: '16px 24px', background: '#FFFFFF', borderTop: '1px solid #E5E7EB' }}>
-          {selectedFileIds.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontSize: '12px', color: '#6B7280' }}>
-              <PaperClipOutlined style={{ color: '#4F46E5' }} />
-              <span>已附加 <strong>{selectedFileIds.length}</strong> 个文件作为对话上下文</span>
-            </div>
-          )}
+
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
             <TextArea
               value={inputValue}
@@ -470,167 +508,29 @@ export default function ChatWindow({
                 flexShrink: 0,
               }}
             />
+            <Button
+              type="text"
+              icon={<ClearOutlined />}
+              onClick={handleClearCurrentSession}
+              style={{
+                height: '44px',
+                width: '44px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                color: '#9CA3AF',
+              }}
+            />
           </div>
           <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '6px' }}>
-            Enter 发送 · Shift+Enter 换行 · 右侧面板可选择上下文文件
+            Enter 发送 · Shift+Enter 换行
           </div>
         </div>
       </div>
 
-      {/* 右侧：上下文文件面板（Drawer） */}
-      <Drawer
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>上下文文件</span>
-            {selectedFileIds.length > 0 && (
-              <Badge
-                count={selectedFileIds.length}
-                style={{ backgroundColor: '#4F46E5' }}
-                size="small"
-              />
-            )}
-          </div>
-        }
-        placement="right"
-        width={240}
-        open={showFilePanel}
-        onClose={() => setShowFilePanel(false)}
-        closable={false}
-        mask={false}
-        styles={{
-          header: { borderBottom: '1px solid #E5E7EB', padding: '12px 16px' },
-          body: { padding: '8px' },
-        }}
-        extra={
-          files.length > 0 ? (
-            <Checkbox
-              checked={allSelected}
-              onChange={(e) => handleSelectAll(e.target.checked)}
-              style={{ fontSize: '12px', color: '#6B7280' }}
-            >
-              全选
-            </Checkbox>
-          ) : null
-        }
-      >
-        {files.length === 0 ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              textAlign: 'center',
-              padding: '24px',
-              color: '#9CA3AF',
-            }}
-          >
-            <FileOutlined style={{ marginBottom: '8px', fontSize: '24px' }} />
-            <div style={{ fontSize: '12px' }}>暂无文件</div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            {files.map((file) => {
-              const typeStyle = getFileTypeStyle(file.filename)
-              const typeLabel = getFileTypeLabel(file.filename)
-              const isSelected = selectedFileIds.includes(file.id)
 
-              return (
-                <label
-                  key={file.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 150ms',
-                    background: isSelected ? '#EEF2FF' : 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = '#F9FAFB'
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = 'transparent'
-                  }}
-                >
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={(e) => handleFileToggle(file.id, e.target.checked)}
-                    style={{ accentColor: '#4F46E5', flexShrink: 0 }}
-                  />
-                  <div
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      background: typeStyle.bg,
-                      color: typeStyle.color,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {typeLabel}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {file.filename}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '1px' }}>
-                      {file.category || '未分类'} · {file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : '-'}
-                    </div>
-                  </div>
-                </label>
-              )
-            })}
-          </div>
-        )}
-
-        <div
-          style={{
-            padding: '10px 16px',
-            borderTop: '1px solid #F3F4F6',
-            fontSize: '12px',
-            color: '#6B7280',
-            textAlign: 'center',
-          }}
-        >
-          选中文件的内容将作为 AI 对话的参考上下文
-        </div>
-      </Drawer>
-
-      {/* 文件面板切换按钮（固定在右侧） */}
-      <div
-        style={{
-          position: 'fixed',
-          right: showFilePanel ? '240px' : '0',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 100,
-          transition: 'right 300ms cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        <Button
-          type="primary"
-          icon={<FileTextOutlined />}
-          onClick={() => setShowFilePanel(!showFilePanel)}
-          style={{
-            height: '48px',
-            width: '32px',
-            borderRadius: '8px 0 0 8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '-2px 0 8px rgba(0,0,0,0.1)',
-          }}
-        />
-      </div>
 
       <style>{`
         @keyframes fadeIn {

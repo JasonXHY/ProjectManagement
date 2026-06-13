@@ -1,24 +1,25 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+node_modules/
+dist/
+dist-electron/
+electron/dist/
+*.db
+*.db.bak
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.local
+.env
+.env.*
+!.env.example
+
+# Tool-specific directories
+.archive/
+.claude-code/
+.mimo-code/
+.mimocode/plans/
+.superpowers/
+.qoderwork/
+.vscode/
+
+# Misc
+bug/
+*.bat
+*.ps1

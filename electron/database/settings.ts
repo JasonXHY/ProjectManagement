@@ -1,15 +1,37 @@
 import { getDatabase, saveDatabase } from './index'
+import { rowsToObjectArray } from './files'
+import { safeStorage } from 'electron'
 
-function rowsToObjectArray(results: any[]): Record<string, any>[] {
-  if (!results || !results[0] || !results[0].values) return []
-  const columns = results[0].columns
-  return results[0].values.map((row: any[]) => {
-    const obj: Record<string, any> = {}
-    columns.forEach((col: string, i: number) => {
-      obj[col] = row[i]
-    })
-    return obj
-  })
+const API_KEY_FIELDS = ['ai_api_key', 'classify_api_key', 'zhipu_api_key', 'mimo_api_key']
+
+function isEncrypted(value: string): boolean {
+  if (!value) return false
+  try {
+    const buf = Buffer.from(value, 'base64')
+    return buf.length > 0
+  } catch {
+    return false
+  }
+}
+
+function encryptValue(value: string): string {
+  if (!value) return value
+  try {
+    const encrypted = safeStorage.encryptString(value)
+    return encrypted.toString('base64')
+  } catch {
+    return value
+  }
+}
+
+function decryptValue(value: string): string {
+  if (!value) return value
+  try {
+    const buf = Buffer.from(value, 'base64')
+    return safeStorage.decryptString(buf)
+  } catch {
+    return value
+  }
 }
 
 export function getSetting(key: string): string | null {
@@ -21,9 +43,10 @@ export function getSetting(key: string): string | null {
 
 export function setSetting(key: string, value: string) {
   const db = getDatabase()
+  const storedValue = API_KEY_FIELDS.includes(key) ? encryptValue(value) : value
   db.run(
     `INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)`,
-    [key, value]
+    [key, storedValue]
   )
   saveDatabase()
 }
@@ -32,7 +55,26 @@ export function getAllSettings(): Record<string, string> {
   const db = getDatabase()
   const results = db.exec('SELECT key, value FROM settings')
   const rows = rowsToObjectArray(results) as { key: string; value: string }[]
-  return rows.reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {})
+  return rows.reduce((acc, row) => {
+    if (API_KEY_FIELDS.includes(row.key) && row.value) {
+      return { ...acc, [row.key]: 'sk-***' }
+    }
+    return { ...acc, [row.key]: row.value }
+  }, {})
+}
+
+export function getDecryptedApiKey(key: string): string {
+  if (!API_KEY_FIELDS.includes(key)) return ''
+  const db = getDatabase()
+  const results = db.exec('SELECT value FROM settings WHERE key = ?', [key])
+  const rows = rowsToObjectArray(results)
+  const raw = rows[0]?.value ?? ''
+  if (!raw) return ''
+  if (isEncrypted(raw)) {
+    return decryptValue(raw)
+  }
+  setSetting(key, raw)
+  return raw
 }
 
 export function initDefaultSettings() {

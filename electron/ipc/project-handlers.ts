@@ -1,36 +1,59 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain } from 'electron'
 import * as projectDb from '../database/projects'
 import { sanitizeFileName, resolveProjectPath, createProjectDirectory } from '../utils/project-path'
+import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
+import { handleIpcError } from '../utils/errors'
 import fs from 'fs/promises'
 import path from 'path'
 
 interface ProjectUpdateData {
   name?: string
-  category_type?: 'stage' | 'content' | 'smart'
+  category_type?: 'stage' | 'content'
   custom_stages?: string[]
   current_stage?: string
+  milestones?: string
 }
 
-// 默认11个阶段
+// 默认3个阶段
 const DEFAULT_STAGES = [
-  '首页', '售前', '启动', '需求', '方案',
-  '构建', '测试', '上线', '验收', '转客户成功', '关闭'
+  '售前', '进行中', '关闭'
 ]
 
 export function registerProjectHandlers() {
   ipcMain.handle('project:create', async (_, name: string, categoryType: string, customStages?: string[]) => {
+    const nameValidation = validateRequired(name, 'name')
+    if (!nameValidation.valid) {
+      return { success: false, error: nameValidation.error }
+    }
+    
+    const nameTypeValidation = validateType(name, 'string', 'name')
+    if (!nameTypeValidation.valid) {
+      return { success: false, error: nameTypeValidation.error }
+    }
+    
+    const categoryTypeValidation = validateType(categoryType, 'string', 'categoryType')
+    if (!categoryTypeValidation.valid) {
+      return { success: false, error: categoryTypeValidation.error }
+    }
+    
+    const categoryValidation = validateCategoryType(categoryType)
+    if (!categoryValidation.valid) {
+      return { success: false, error: categoryValidation.error }
+    }
+    
+    if (customStages) {
+      const stagesValidation = validateStringArray(customStages, 'customStages')
+      if (!stagesValidation.valid) {
+        return { success: false, error: stagesValidation.error }
+      }
+    }
+
     // 先创建数据库记录
-    console.log('[Project] ========== 开始创建项目 ==========')
-    console.log('[Project] 项目名称:', name)
-    console.log('[Project] 分类方式:', categoryType)
     const id = projectDb.createProject(name, categoryType as any, customStages)
-    console.log('[Project] 数据库记录创建成功，ID:', id)
 
     try {
       // 创建项目文件夹（使用项目名称作为目录名）
-      console.log('[Project] 开始创建项目文件夹...')
       const projectPath = await createProjectDirectory(id, name)
-      console.log('[Project] 项目文件夹路径:', projectPath)
 
       // 根据分类方式创建子文件夹
       if (categoryType === 'stage') {
@@ -57,7 +80,7 @@ export function registerProjectHandlers() {
       } catch (rollbackError) {
         console.error('回滚数据库失败:', rollbackError)
       }
-      throw error
+      return handleIpcError(error)
     }
   })
 
@@ -67,17 +90,67 @@ export function registerProjectHandlers() {
   })
 
   ipcMain.handle('project:get', async (_, id: number) => {
+    const idValidation = validateRequired(id, 'id')
+    if (!idValidation.valid) {
+      return { success: false, error: idValidation.error }
+    }
+    
+    const idTypeValidation = validateType(id, 'number', 'id')
+    if (!idTypeValidation.valid) {
+      return { success: false, error: idTypeValidation.error }
+    }
+    
+    const existsValidation = validateProjectExists(id)
+    if (!existsValidation.valid) {
+      return { success: false, error: existsValidation.error }
+    }
+
     const project = projectDb.getProject(id)
     return { success: true, data: project }
   })
 
   ipcMain.handle('project:update', async (_, id: number, data: ProjectUpdateData) => {
+    const idValidation = validateRequired(id, 'id')
+    if (!idValidation.valid) {
+      return { success: false, error: idValidation.error }
+    }
+    
+    const idTypeValidation = validateType(id, 'number', 'id')
+    if (!idTypeValidation.valid) {
+      return { success: false, error: idTypeValidation.error }
+    }
+    
+    const existsValidation = validateProjectExists(id)
+    if (!existsValidation.valid) {
+      return { success: false, error: existsValidation.error }
+    }
+    
+    const dataValidation = validateType(data, 'object', 'data')
+    if (!dataValidation.valid) {
+      return { success: false, error: dataValidation.error }
+    }
+
     // Cast custom_stages to string since the DB stores it as JSON-serialized string
     projectDb.updateProject(id, data as unknown as Partial<projectDb.Project>)
     return { success: true }
   })
 
   ipcMain.handle('project:delete', async (_, id: number) => {
+    const idValidation = validateRequired(id, 'id')
+    if (!idValidation.valid) {
+      return { success: false, error: idValidation.error }
+    }
+    
+    const idTypeValidation = validateType(id, 'number', 'id')
+    if (!idTypeValidation.valid) {
+      return { success: false, error: idTypeValidation.error }
+    }
+    
+    const existsValidation = validateProjectExists(id)
+    if (!existsValidation.valid) {
+      return { success: false, error: existsValidation.error }
+    }
+
     // 先删除数据库记录（确保即使文件系统删除失败，数据库也不会留下孤儿记录）
     projectDb.deleteProject(id)
 

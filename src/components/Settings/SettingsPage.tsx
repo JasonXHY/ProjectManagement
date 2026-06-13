@@ -4,10 +4,11 @@ import {
   Input,
   Button,
   Select,
-  Tabs,
-  Typography,
+  Radio,
   message,
   Spin,
+  Tag,
+  Space,
 } from "antd";
 import {
   SaveOutlined,
@@ -15,34 +16,39 @@ import {
   RobotOutlined,
   FileOutlined,
   EditOutlined,
+  UserOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { configService } from "../../services/configService";
 import {
-  ZHIPU_PROVIDER,
-  MIMO_PROVIDER,
-  DEFAULT_CLASSIFY_PROMPT_STAGES,
-  DEFAULT_CLASSIFY_PROMPT_CONTENT,
-  DEFAULT_ANALYZE_PROMPT,
+  USER_ROLE_OPTIONS,
   type AIProvider,
 } from "../../types";
-
-const { Text } = Typography;
+import {
+  getProviderList,
+  type AIModel,
+} from "../../shared/model-registry";
 
 /** SettingsPage 组件属性 */
 interface SettingsPageProps {
   onBack: () => void;
 }
 
+const providerList = getProviderList()
+
 /**
  * 设置页面
  * 包含AI模型配置和文件提取配置
  */
-export default function SettingsPage({ onBack }: SettingsPageProps) {
+export default function SettingsPage(_props: SettingsPageProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [provider, setProvider] = useState<AIProvider>("zhipu");
   const [activeTab, setActiveTab] = useState("ai");
+  const [models, setModels] = useState<AIModel[]>([]);
+  const defaultStages = ['售前', '进行中', '关闭'];
+  const [customStages, setCustomStages] = useState<string[]>(defaultStages);
+  const [newStageName, setNewStageName] = useState('');
 
   /** 加载配置 */
   useEffect(() => {
@@ -55,7 +61,25 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
       const result = await configService.get();
       if (result.success && result.data) {
         form.setFieldsValue(result.data);
-        setProvider((result.data.ai_provider as AIProvider) || "zhipu");
+        if (result.data.custom_stages) {
+          try {
+            const parsed = JSON.parse(result.data.custom_stages);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setCustomStages(parsed);
+            }
+          } catch {
+            // JSON parse error, use default stages
+          }
+        }
+      }
+      
+      const promptsResult = await configService.getPrompts();
+      if (promptsResult.success && promptsResult.data) {
+        form.setFieldsValue({
+          classify_prompt_stages: promptsResult.data.classify_stages,
+          classify_prompt_content: promptsResult.data.classify_content,
+          analyze_prompt: promptsResult.data.analyze,
+        });
       }
     } catch (error) {
       message.error("加载配置失败");
@@ -76,7 +100,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
 
     setSaving(true);
     try {
-      const result = await configService.update(values);
+      const result = await configService.update({ ...values, custom_stages: JSON.stringify(customStages) });
       if (result.success) {
         message.success("保存成功");
       } else {
@@ -95,7 +119,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
     setLoading(true);
     try {
       form.resetFields();
-      setProvider("zhipu");
+      setModels([]);
       message.success("已重置表单（请保存以生效）");
     } catch (error) {
       message.error("重置失败");
@@ -107,28 +131,36 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
 
   /** 供应商切换 */
   const handleProviderChange = (value: AIProvider) => {
-    setProvider(value);
-    if (value === "zhipu") {
+    const providerConfig = providerList.find((p) => p.id === value);
+    if (providerConfig) {
+      setModels(providerConfig.models);
+      const firstModel = providerConfig.models[0];
       form.setFieldsValue({
-        ai_model: ZHIPU_PROVIDER.models[0],
-        ai_base_url: ZHIPU_PROVIDER.baseUrl,
-      });
-    } else if (value === "mimo") {
-      form.setFieldsValue({
-        ai_model: MIMO_PROVIDER.models[0],
-        ai_base_url: MIMO_PROVIDER.baseUrl,
+        ai_model: firstModel?.id || "",
+        ai_base_url: providerConfig.baseUrl,
       });
     }
   };
 
+  /** 添加自定义阶段 */
+  const handleAddStage = () => {
+    if (newStageName && !customStages.includes(newStageName)) {
+      setCustomStages([...customStages, newStageName]);
+      setNewStageName('');
+    }
+  };
+
+  /** 删除自定义阶段 */
+  const handleDeleteStage = (stage: string) => {
+    setCustomStages(customStages.filter(s => s !== stage));
+  };
+
   /** 获取模型选项 */
   const getModelOptions = () => {
-    if (provider === "zhipu") {
-      return ZHIPU_PROVIDER.models.map((m) => ({ value: m, label: m }));
-    } else if (provider === "mimo") {
-      return MIMO_PROVIDER.models.map((m) => ({ value: m, label: m }));
-    }
-    return [];
+    return models.map((m) => ({
+      value: m.id,
+      label: m.isFree ? `${m.name} (免费)` : m.name,
+    }));
   };
 
   const extractionOptions = [
@@ -143,17 +175,19 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
         <div
           style={{
             display: 'flex',
-            border: '1px solid #E5E7EB',
+            border: '1px solid var(--border-default)',
             borderRadius: '8px',
             padding: '4px',
             marginBottom: '24px',
-            background: '#F3F4F6',
+            background: 'var(--bg-secondary)',
           }}
         >
           {[
             { key: 'ai', label: 'AI模型', icon: <RobotOutlined /> },
             { key: 'extraction', label: '文件提取', icon: <FileOutlined /> },
             { key: 'prompt', label: 'Prompt配置', icon: <EditOutlined /> },
+            { key: 'role', label: '用户角色', icon: <UserOutlined /> },
+            { key: 'stages', label: '自定义阶段', icon: <PlusOutlined /> },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -171,7 +205,7 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 fontWeight: 500,
                 transition: 'all 150ms',
                 background: activeTab === tab.key ? '#FFFFFF' : 'transparent',
-                color: activeTab === tab.key ? '#4F46E5' : '#6B7280',
+                color: activeTab === tab.key ? 'var(--color-primary)' : 'var(--text-secondary)',
                 boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
               }}
               onClick={() => setActiveTab(tab.key)}
@@ -188,37 +222,32 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <div
               style={{
                 background: '#FFFFFF',
-                border: '1px solid #E5E7EB',
+                border: '1px solid var(--border-default)',
                 borderRadius: '12px',
                 padding: '24px',
                 marginBottom: '24px',
               }}
             >
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                 AI模型配置
               </div>
-              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
                 配置AI模型供应商和接口参数，用于智能分析功能。
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-                <Form.Item label="模型供应商" name="ai_provider">
+                <Form.Item label="模型厂商" name="ai_provider">
                   <Select
                     onChange={handleProviderChange}
-                    options={[
-                      { value: "zhipu", label: "智谱AI" },
-                      { value: "mimo", label: "小米MiMo" },
-                      { value: "custom", label: "自定义" },
-                    ]}
+                    options={providerList.map((p) => ({
+                      value: p.id,
+                      label: p.name,
+                    }))}
                   />
                 </Form.Item>
 
-                <Form.Item label="模型" name="ai_model">
-                  {provider === "custom" ? (
-                    <Input placeholder="输入模型名称" />
-                  ) : (
-                    <Select options={getModelOptions()} />
-                  )}
+                <Form.Item label="AI模型" name="ai_model">
+                  <Select options={getModelOptions()} />
                 </Form.Item>
               </div>
 
@@ -241,16 +270,16 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <div
               style={{
                 background: '#FFFFFF',
-                border: '1px solid #E5E7EB',
+                border: '1px solid var(--border-default)',
                 borderRadius: '12px',
                 padding: '24px',
                 marginBottom: '24px',
               }}
             >
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                 文件提取配置
               </div>
-              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
                 配置不同文件类型的提取方式。本地提取更快，云端分析更准确。
               </div>
 
@@ -293,23 +322,22 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
             <div
               style={{
                 background: '#FFFFFF',
-                border: '1px solid #E5E7EB',
+                border: '1px solid var(--border-default)',
                 borderRadius: '12px',
                 padding: '24px',
                 marginBottom: '24px',
               }}
             >
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', marginBottom: '8px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                 Prompt配置
               </div>
-              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
                 配置AI分类和分析的Prompt模板。使用 {'{content}'} 作为文件内容占位符。
               </div>
 
               <Form.Item
                 label="文件分类Prompt（按阶段）"
                 name="classify_prompt_stages"
-                initialValue={DEFAULT_CLASSIFY_PROMPT_STAGES}
               >
                 <Input.TextArea
                   rows={8}
@@ -325,7 +353,6 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               <Form.Item
                 label="文件分类Prompt（按内容）"
                 name="classify_prompt_content"
-                initialValue={DEFAULT_CLASSIFY_PROMPT_CONTENT}
               >
                 <Input.TextArea
                   rows={8}
@@ -341,7 +368,6 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
               <Form.Item
                 label="项目分析Prompt"
                 name="analyze_prompt"
-                initialValue={DEFAULT_ANALYZE_PROMPT}
               >
                 <Input.TextArea
                   rows={8}
@@ -353,6 +379,87 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                   }}
                 />
               </Form.Item>
+            </div>
+          )}
+
+          {/* 用户角色配置 */}
+          {activeTab === 'role' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid var(--border-default)',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                用户角色
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                选择您的角色，后续将根据角色提供差异化的功能体验。
+              </div>
+
+              <Form.Item label="当前角色" name="user_role" initialValue="pm">
+                <Radio.Group options={USER_ROLE_OPTIONS} />
+              </Form.Item>
+            </div>
+          )}
+
+          {/* 自定义阶段配置 */}
+          {activeTab === 'stages' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid var(--border-default)',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                自定义阶段
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                管理项目的自定义阶段。这些阶段将用于文件分类和项目进度管理。
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <Space>
+                  <Input
+                    placeholder="输入新阶段名称"
+                    value={newStageName}
+                    onChange={(e) => setNewStageName(e.target.value)}
+                    onPressEnter={handleAddStage}
+                    style={{ width: '200px' }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={handleAddStage}
+                    disabled={!newStageName}
+                  >
+                    添加阶段
+                  </Button>
+                </Space>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {customStages.map((stage) => (
+                  <Tag
+                    key={stage}
+                    closable
+                    onClose={() => handleDeleteStage(stage)}
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: '14px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    {stage}
+                  </Tag>
+                ))}
+              </div>
             </div>
           )}
         </Form>

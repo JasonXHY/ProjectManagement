@@ -43,4 +43,26 @@ export class MiMoProvider implements AIProviderInterface {
       usage: data.usage
     }
   }
+
+  async vision(imageBase64: string, prompt: string, model: string = 'mimo-vision'): Promise<AIResponse> {
+    const messages: AIMessage[] = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageBase64
+            }
+          },
+          {
+            type: 'text',
+            text: prompt
+          }
+        ]
+      }
+    ]
+
+    return this.chat(messages, model)
+  }
 }

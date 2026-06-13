@@ -20,5 +20,13 @@ export const fileService = {
 
   async delete(id: number) {
     return window.api.file.delete(id)
+  },
+
+  async updateCategory(id: number, category: string) {
+    return window.api.file.updateCategory(id, category)
+  },
+
+  async openFolder(projectId: number) {
+    return window.api.file.openFolder(projectId)
   }
 }

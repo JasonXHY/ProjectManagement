@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方案A：Timeline+Progress 组合</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 40px; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .card-title::before { content: "📅"; }
+        .progress-section { margin-bottom: 24px; }
+        .progress-label { font-size: 13px; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .progress-bar { height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #1677ff, #4096ff); border-radius: 4px; transition: width 0.3s; }
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: #e8e8e8; }
+        .timeline-item { position: relative; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f5f5f5; }
+        .timeline-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .timeline-dot { position: absolute; left: -21px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #d9d9d9; border: 2px solid #fff; }
+        .timeline-dot.completed { background: #52c41a; }
+        .timeline-dot.current { background: #1677ff; box-shadow: 0 0 0 4px rgba(22,119,255,0.2); }
+        .timeline-dot.milestone { background: #faad14; }
+        .timeline-dot.milestone::after { content: "⭐"; position: absolute; top: -8px; left: -4px; font-size: 12px; }
+        .timeline-content { display: flex; justify-content: space-between; align-items: flex-start; }
+        .timeline-title { font-size: 14px; color: #1a1a1a; font-weight: 500; }
+        .timeline-date { font-size: 12px; color: #999; }
+        .timeline-desc { font-size: 12px; color: #666; margin-top: 4px; }
+        .star-badge { display: inline-flex; align-items: center; gap: 4px; background: #fff7e6; color: #d48806; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-title">项目进度</div>
+        <div class="progress-section">
+            <div class="progress-label">
+                <span>整体进度</span>
+                <span style="color: #1677ff; font-weight: 500;">45%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 45%;"></div>
+            </div>
+        </div>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot completed"></div>
+                <div class="timeline-content">
+                    <div>
+                        <div class="timeline-title">合同签署</div>
+                        <div class="timeline-desc">项目正式启动</div>
+                        <div class="star-badge">⭐ 关键节点</div>
+                    </div>
+                    <div class="timeline-date">2026-05-15</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot completed"></div>
+                <div class="timeline-content">
+                    <div>
+                        <div class="timeline-title">蓝图确认</div>
+                        <div class="timeline-desc">需求方案已确认</div>
+                        <div class="star-badge">⭐ 关键节点</div>
+                    </div>
+                    <div class="timeline-date">2026-06-01</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot current"></div>
+                <div class="timeline-content">
+                    <div>
+                        <div class="timeline-title">开发实施</div>
+                        <div class="timeline-desc">进行中...</div>
+                    </div>
+                    <div class="timeline-date">进行中</div>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot milestone"></div>
+                <div class="timeline-content">
+                    <div>
+                        <div class="timeline-title">上线验收</div>
+                        <div class="timeline-desc">待进行</div>
+                    </div>
+                    <div class="timeline-date">待定</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

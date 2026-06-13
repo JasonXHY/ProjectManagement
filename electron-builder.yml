@@ -1,0 +1,7 @@
+appId: com.project-manager.app
+productName: 项目管理助手
+directories:
+  output: dist_electron
+files:
+  - dist/**/*
+  - electron/**/*

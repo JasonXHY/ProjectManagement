@@ -7,5 +7,9 @@ export const configService = {
 
   async update(settings: Record<string, string>) {
     return window.api.settings.update(settings)
+  },
+
+  async getPrompts() {
+    return window.api.settings.getPrompts()
   }
 }

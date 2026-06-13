@@ -3,14 +3,16 @@ import ReactDOM from "react-dom/client";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import App from "./App";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import "./index.css";
 import "./styles/overrides.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <ConfigProvider
-      locale={zhCN}
-      theme={{
+    <ErrorBoundary>
+      <ConfigProvider
+        locale={zhCN}
+        theme={{
         token: {
           colorPrimary: '#4F46E5',
           colorBgContainer: '#FFFFFF',
@@ -63,13 +65,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           Select: {
             optionSelectedBg: '#EEF2FF',
           },
-          Upload: {
-            draggerColor: '#F3F4F6',
-          },
         },
       }}
     >
       <App />
     </ConfigProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );
