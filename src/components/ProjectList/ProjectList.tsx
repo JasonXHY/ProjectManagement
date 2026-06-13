@@ -47,7 +47,9 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
   const [modalVisible, setModalVisible] = useState(false)
   const [editStatusVisible, setEditStatusVisible] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [editingName, setEditingName] = useState<string>('')
   const [editingStatus, setEditingStatus] = useState<string>('')
+  const [editingCategoryType, setEditingCategoryType] = useState<string>('stage')
   const [newProject, setNewProject] = useState({
     name: '',
     categoryType: 'stage' as CategoryType,
@@ -114,16 +116,18 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
     }
   }
 
-  /** 编辑项目状态 */
-  const handleEditStatus = async () => {
+  /** 编辑项目 */
+  const handleEditProject = async () => {
     if (!editingProject) return
 
     try {
       const result = await projectService.update(editingProject.id, {
-        current_stage: editingStatus
+        name: editingName,
+        current_stage: editingStatus,
+        category_type: editingCategoryType as 'stage' | 'content'
       })
       if (result.success) {
-        message.success('状态更新成功')
+        message.success('项目更新成功')
         setEditStatusVisible(false)
         loadProjects()
       } else {
@@ -226,11 +230,13 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             icon={<EditOutlined />}
             onClick={() => {
               setEditingProject(record)
+              setEditingName(record.name)
               setEditingStatus(record.current_stage)
+              setEditingCategoryType(record.category_type || 'stage')
               setEditStatusVisible(true)
             }}
           >
-            状态
+            编辑
           </Button>
           <Popconfirm
             title="确定删除该项目？"
@@ -627,26 +633,42 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
         </div>
       </Modal>
 
-      {/* 编辑项目状态弹窗 */}
+      {/* 编辑项目弹窗 */}
       <Modal
-        title="编辑项目状态"
+        title="编辑项目"
         open={editStatusVisible}
-        onOk={handleEditStatus}
+        onOk={handleEditProject}
         onCancel={() => setEditStatusVisible(false)}
         okText="保存"
         cancelText="取消"
       >
         <div style={{ marginBottom: '20px' }}>
           <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 500, color: '#111827' }}>项目名称</div>
-          <div style={{ color: '#6B7280' }}>{editingProject?.name}</div>
+          <Input
+            value={editingName}
+            onChange={(e) => setEditingName(e.target.value)}
+            placeholder="输入项目名称"
+          />
         </div>
-        <div>
+        <div style={{ marginBottom: '20px' }}>
           <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 500, color: '#111827' }}>项目状态</div>
           <Select
             value={editingStatus}
             onChange={setEditingStatus}
             style={{ width: '100%' }}
             options={PROJECT_STATUS.map(s => ({ value: s.value, label: s.label }))}
+          />
+        </div>
+        <div>
+          <div style={{ marginBottom: '6px', fontSize: '14px', fontWeight: 500, color: '#111827' }}>分类方式</div>
+          <Select
+            value={editingCategoryType}
+            onChange={setEditingCategoryType}
+            style={{ width: '100%' }}
+            options={[
+              { value: 'stage', label: '按阶段分类' },
+              { value: 'content', label: '按内容分类' },
+            ]}
           />
         </div>
       </Modal>

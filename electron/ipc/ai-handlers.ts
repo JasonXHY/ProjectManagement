@@ -10,8 +10,17 @@ import { handleIpcError } from '../utils/errors'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT, EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
+import { getAllSettings } from '../database/settings'
 import fs from 'fs/promises'
 import path from 'path'
+
+// 角色差异化Prompt
+const ROLE_HINT: Record<string, string> = {
+  pm: '你面向项目经理，关注进度、风险、里程碑。',
+  developer: '你面向开发工程师，关注技术方案与接口文档。',
+  pre_sales: '你面向售前，关注报价、方案、客户需求。',
+  customer_success: '你面向客户成功，关注验收、交接、签字完整性。',
+}
 
 export function registerAIHandlers() {
   // 进度回传通道 - 用于批量分类时发送进度
@@ -85,9 +94,14 @@ export function registerAIHandlers() {
         }
       }
 
-      // 构建消息
+      // 获取用户角色设置
+      const settings = getAllSettings()
+      const role = settings.user_role || 'pm'
+      const roleHint = ROLE_HINT[role] || ''
+
+      // 构建消息（注入角色差异化Prompt）
       const messages = [
-        { role: 'system' as const, content: CHAT_SYSTEM_PROMPT },
+        { role: 'system' as const, content: `${roleHint}\n${CHAT_SYSTEM_PROMPT}` },
         { role: 'user' as const, content: `项目上下文：\n${contextContents.join('\n\n')}\n\n用户问题：${message}` }
       ]
 
@@ -142,7 +156,9 @@ export function registerAIHandlers() {
       }
 
       // 根据分类方式选择 prompt（优先使用用户自定义的）
-      const settings = (await import('../database/settings')).getAllSettings()
+      const settings = getAllSettings()
+      const role = settings.user_role || 'pm'
+      const roleHint = ROLE_HINT[role] || ''
       let promptTemplate: string
       if (categoryType === 'content') {
         promptTemplate = settings.classify_prompt_content || CLASSIFY_PROMPT_CONTENT
@@ -151,8 +167,9 @@ export function registerAIHandlers() {
       }
       const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
 
-      // 调用AI分类
+      // 调用AI分类（注入角色差异化Prompt）
       const messages = [
+        { role: 'system' as const, content: roleHint },
         { role: 'user' as const, content: classifyPrompt }
       ]
 

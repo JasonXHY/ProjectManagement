@@ -12,7 +12,7 @@ const ALLOWED_SETTINGS_FIELDS = [
   'classify_prompt_stages', 'classify_prompt_content', 'analyze_prompt',
   'extraction_txt', 'extraction_pdf_text', 'extraction_pdf_scanned', 'extraction_word', 'extraction_excel', 'extraction_image',
   'zhipu_api_key', 'mimo_api_key', 'zhipu_api_url', 'mimo_api_url',
-  'user_role', 'custom_stages',
+  'user_role', 'custom_stages', 'project_storage_path',
 ]
 
 export function registerSettingsHandlers() {

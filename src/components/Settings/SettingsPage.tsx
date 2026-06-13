@@ -18,6 +18,7 @@ import {
   EditOutlined,
   UserOutlined,
   PlusOutlined,
+  FolderOutlined,
 } from "@ant-design/icons";
 import { configService } from "../../services/configService";
 import {
@@ -193,6 +194,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {[
             { key: 'ai', label: 'AI模型', icon: <RobotOutlined /> },
             { key: 'extraction', label: '文件提取', icon: <FileOutlined /> },
+            { key: 'storage', label: '存储设置', icon: <FolderOutlined /> },
             { key: 'prompt', label: 'Prompt配置', icon: <EditOutlined /> },
             { key: 'role', label: '用户角色', icon: <UserOutlined /> },
             { key: 'stages', label: '自定义阶段', icon: <PlusOutlined /> },
@@ -322,6 +324,37 @@ export default function SettingsPage(_props: SettingsPageProps) {
                   />
                 </Form.Item>
               </div>
+            </div>
+          )}
+
+          {/* 存储设置 */}
+          {activeTab === 'storage' && (
+            <div
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid var(--border-default)',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+              }}
+            >
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                存储设置
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                配置项目文件的存储位置。新创建的项目将使用此路径。
+              </div>
+
+              <Form.Item
+                label="项目存储路径"
+                name="project_storage_path"
+                extra="留空则使用默认路径（用户数据目录下的projects文件夹）"
+              >
+                <Input
+                  placeholder="例如：D:\WORK 或 C:\Projects"
+                  style={{ width: '100%' }}
+                />
+              </Form.Item>
             </div>
           )}
 

@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
+import { getSetting } from '../database/settings'
 
 /**
  * 清理文件名中的特殊字符
@@ -10,9 +11,13 @@ export function sanitizeFileName(name: string): string {
 }
 
 /**
- * 获取项目根目录
+ * 获取项目根目录（优先使用用户自定义路径）
  */
 export function getProjectsRoot(): string {
+  const customPath = getSetting('project_storage_path')
+  if (customPath && customPath.trim()) {
+    return customPath.trim()
+  }
   return path.join(app.getPath('userData'), 'projects')
 }
 
