@@ -415,6 +415,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
     handleBatchClassify,
     handleBatchDelete,
     handleBatchClassifySelected,
+    handleCancelBatchClassify: () => { batchCancelledRef.current = true },
     handleStageChange,
     handleConfirmProgression,
     handleManualProgression,

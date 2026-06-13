@@ -13,6 +13,8 @@ import {
   UserOutlined,
   HistoryOutlined,
 } from "@ant-design/icons";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ChatConversationMessage } from "../../types";
 import { aiService } from "../../services/aiService";
 import { formatTime, formatSessionTime } from "../../utils/time";
@@ -432,11 +434,12 @@ export default function ChatWindow({
                     }}
                   >
                     <div
+                      className={msg.role !== 'user' ? 'markdown-body' : ''}
                       style={{
                         padding: '12px 16px',
                         fontSize: '14px',
                         lineHeight: 1.6,
-                        whiteSpace: 'pre-wrap',
+                        whiteSpace: msg.role === 'user' ? 'pre-wrap' : 'normal',
                         wordBreak: 'break-word',
                         background: msg.role === 'user' ? '#4F46E5' : '#F3F4F6',
                         color: msg.role === 'user' ? 'white' : '#111827',
@@ -445,7 +448,11 @@ export default function ChatWindow({
                         borderBottomLeftRadius: msg.role === 'user' ? '16px' : '4px',
                       }}
                     >
-                      {msg.content}
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                      )}
                     </div>
                     <div style={{ fontSize: '11px', color: '#9CA3AF', padding: '0 4px' }}>
                       {formatTime(msg.created_at)}

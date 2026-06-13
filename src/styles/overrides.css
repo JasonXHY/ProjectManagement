@@ -268,3 +268,115 @@ textarea.ant-input:focus {
 .ant-app {
   color: var(--text-primary) !important;
 }
+
+/* Markdown 渲染样式 */
+/* 原因：AI回复需要支持Markdown格式渲染 */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #111827;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body h1 { font-size: 20px; }
+.markdown-body h2 { font-size: 18px; }
+.markdown-body h3 { font-size: 16px; }
+.markdown-body h4 { font-size: 14px; }
+
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 24px;
+  margin-bottom: 12px;
+}
+
+.markdown-body li {
+  margin-bottom: 4px;
+}
+
+.markdown-body code {
+  padding: 2px 6px;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+.markdown-body pre {
+  padding: 12px;
+  overflow-x: auto;
+  background: #1F2937;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background: transparent;
+  color: #E5E7EB;
+  font-size: 13px;
+}
+
+.markdown-body blockquote {
+  padding-left: 16px;
+  border-left: 4px solid #E5E7EB;
+  color: #6B7280;
+  margin-bottom: 12px;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 8px 12px;
+  border: 1px solid #E5E7EB;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: #F9FAFB;
+  font-weight: 500;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #E5E7EB;
+  margin: 16px 0;
+}
+
+.markdown-body a {
+  color: #4F46E5;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 600;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
+}

@@ -456,7 +456,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 {customStages.map((stage) => (
                   <Tag
                     key={stage}
-                    closable
+                    closable={!defaultStages.includes(stage)}
                     onClose={() => handleDeleteStage(stage)}
                     style={{
                       padding: '4px 12px',

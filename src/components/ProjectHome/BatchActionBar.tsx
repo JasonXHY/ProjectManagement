@@ -2,6 +2,7 @@ import { Button, Progress } from 'antd'
 import {
   RobotOutlined,
   DeleteOutlined,
+  StopOutlined,
 } from '@ant-design/icons'
 
 interface BatchActionBarProps {
@@ -10,9 +11,10 @@ interface BatchActionBarProps {
   classifyProgress: { current: number; total: number } | null
   onBatchClassify: () => void
   onBatchDelete: () => void
+  onCancelBatch?: () => void
 }
 
-export default function BatchActionBar({ selectedCount, batchClassifying, classifyProgress, onBatchClassify, onBatchDelete }: BatchActionBarProps) {
+export default function BatchActionBar({ selectedCount, batchClassifying, classifyProgress, onBatchClassify, onBatchDelete, onCancelBatch }: BatchActionBarProps) {
   if (selectedCount === 0) return null
 
   return (
@@ -40,6 +42,16 @@ export default function BatchActionBar({ selectedCount, batchClassifying, classi
       >
         批量分类
       </Button>
+      {batchClassifying && onCancelBatch && (
+        <Button
+          danger
+          size="small"
+          icon={<StopOutlined />}
+          onClick={onCancelBatch}
+        >
+          取消
+        </Button>
+      )}
       <Button
         danger
         size="small"

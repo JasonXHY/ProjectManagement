@@ -50,6 +50,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
     handleStageChange,
     handleConfirmProgression,
     handleManualProgression,
+    handleCancelBatchClassify,
     handleViewSummary,
     handleGenerateSummary,
   } = useProjectHome(project, onProjectUpdated)
@@ -125,6 +126,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
             classifyProgress={classifyProgress}
             onBatchClassify={handleBatchClassifySelected}
             onBatchDelete={handleBatchDelete}
+            onCancelBatch={handleCancelBatchClassify}
           />
 
           <FileListTable
