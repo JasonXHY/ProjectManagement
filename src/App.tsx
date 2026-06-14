@@ -167,11 +167,11 @@ function App() {
               onClick={handleBackToProjects}
               style={{ color: '#6B7280' }}
             />
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 600, color: '#111827' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <div style={{ fontSize: '18px', fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {selectedProject.name}
               </div>
-              <div style={{ fontSize: '12px', color: '#9CA3AF' }}>
+              <div style={{ fontSize: '12px', color: '#9CA3AF', flexShrink: 0 }}>
                 {selectedProject.current_stage}
               </div>
             </div>
