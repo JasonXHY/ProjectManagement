@@ -9,6 +9,7 @@ import { SignatureDetector } from '../services/signature-detector'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from '../prompts/classify'
 import { validateRequired, validateType, validateProjectExists, validateFileExists } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
+import { parseClassifyResponse } from '../utils/ai-response'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -122,19 +123,7 @@ export function registerFileHandlers() {
         getAIService().chat([
           { role: 'user', content: classifyPrompt }
         ]).then(async (result) => {
-          // 解析AI返回的JSON
-          let category: string
-          try {
-            const jsonMatch = result.content.match(/\{[\s\S]*\}/)
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0])
-              category = parsed.category || '未分类'
-            } else {
-              category = result.content.trim() || '未分类'
-            }
-          } catch {
-            category = result.content.trim() || '未分类'
-          }
+          const { category } = parseClassifyResponse(result.content)
 
           // 先移动文件，成功后再更新数据库（事务性保护）
           try {

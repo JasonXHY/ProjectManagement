@@ -57,20 +57,25 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
 
   /** 加载项目列表 */
   const loadProjects = useCallback(async () => {
+    let cancelled = false
     setLoading(true)
     try {
       const result = await projectService.list()
+      if (cancelled) return
       if (result.success && result.data) {
         setProjects(result.data)
       } else {
         message.error(result.error || '加载项目列表失败')
       }
     } catch (error) {
-      message.error('加载项目列表失败')
-      console.error(error)
+      if (!cancelled) {
+        message.error('加载项目列表失败')
+        console.error(error)
+      }
     } finally {
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -268,23 +273,25 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
         return (
           <div
             key={project.id}
+            className="project-card"
             style={{
-              background: '#FFFFFF',
-              border: '1px solid #E5E7EB',
-              borderRadius: '12px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-sm)',
               overflow: 'hidden',
               cursor: 'pointer',
-              transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'all var(--transition-normal)',
               animation: `fadeInUp 300ms ease-out ${index * 50}ms both`,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#D1D5DB'
-              e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04)'
+              e.currentTarget.style.borderColor = 'var(--text-disabled)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)'
               e.currentTarget.style.transform = 'translateY(-2px)'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#E5E7EB'
-              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.borderColor = 'var(--border-default)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
               e.currentTarget.style.transform = 'translateY(0)'
             }}
             onClick={() => onOpen?.(project)}
@@ -302,17 +309,17 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             />
 
             {/* 卡片内容 */}
-            <div style={{ padding: '16px 20px 20px' }}>
+            <div style={{ padding: 'var(--space-4) 20px 20px' }}>
               {/* 标题行 */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
-                  marginBottom: '12px',
+                  marginBottom: 'var(--space-3)',
                 }}
               >
-                <div style={{ fontSize: '16px', fontWeight: 600, color: '#111827', lineHeight: 1.4 }}>
+                <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {project.name}
                 </div>
                 <Tag
@@ -320,7 +327,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                     color: stageStyle.color,
                     backgroundColor: stageStyle.bg,
                     border: 'none',
-                    borderRadius: '9999px',
+                    borderRadius: 'var(--radius-full)',
                     padding: '2px 10px',
                     fontSize: '12px',
                     fontWeight: 500,
@@ -332,27 +339,27 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
               </div>
 
               {/* 元信息 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B7280' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 'var(--space-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   <FileTextOutlined style={{ width: '14px', textAlign: 'center' }} />
                   <span>文件</span>
-                  <span style={{ margin: '0 4px', color: '#E5E7EB' }}>|</span>
+                  <span style={{ margin: '0 4px', color: 'var(--border-default)' }}>|</span>
                   <span
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
                       padding: '1px 8px',
-                      background: '#F3F4F6',
-                      borderRadius: '6px',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: 'var(--radius-sm)',
                       fontSize: '11px',
-                      color: '#6B7280',
+                      color: 'var(--text-secondary)',
                     }}
                   >
-                    按阶段分类
+                    {project.category_type === 'content' ? '按内容分类' : '按阶段分类'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B7280' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   <ProjectOutlined style={{ width: '14px', textAlign: 'center' }} />
                   <span>当前阶段: {project.current_stage}</span>
                 </div>
@@ -376,11 +383,11 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  paddingTop: '12px',
-                  borderTop: '1px solid #F3F4F6',
+                  paddingTop: 'var(--space-3)',
+                  borderTop: '1px solid var(--border-light)',
                 }}
               >
-                <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>
                   {formatTimeRelative(project.updated_at)}
                 </span>
                 <div
@@ -438,7 +445,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '80px 24px',
+        padding: '80px var(--space-6)',
         textAlign: 'center',
       }}
     >
@@ -446,29 +453,29 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
         style={{
           width: '80px',
           height: '80px',
-          marginBottom: '24px',
-          background: '#F3F4F6',
+          marginBottom: 'var(--space-6)',
+          background: 'var(--bg-secondary)',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#D1D5DB',
+          color: 'var(--text-disabled)',
           fontSize: '32px',
         }}
       >
         <FolderOpenOutlined />
       </div>
-      <div style={{ fontSize: '18px', fontWeight: 600, color: '#6B7280', marginBottom: '8px' }}>
+      <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>
         还没有项目
       </div>
-      <div style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '24px', maxWidth: '360px' }}>
+      <div style={{ fontSize: '14px', color: 'var(--text-placeholder)', marginBottom: 'var(--space-6)', maxWidth: '360px' }}>
         创建你的第一个项目，开始用 AI 智能管理你的项目文件和文档
       </div>
       <Button
         type="primary"
         icon={<PlusOutlined />}
         onClick={() => setModalVisible(true)}
-        style={{ height: '42px', padding: '0 24px', fontSize: '15px' }}
+        style={{ height: '42px', padding: '0 var(--space-6)', fontSize: '15px' }}
       >
         创建第一个项目
       </Button>
@@ -476,22 +483,22 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
   )
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: 'var(--space-6)' }}>
       {/* 工具栏 */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '20px',
-          gap: '12px',
+          marginBottom: 'var(--space-5)',
+          gap: 'var(--space-3)',
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <Input
             placeholder="搜索项目名称..."
-            prefix={<SearchOutlined style={{ color: '#9CA3AF' }} />}
+            prefix={<SearchOutlined style={{ color: 'var(--text-placeholder)' }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear

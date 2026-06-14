@@ -42,12 +42,12 @@ export default function FileListTable({
         const typeLabel = getFileTypeLabel(name)
         const typeDesc = getFileTypeDesc(name)
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <div
               style={{
                 width: '32px',
                 height: '32px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -61,8 +61,8 @@ export default function FileListTable({
               {typeLabel}
             </div>
             <div>
-              <div style={{ fontWeight: 500, color: '#111827' }}>{name}</div>
-              <div style={{ fontSize: '12px', color: '#9CA3AF' }}>{typeDesc}</div>
+              <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{name}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>{typeDesc}</div>
             </div>
           </div>
         )
@@ -74,7 +74,7 @@ export default function FileListTable({
       key: 'category',
       width: 120,
       render: (category: string) => {
-        if (!category) return <span style={{ color: '#6B7280' }}>未分类</span>
+        if (!category) return <span style={{ color: 'var(--text-secondary)' }}>未分类</span>
         const style = getStageStyle(category)
         return (
           <Tag
@@ -82,7 +82,7 @@ export default function FileListTable({
               color: style.color,
               backgroundColor: style.bg,
               border: 'none',
-              borderRadius: '9999px',
+              borderRadius: 'var(--radius-full)',
               padding: '2px 10px',
               fontSize: '12px',
               fontWeight: 500,
@@ -104,12 +104,12 @@ export default function FileListTable({
             <Tag
               color="success"
               icon={<SignatureOutlined />}
-              style={{ borderRadius: '9999px', padding: '2px 8px', fontSize: '12px' }}
+              style={{ borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '12px' }}
             >
               有签字
             </Tag>
           ) : (
-            <span style={{ color: '#9CA3AF', fontSize: '12px' }}>-</span>
+            <span style={{ color: 'var(--text-placeholder)', fontSize: '12px' }}>-</span>
           )}
         </div>
       ),
@@ -146,8 +146,8 @@ export default function FileListTable({
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '4px',
-                color: record.category ? getStageStyle(record.category).color : '#6B7280',
+                gap: 'var(--space-1)',
+                color: record.category ? getStageStyle(record.category).color : 'var(--text-secondary)',
               }}
             >
               {record.category || '选择阶段'}

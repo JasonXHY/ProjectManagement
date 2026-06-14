@@ -9,6 +9,7 @@ import {
   Spin,
   Tag,
   Space,
+  Tooltip,
 } from "antd";
 import {
   SaveOutlined,
@@ -82,6 +83,10 @@ export default function SettingsPage(_props: SettingsPageProps) {
           analyze_prompt: promptsResult.data.analyze,
         });
       }
+
+      if (result.data?.ai_provider) {
+        handleProviderChange(result.data.ai_provider as AIProvider);
+      }
     } catch (error) {
       message.error("加载配置失败");
       console.error(error);
@@ -125,17 +130,8 @@ export default function SettingsPage(_props: SettingsPageProps) {
 
   /** 恢复默认配置 */
   const handleReset = async () => {
-    setLoading(true);
-    try {
-      form.resetFields();
-      setModels([]);
-      message.success("已重置表单（请保存以生效）");
-    } catch (error) {
-      message.error("重置失败");
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    await loadSettings();
+    message.success("已恢复到保存的配置");
   };
 
   /** 供应商切换 */
@@ -185,9 +181,9 @@ export default function SettingsPage(_props: SettingsPageProps) {
           style={{
             display: 'flex',
             border: '1px solid var(--border-default)',
-            borderRadius: '8px',
-            padding: '4px',
-            marginBottom: '24px',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-1)',
+            marginBottom: 'var(--space-6)',
             background: 'var(--bg-secondary)',
           }}
         >
@@ -207,16 +203,16 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                padding: '8px 16px',
+                padding: 'var(--space-2) var(--space-4)',
                 border: 'none',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: 500,
-                transition: 'all 150ms',
-                background: activeTab === tab.key ? '#FFFFFF' : 'transparent',
+                transition: 'all var(--transition-fast)',
+                background: activeTab === tab.key ? 'var(--bg-surface)' : 'transparent',
                 color: activeTab === tab.key ? 'var(--color-primary)' : 'var(--text-secondary)',
-                boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                boxShadow: activeTab === tab.key ? 'var(--shadow-sm)' : 'none',
               }}
               onClick={() => setActiveTab(tab.key)}
             >
@@ -231,11 +227,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'ai' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                marginBottom: 'var(--space-6)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -279,11 +275,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'extraction' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                marginBottom: 'var(--space-6)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -331,11 +327,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'storage' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                marginBottom: 'var(--space-6)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -362,11 +358,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'prompt' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                marginBottom: 'var(--space-6)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -427,10 +423,10 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'role' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
                 marginBottom: '24px',
               }}
             >
@@ -451,11 +447,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
           {activeTab === 'stages' && (
             <div
               style={{
-                background: '#FFFFFF',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '24px',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-6)',
+                marginBottom: 'var(--space-6)',
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
@@ -487,18 +483,19 @@ export default function SettingsPage(_props: SettingsPageProps) {
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {customStages.map((stage) => (
-                  <Tag
-                    key={stage}
-                    closable={!defaultStages.includes(stage)}
-                    onClose={() => handleDeleteStage(stage)}
-                    style={{
-                      padding: '4px 12px',
-                      fontSize: '14px',
-                      borderRadius: '6px',
-                    }}
-                  >
-                    {stage}
-                  </Tag>
+                  <Tooltip key={stage} title={defaultStages.includes(stage) ? '默认阶段不可删除' : ''}>
+                    <Tag
+                      closable={!defaultStages.includes(stage)}
+                      onClose={() => handleDeleteStage(stage)}
+                      style={{
+                        padding: '4px 12px',
+                        fontSize: '14px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {stage}
+                    </Tag>
+                  </Tooltip>
                 ))}
               </div>
             </div>
@@ -507,7 +504,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
       </Spin>
 
       {/* 保存按钮 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-6)' }}>
         <Button
           icon={<UndoOutlined />}
           onClick={handleReset}

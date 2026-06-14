@@ -1,4 +1,5 @@
-import { Button, Upload } from 'antd'
+import { useState } from 'react'
+import { Button, Upload, Tooltip } from 'antd'
 import {
   UploadOutlined,
   AppstoreOutlined,
@@ -13,6 +14,8 @@ import {
   TeamOutlined,
   FolderOutlined,
   QuestionCircleOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons'
 import { FileRecord } from '../../types'
 import { getStageStyle } from './projectHome.styles'
@@ -41,7 +44,16 @@ interface StageSidebarProps {
   onOpenFolder?: () => void
 }
 
+/**
+ * 侧边栏组件
+ * 
+ * 设计决策：
+ * - 支持折叠模式（56px图标模式）和展开模式（200px完整模式）
+ * - 折叠时只显示图标，悬停显示Tooltip提示阶段名称
+ * - 默认展开，点击按钮切换
+ */
 export default function StageSidebar({ files, selectedCategory, onSelectCategory, onUpload, onOpenFolder }: StageSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false)
   const uncategorizedCount = files.filter(f => !f.category).length
 
   const stageItems = [
@@ -53,76 +65,81 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
     { key: '未分类', icon: <QuestionCircleOutlined />, label: '未分类', count: uncategorizedCount },
   ]
 
-  return (
+  const sidebarContent = (
     <div
       style={{
-        width: '200px',
-        background: '#FFFFFF',
-        borderRight: '1px solid #E5E7EB',
+        width: collapsed ? '56px' : '200px',
+        background: 'var(--bg-surface)',
+        borderRight: '1px solid var(--border-default)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
         overflow: 'hidden',
+        transition: 'width var(--transition-normal)',
       }}
     >
       <div
         style={{
-          padding: '16px 16px 12px',
+          padding: collapsed ? 'var(--space-4) var(--space-2) var(--space-3)' : 'var(--space-4) var(--space-4) var(--space-3)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: collapsed ? 'center' : 'space-between',
         }}
       >
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          文件分类
-        </span>
+        {!collapsed && (
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-placeholder)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            文件分类
+          </span>
+        )}
         <Button
           type="text"
           size="small"
-          icon={<UploadOutlined />}
-          style={{ width: '24px', height: '24px', color: '#9CA3AF' }}
+          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          onClick={() => setCollapsed(!collapsed)}
+          style={{ width: '24px', height: '24px', color: 'var(--text-placeholder)' }}
         />
       </div>
 
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '0 8px 8px' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: collapsed ? '0 var(--space-1) var(--space-2)' : '0 var(--space-2) var(--space-2)' }}>
         {stageItems.map((item) => {
           const stageStyle = item.key !== '所有文件' ? getStageStyle(item.key) : null
           const isSelected = selectedCategory === item.key
 
-          return (
+          const button = (
             <button
               key={item.key}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: collapsed ? 0 : 'var(--space-2)',
                 height: '40px',
-                padding: '0 12px',
-                borderRadius: '8px',
+                padding: collapsed ? '0' : '0 var(--space-3)',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                borderRadius: 'var(--radius-md)',
                 cursor: 'pointer',
-                color: isSelected ? (stageStyle?.color || '#4F46E5') : '#6B7280',
-                background: isSelected ? (stageStyle?.bg || '#EEF2FF') : 'transparent',
+                color: isSelected ? (stageStyle?.color || 'var(--color-primary)') : 'var(--text-secondary)',
+                background: isSelected ? (stageStyle?.bg || 'var(--color-primary-light)') : 'transparent',
                 border: 'none',
                 width: '100%',
                 textAlign: 'left',
                 fontFamily: 'inherit',
                 fontSize: '13px',
                 fontWeight: isSelected ? 500 : 400,
-                transition: 'all 150ms',
+                transition: 'all var(--transition-fast)',
                 position: 'relative',
                 marginBottom: '2px',
               }}
               onClick={() => onSelectCategory(item.key)}
               onMouseEnter={(e) => {
                 if (!isSelected) {
-                  e.currentTarget.style.background = '#F9FAFB'
-                  e.currentTarget.style.color = '#111827'
+                  e.currentTarget.style.background = 'var(--bg-hover)'
+                  e.currentTarget.style.color = 'var(--text-primary)'
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSelected) {
                   e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = '#6B7280'
+                  e.currentTarget.style.color = 'var(--text-secondary)'
                 }
               }}
             >
@@ -134,7 +151,7 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
                     top: '8px',
                     bottom: '8px',
                     width: '3px',
-                    background: stageStyle?.color || '#4F46E5',
+                    background: stageStyle?.color || 'var(--color-primary)',
                     borderRadius: '0 2px 2px 0',
                   }}
                 />
@@ -142,58 +159,72 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
               <span style={{ width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '14px' }}>
                 {item.icon}
               </span>
-              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {item.label}
-              </span>
-              <span
-                style={{
-                  minWidth: '20px',
-                  height: '18px',
-                  padding: '0 6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: isSelected ? `${stageStyle?.color || '#4F46E5'}18` : '#F3F4F6',
-                  borderRadius: '9999px',
-                  fontSize: '11px',
-                  color: isSelected ? (stageStyle?.color || '#4F46E5') : '#6B7280',
-                  fontWeight: 500,
-                }}
-              >
-                {item.count}
-              </span>
+              {!collapsed && (
+                <>
+                  <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {item.label}
+                  </span>
+                  <span
+                    style={{
+                      minWidth: '20px',
+                      height: '18px',
+                      padding: '0 6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: isSelected ? `${stageStyle?.color || 'var(--color-primary)'}18` : 'var(--bg-secondary)',
+                      borderRadius: 'var(--radius-full)',
+                      fontSize: '11px',
+                      color: isSelected ? (stageStyle?.color || 'var(--color-primary)') : 'var(--text-secondary)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {item.count}
+                  </span>
+                </>
+              )}
             </button>
           )
+
+          return collapsed ? (
+            <Tooltip key={item.key} title={item.label} placement="right">
+              {button}
+            </Tooltip>
+          ) : button
         })}
       </nav>
 
-      <div style={{ padding: '8px', borderTop: '1px solid #F3F4F6' }}>
-        <Dragger
-          name="file"
-          multiple={true}
-          showUploadList={false}
-          customRequest={({ file }) => onUpload(file as File)}
-          style={{ marginBottom: '4px' }}
-        >
-          <Button
-            type="default"
-            size="small"
-            icon={<UploadOutlined />}
-            style={{ width: '100%', marginBottom: '4px' }}
+      {!collapsed && (
+        <div style={{ padding: 'var(--space-2)', borderTop: '1px solid var(--border-light)' }}>
+          <Dragger
+            name="file"
+            multiple={true}
+            showUploadList={false}
+            customRequest={({ file }) => onUpload(file as File)}
+            style={{ marginBottom: 'var(--space-1)' }}
           >
-            上传文件
+            <Button
+              type="default"
+              size="small"
+              icon={<UploadOutlined />}
+              style={{ width: '100%', marginBottom: '4px' }}
+            >
+              上传文件
+            </Button>
+          </Dragger>
+          <Button
+            type="text"
+            size="small"
+            icon={<FolderOutlined />}
+            style={{ width: '100%' }}
+            onClick={onOpenFolder}
+          >
+            打开文件夹
           </Button>
-        </Dragger>
-        <Button
-          type="text"
-          size="small"
-          icon={<FolderOutlined />}
-          style={{ width: '100%' }}
-          onClick={onOpenFolder}
-        >
-          打开文件夹
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   )
+
+  return sidebarContent
 }

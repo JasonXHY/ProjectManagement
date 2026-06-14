@@ -107,3 +107,40 @@ body {
 .no-select {
   user-select: none;
 }
+
+/* 响应式断点 */
+@media (max-width: 900px) {
+  /* 小屏：侧边栏自动折叠 */
+  .sidebar-auto-collapse {
+    width: 56px !important;
+  }
+  
+  /* 卡片网格2列 */
+  .card-grid-responsive {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  /* 隐藏非关键信息 */
+  .hide-on-small {
+    display: none !important;
+  }
+  
+  /* Header紧凑模式 */
+  .header-compact {
+    padding: 0 12px !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  /* 中屏：2-3列卡片 */
+  .card-grid-responsive {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (min-width: 1201px) {
+  /* 大屏：3-4列卡片 */
+  .card-grid-responsive {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}

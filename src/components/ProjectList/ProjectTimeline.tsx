@@ -2,16 +2,11 @@ import { memo } from 'react'
 import { Timeline, Tag, Tooltip } from 'antd'
 import { StarFilled } from '@ant-design/icons'
 import { Milestone } from '../../types'
+import { PROJECT_STAGE_STYLE } from '../ProjectHome/projectHome.styles'
 
 interface ProjectTimelineProps {
   milestones: Milestone[]
   currentStage?: string
-}
-
-const STAGE_STYLE: Record<string, { color: string; bg: string }> = {
-  '售前': { color: '#92400E', bg: '#FEF3C7' },
-  '进行中': { color: '#553c9a', bg: '#e9d8fd' },
-  '关闭': { color: '#374151', bg: '#F3F4F6' },
 }
 
 const KEY_NODE_KEYWORDS = ['上线单', '验收单', '蓝图确认', '签署', '合同', '验收', '上线']
@@ -31,7 +26,7 @@ const ProjectTimeline = memo(function ProjectTimeline({ milestones, currentStage
 
   const sorted = [...milestones].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  const stageStyle = currentStage ? STAGE_STYLE[currentStage] : null
+  const stageStyle = currentStage ? PROJECT_STAGE_STYLE[currentStage] : null
 
   return (
     <div style={{ padding: '4px 0' }}>

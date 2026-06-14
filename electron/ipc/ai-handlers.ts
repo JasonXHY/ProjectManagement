@@ -7,6 +7,7 @@ import { getDatabase, saveDatabase } from '../database'
 import { resolveProjectPath } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateFileExists, validateNumberArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
+import { parseClassifyResponse } from '../utils/ai-response'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT, EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
@@ -176,25 +177,7 @@ export function registerAIHandlers() {
       const aiService = getAIService()
       const response = await aiService.chat(messages)
 
-      // 解析AI返回的JSON
-      let category: string
-      let fileStage: string | null = null
-      let summary: string | null = null
-      let keyInfo: Record<string, string> | null = null
-      try {
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
-          category = parsed.category || '未分类'
-          fileStage = parsed.stage || null
-          summary = parsed.summary || null
-          keyInfo = parsed.key_info || null
-        } else {
-          category = response.content.trim() || '未分类'
-        }
-      } catch {
-        category = response.content.trim() || '未分类'
-      }
+      const { category, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
 
       // 合并关键信息到项目 metadata
       if (keyInfo) {

@@ -8,7 +8,9 @@ function isEncrypted(value: string): boolean {
   if (!value) return false
   try {
     const buf = Buffer.from(value, 'base64')
-    return buf.length > 0
+    if (buf.length === 0) return false
+    const firstByte = buf[0]
+    return firstByte >= 0 && firstByte <= 3
   } catch {
     return false
   }

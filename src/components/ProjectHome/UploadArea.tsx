@@ -25,7 +25,7 @@ export default function UploadArea({ onUpload }: UploadAreaProps) {
       }}
       style={{
         width: '100%',
-        minHeight: '80px',
+        minHeight: '160px',
         border: '2px dashed #E5E7EB',
         borderRadius: '12px',
         padding: '16px',

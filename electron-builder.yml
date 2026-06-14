@@ -1,7 +1,34 @@
 appId: com.project-manager.app
 productName: 项目管理助手
+
 directories:
   output: dist_electron
+
 files:
   - dist/**/*
-  - electron/**/*
+  - electron/dist/**/*
+  - "!**/*.ts"
+  - "!**/.gitignore"
+  - "!**/node_modules/.cache"
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 项目管理助手
+
+publish:
+  provider: github
+  owner: JasonXHY
+  repo: ProjectManagement
