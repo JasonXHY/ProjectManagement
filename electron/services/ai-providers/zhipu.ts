@@ -10,7 +10,7 @@ export class ZhipuProvider implements AIProviderInterface {
     this.baseUrl = baseUrl
   }
 
-  async chat(messages: AIMessage[], model: string = 'glm-4-flash'): Promise<AIResponse> {
+  async chat(messages: AIMessage[], model: string = 'glm-4.7-flash'): Promise<AIResponse> {
     const response = await fetch(this.baseUrl, {
       method: 'POST',
       headers: {

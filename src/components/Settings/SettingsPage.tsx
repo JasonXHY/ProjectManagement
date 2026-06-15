@@ -48,6 +48,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("ai");
   const [models, setModels] = useState<AIModel[]>([]);
+  const [isBuiltinApiKey, setIsBuiltinApiKey] = useState(false);
   const defaultStages = ['售前', '进行中', '关闭'];
   const [customStages, setCustomStages] = useState<string[]>(defaultStages);
   const [newStageName, setNewStageName] = useState('');
@@ -72,6 +73,10 @@ export default function SettingsPage(_props: SettingsPageProps) {
           } catch {
             // JSON parse error, use default stages
           }
+        }
+        // 检测是否为内置API Key（内测版）
+        if (result.data.ai_provider === 'xiaomi' && result.data.ai_model === 'mimo-v2.5') {
+          setIsBuiltinApiKey(true);
         }
       }
       
@@ -138,8 +143,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const handleProviderChange = (value: AIProvider) => {
     const providerConfig = providerList.find((p) => p.id === value);
     if (providerConfig) {
-      setModels(providerConfig.models);
-      const firstModel = providerConfig.models[0];
+      // 过滤掉已废弃的模型，只显示当前可用的模型
+      const availableModels = providerConfig.models.filter(m => !m.deprecated);
+      setModels(availableModels.length > 0 ? availableModels : providerConfig.models);
+      
+      const firstModel = availableModels[0] || providerConfig.models[0];
       form.setFieldsValue({
         ai_model: firstModel?.id || "",
         ai_base_url: providerConfig.baseUrl,
@@ -162,10 +170,16 @@ export default function SettingsPage(_props: SettingsPageProps) {
 
   /** 获取模型选项 */
   const getModelOptions = () => {
-    return models.map((m) => ({
-      value: m.id,
-      label: m.isFree ? `${m.name} (免费)` : m.name,
-    }));
+    return models.map((m) => {
+      let label = m.name;
+      if (m.isFree) label += ' (免费)';
+      if (m.deprecated) label += ' [已废弃]';
+      return {
+        value: m.id,
+        label,
+        disabled: m.deprecated,
+      };
+    });
   };
 
   const extractionOptions = [
@@ -260,9 +274,27 @@ export default function SettingsPage(_props: SettingsPageProps) {
               <Form.Item
                 label="API Key"
                 name="ai_api_key"
-                rules={[{ required: true, message: "请输入API Key" }]}
+                rules={[{ required: !isBuiltinApiKey, message: "请输入API Key" }]}
+                extra={isBuiltinApiKey ? "内测版已内置API Key，不可编辑" : undefined}
               >
-                <Input.Password placeholder="输入API Key" />
+                <Input.Password
+                  placeholder={isBuiltinApiKey ? "内测版已内置" : "输入API Key"}
+                  readOnly={isBuiltinApiKey}
+                  disabled={isBuiltinApiKey}
+                  onCopy={(e) => isBuiltinApiKey && e.preventDefault()}
+                  onCut={(e) => isBuiltinApiKey && e.preventDefault()}
+                  onPaste={(e) => isBuiltinApiKey && e.preventDefault()}
+                  onContextMenu={(e) => isBuiltinApiKey && e.preventDefault()}
+                  onKeyDown={(e) => {
+                    if (isBuiltinApiKey) {
+                      // 阻止 Ctrl+C, Ctrl+A, Ctrl+X 等
+                      if (e.ctrlKey && ['c', 'a', 'x'].includes(e.key.toLowerCase())) {
+                        e.preventDefault();
+                      }
+                    }
+                  }}
+                  style={isBuiltinApiKey ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : undefined}
+                />
               </Form.Item>
 
               <Form.Item label="API地址" name="ai_base_url">

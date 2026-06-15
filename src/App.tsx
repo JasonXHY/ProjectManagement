@@ -11,6 +11,7 @@ import ProjectHome from "./components/ProjectHome/ProjectHome";
 import ChatWindow from "./components/Chat/ChatWindow";
 import SettingsPage from "./components/Settings/SettingsPage";
 import StyleTest from "./pages/StyleTest";
+import BetaNoticeModal from "./components/BetaNotice/BetaNoticeModal";
 import type { Project } from "./types";
 
 const { Header, Content } = Layout;
@@ -133,7 +134,7 @@ function App() {
             >
               PM
             </div>
-            <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>项目管理助手</span>
+            <span style={{ fontSize: '16px', fontWeight: 600, color: '#111827' }}>PMAer</span>
           </div>
           <div className="flex items-center" style={{ gap: '12px' }}>
             {renderBreadcrumb()}
@@ -269,6 +270,7 @@ function App() {
 
   return (
     <Layout className="min-h-screen" style={{ background: '#F8F7F4' }}>
+      <BetaNoticeModal />
       <Header
         className="flex items-center justify-between"
         style={{

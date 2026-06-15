@@ -1,5 +1,6 @@
-appId: com.project-manager.app
-productName: 项目管理助手
+appId: com.pmaer.app
+productName: PMAer
+copyright: Copyright © 2026
 
 directories:
   output: dist_electron
@@ -17,6 +18,7 @@ win:
       arch:
         - x64
   icon: build/icon.ico
+  artifactName: "PMAer-${version}-Setup.${ext}"
 
 nsis:
   oneClick: false
@@ -26,7 +28,7 @@ nsis:
   installerHeaderIcon: build/icon.ico
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: 项目管理助手
+  shortcutName: PMAer
 
 publish:
   provider: github

@@ -81,10 +81,10 @@ export function getDecryptedApiKey(key: string): string {
 
 export function initDefaultSettings() {
   const defaults: Record<string, string> = {
-    ai_provider: 'zhipu',
-    ai_model: 'glm-4-flash',
-    ai_api_key: '',
-    ai_base_url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+    ai_provider: 'xiaomi',
+    ai_model: 'mimo-v2.5',
+    ai_api_key: 'sk-c3vuo9gj5zpepvrcc7u509lpv0iazs9ze76bfstbl528eonf',
+    ai_base_url: 'https://api.xiaomimimo.com/v1/chat/completions',
     classify_provider: '',
     classify_model: '',
     classify_api_key: '',
@@ -95,7 +95,9 @@ export function initDefaultSettings() {
     extraction_pdf_scanned: 'cloud',
     extraction_word: 'local',
     extraction_excel: 'local',
-    extraction_image: 'cloud'
+    extraction_image: 'cloud',
+    first_launch_done: 'false',
+    beta_ai_shutdown_date: '2026-07-31'
   }
 
   for (const [key, value] of Object.entries(defaults)) {

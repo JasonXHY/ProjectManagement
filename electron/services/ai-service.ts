@@ -5,7 +5,7 @@ import { getSetting, getDecryptedApiKey } from '../database/settings'
 import { getProviderById, getFullApiUrl } from '../shared/model-registry'
 
 // AI模型供应商类型（与 src/types 中的 AIProvider 保持一致）
-export type AIProvider = 'xiaomi' | 'zhipu' | 'ali' | 'tencent' | 'baidu' | 'deepseek' | 'moonshot' | 'lingyiwanwu' | 'xunfei' | 'baichuan' | 'minimax' | 'custom'
+export type AIProvider = 'xiaomi' | 'zhipu' | 'ali' | 'tencent' | 'baidu' | 'deepseek' | 'moonshot' | 'xunfei' | 'baichuan' | 'minimax' | 'custom'
 
 // 通用OpenAI兼容供应商实现
 class OpenAICompatibleProvider implements AIProviderInterface {
@@ -17,7 +17,7 @@ class OpenAICompatibleProvider implements AIProviderInterface {
     this.apiUrl = apiUrl
   }
 
-  async chat(messages: AIMessage[], model: string = 'deepseek-chat'): Promise<AIResponse> {
+  async chat(messages: AIMessage[], model: string = 'deepseek-v4-flash'): Promise<AIResponse> {
     const response = await fetch(this.apiUrl, {
       method: 'POST',
       headers: {

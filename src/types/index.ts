@@ -65,7 +65,7 @@ export interface ChatConversationMessage {
 }
 
 // AI模型供应商
-export type AIProvider = 'xiaomi' | 'zhipu' | 'ali' | 'tencent' | 'baidu' | 'deepseek' | 'moonshot' | 'lingyiwanwu' | 'xunfei' | 'baichuan' | 'minimax' | 'custom'
+export type AIProvider = 'xiaomi' | 'zhipu' | 'ali' | 'tencent' | 'baidu' | 'deepseek' | 'moonshot' | 'xunfei' | 'baichuan' | 'minimax' | 'custom'
 
 // AI配置
 export interface AIConfig {
