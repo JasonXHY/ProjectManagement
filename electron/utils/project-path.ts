@@ -2,6 +2,7 @@ import { app } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
 import { getSetting } from '../database/settings'
+import type { StageDef } from '../shared/stages'
 
 /**
  * 清理文件名中的特殊字符
@@ -63,4 +64,18 @@ export async function createProjectDirectory(projectId: number, projectName: str
   }
 
   return projectPath
+}
+
+/**
+ * 在项目目录下创建「阶段/子分类」两级目录结构（v3.1 §4.2）。
+ * 无子分类的阶段只创建阶段级目录。
+ */
+export async function createStageFolders(projectPath: string, stages: StageDef[]): Promise<void> {
+  for (const stage of stages) {
+    const stageDir = path.join(projectPath, sanitizeFileName(stage.name))
+    await fs.mkdir(stageDir, { recursive: true })
+    for (const sub of stage.subcategories) {
+      await fs.mkdir(path.join(stageDir, sanitizeFileName(sub)), { recursive: true })
+    }
+  }
 }

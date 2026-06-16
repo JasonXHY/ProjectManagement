@@ -6,7 +6,8 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// Mock window.api（Electron IPC）
+// Mock window.api（Electron IPC）— 仅在浏览器(jsdom)环境注入；Node 环境(集成测试)跳过
+if (typeof window !== 'undefined') {
 Object.defineProperty(window, 'api', {
   value: {
     project: {
@@ -45,6 +46,7 @@ Object.defineProperty(window, 'api', {
     },
   },
 })
+}
 
 // Mock message（AntD）
 vi.mock('antd', async () => {

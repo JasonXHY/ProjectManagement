@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import * as projectDb from '../database/projects'
-import { sanitizeFileName, resolveProjectPath, createProjectDirectory } from '../utils/project-path'
+import { resolveProjectPath, createProjectDirectory, createStageFolders } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
-import { FILE_CLASSIFICATION_STAGES } from '../shared/stages'
+import { STAGE_DEFINITIONS, getSubcategories, type StageDef } from '../shared/stages'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -51,13 +51,13 @@ export function registerProjectHandlers() {
       // 创建项目文件夹（使用项目名称作为目录名）
       const projectPath = await createProjectDirectory(id, name)
 
-      // 根据分类方式创建子文件夹
+      // 根据分类方式创建「阶段/子分类」两级目录结构（v3.1 §4.2）
       if (categoryType === 'stage') {
-        const stages = customStages || FILE_CLASSIFICATION_STAGES
-        for (const stage of stages) {
-          const stageDir = path.join(projectPath, sanitizeFileName(stage))
-          await fs.mkdir(stageDir, { recursive: true })
-        }
+        // 自定义阶段（扁平字符串）映射为带子分类的定义；未自定义时用完整默认定义
+        const stages: StageDef[] = customStages
+          ? customStages.map((name) => ({ name, subcategories: getSubcategories(name) }))
+          : STAGE_DEFINITIONS
+        await createStageFolders(projectPath, stages)
       }
       // 按内容/智能分类时，文件夹由AI分类后动态创建
 
