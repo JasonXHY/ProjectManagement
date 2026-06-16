@@ -110,3 +110,6 @@
 | 2026-06-15 | MiMoCode | 模型注册表全面更新：10家厂商模型更新+零一万物移除+接口扩展+文档建立 |
 | 2026-06-15 | MiMoCode | PMAer v0.1.0内测版：应用重命名+内置小米MiMo V2.5 API Key+UI防复制+首次打开弹窗+负鼠图标 |
 | 2026-06-15 | MiMoCode | 添加内测版说明文档：docs/beta-version-notes.md（特殊配置说明+未来更新计划） |
+| 2026-06-16 | MiMoCode | v11.1：8项bug修复（缩进/preload categoryType/model-registry去重/阶段空状态/搜索空状态/hover位移/字体/CSS hover迁移+EmptyState颜色） |
+| 2026-06-16 | MiMoCode | v11.2：首次启动两步引导+AI预检+设置页模型修复+分类fallback+操作按钮修复+需求文档v3.1+Qoder审核 |
+| 2026-06-16 | MiMoCode | v11.3：API Key明文存储+MiMo URL修复+billing mode选择器+stage计数修复+自定义阶段→文件分类管理+79测试通过 |
