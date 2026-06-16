@@ -169,7 +169,10 @@ export default function ChatWindow({
         messagesRef.current = finalMessages;
         setMessages(finalMessages);
       } else {
-        message.error(result.error || "发送消息失败，请重试");
+        const errMsg = typeof result.error === 'object' && result.error !== null
+          ? (result.error as any).message || JSON.stringify(result.error)
+          : result.error || "发送消息失败，请重试";
+        message.error(errMsg);
         const reverted = messagesRef.current.filter(
           (m) => m.id !== userMessage.id
         );

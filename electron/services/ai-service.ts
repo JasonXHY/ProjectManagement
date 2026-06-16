@@ -62,7 +62,7 @@ export class AIService {
       const url = baseUrl || 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
       this.providers.set('zhipu', new ZhipuProvider(apiKey, url))
     } else if (currentProvider === 'xiaomi' && apiKey) {
-      const url = baseUrl || 'https://api.xiaomimimo.com'
+      const url = (baseUrl || 'https://api.xiaomimimo.com').replace(/\/v1\/?$/, '')
       this.providers.set('xiaomi', new MiMoProvider(apiKey, url, url, 'api'))
     } else if (apiKey) {
       // 通用OpenAI兼容供应商
@@ -81,7 +81,7 @@ export class AIService {
     }
 
     const mimoKey = getDecryptedApiKey('mimo_api_key')
-    const mimoUrl = getSetting('mimo_api_url') || 'https://api.xiaomimimo.com'
+    const mimoUrl = (getSetting('mimo_api_url') || 'https://api.xiaomimimo.com').replace(/\/v1\/?$/, '')
     if (mimoKey && !this.providers.has('xiaomi')) {
       this.providers.set('xiaomi', new MiMoProvider(mimoKey, mimoUrl, mimoUrl, 'api'))
     }

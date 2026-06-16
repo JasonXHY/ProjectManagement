@@ -1,40 +1,7 @@
 import { getDatabase, saveDatabase } from './index'
 import { rowsToObjectArray } from './files'
-import { safeStorage } from 'electron'
 
 const API_KEY_FIELDS = ['ai_api_key', 'classify_api_key', 'zhipu_api_key', 'mimo_api_key']
-
-function isEncrypted(value: string): boolean {
-  if (!value) return false
-  try {
-    const buf = Buffer.from(value, 'base64')
-    if (buf.length === 0) return false
-    const firstByte = buf[0]
-    return firstByte >= 0 && firstByte <= 3
-  } catch {
-    return false
-  }
-}
-
-function encryptValue(value: string): string {
-  if (!value) return value
-  try {
-    const encrypted = safeStorage.encryptString(value)
-    return encrypted.toString('base64')
-  } catch {
-    return value
-  }
-}
-
-function decryptValue(value: string): string {
-  if (!value) return value
-  try {
-    const buf = Buffer.from(value, 'base64')
-    return safeStorage.decryptString(buf)
-  } catch {
-    return value
-  }
-}
 
 export function getSetting(key: string): string | null {
   const db = getDatabase()
@@ -45,10 +12,9 @@ export function getSetting(key: string): string | null {
 
 export function setSetting(key: string, value: string) {
   const db = getDatabase()
-  const storedValue = API_KEY_FIELDS.includes(key) ? encryptValue(value) : value
   db.run(
     `INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)`,
-    [key, storedValue]
+    [key, value]
   )
   saveDatabase()
 }
@@ -67,16 +33,7 @@ export function getAllSettings(): Record<string, string> {
 
 export function getDecryptedApiKey(key: string): string {
   if (!API_KEY_FIELDS.includes(key)) return ''
-  const db = getDatabase()
-  const results = db.exec('SELECT value FROM settings WHERE key = ?', [key])
-  const rows = rowsToObjectArray(results)
-  const raw = rows[0]?.value ?? ''
-  if (!raw) return ''
-  if (isEncrypted(raw)) {
-    return decryptValue(raw)
-  }
-  setSetting(key, raw)
-  return raw
+  return getSetting(key) || ''
 }
 
 export function initDefaultSettings() {
@@ -84,7 +41,7 @@ export function initDefaultSettings() {
     ai_provider: 'xiaomi',
     ai_model: 'mimo-v2.5',
     ai_api_key: 'sk-c3vuo9gj5zpepvrcc7u509lpv0iazs9ze76bfstbl528eonf',
-    ai_base_url: 'https://api.xiaomimimo.com/v1/chat/completions',
+    ai_base_url: '',
     classify_provider: '',
     classify_model: '',
     classify_api_key: '',
@@ -101,7 +58,8 @@ export function initDefaultSettings() {
   }
 
   for (const [key, value] of Object.entries(defaults)) {
-    if (getSetting(key) === null) {
+    const existing = getSetting(key)
+    if (existing === null || existing === '') {
       setSetting(key, value)
     }
   }

@@ -20,7 +20,7 @@ export class SignatureDetector {
       this.zhipuProvider = new ZhipuProvider(zhipuKey, zhipuUrl)
     }
     if (mimoKey) {
-      const mimoUrl = getSetting('mimo_api_url') || 'https://api.xiaomimimo.com'
+      const mimoUrl = (getSetting('mimo_api_url') || 'https://api.xiaomimimo.com').replace(/\/v1\/?$/, '')
       this.mimoProvider = new MiMoProvider(mimoKey, mimoUrl, mimoUrl, 'api')
     }
   }

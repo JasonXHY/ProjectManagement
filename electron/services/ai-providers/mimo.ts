@@ -19,28 +19,47 @@ export class MiMoProvider implements AIProviderInterface {
 
   async chat(messages: AIMessage[], model: string = 'mimo-v2.5'): Promise<AIResponse> {
     const baseUrl = this.mode === 'api' ? this.apiUrl : this.tokenPlanUrl
+    const url = `${baseUrl}/v1/chat/completions`
 
-    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': this.apiKey
-      },
-      body: JSON.stringify({
-        model,
-        messages
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 60000)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': this.apiKey
+        },
+        body: JSON.stringify({
+          model,
+          messages
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`小米MiMo请求失败: ${response.statusText}`)
-    }
+      if (!response.ok) {
+        const body = await response.text().catch(() => '')
+        throw new Error(`小米MiMo请求失败 (${response.status}): ${response.statusText} ${body}`)
+      }
 
-    const data = await response.json() as OpenAIResponse
+      const data = await response.json() as OpenAIResponse
 
-    return {
-      content: data.choices[0].message.content,
-      usage: data.usage
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error('小米MiMo返回空响应')
+      }
+
+      return {
+        content: data.choices[0].message.content,
+        usage: data.usage
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        throw new Error('小米MiMo请求超时（60秒），请检查网络连接或稍后重试')
+      }
+      throw err
+    } finally {
+      clearTimeout(timeout)
     }
   }
 

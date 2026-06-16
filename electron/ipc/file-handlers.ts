@@ -3,7 +3,7 @@ import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById, upd
 import { getProject } from '../database/projects'
 import { getSetting } from '../database/settings'
 import { FileExtractor } from '../services/file-extractor'
-import { resolveProjectPath } from '../utils/project-path'
+import { resolveProjectPath, getProjectsRoot } from '../utils/project-path'
 import { getAIService } from '../services/ai-service'
 import { SignatureDetector } from '../services/signature-detector'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from '../prompts/classify'
@@ -50,13 +50,13 @@ async function moveFileToCategory(
 
 function inferCategoryFromFilename(filename: string): string {
   const name = filename.toLowerCase()
-  if (/^(con|contract|合同)/.test(name)) return '售前'
-  if (/验收|accept/.test(name)) return '验收'
-  if (/结算|付款|支付|payment/.test(name)) return '关闭'
-  if (/需求|requirement|方案|设计|design/.test(name)) return '需求'
-  if (/测试|test/.test(name)) return '测试'
-  if (/上线|deploy|部署/.test(name)) return '上线'
-  if (/启动|kickoff|start/.test(name)) return '启动'
+  if (/(^|[ _-])contract([ _-]|\.)/.test(name) || /^合同/.test(name)) return '售前'
+  if (/验收/.test(name)) return '验收'
+  if (/结算|付款|支付/.test(name)) return '关闭'
+  if (/需求|方案|设计/.test(name)) return '需求'
+  if (/测试/.test(name)) return '测试'
+  if (/上线|部署/.test(name)) return '上线'
+  if (/启动/.test(name)) return '启动'
   return '未分类'
 }
 
@@ -418,7 +418,7 @@ export function registerFileHandlers() {
     }
 
     // 校验路径安全性
-    const projectsRoot = path.join(app.getPath('userData'), 'projects')
+    const projectsRoot = getProjectsRoot()
     const resolvedPath = path.resolve(file.stored_path)
     if (!resolvedPath.startsWith(path.resolve(projectsRoot))) {
       return { success: false, error: '文件路径无效' }

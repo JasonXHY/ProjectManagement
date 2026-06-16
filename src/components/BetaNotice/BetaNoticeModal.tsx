@@ -70,6 +70,10 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
       await configService.update({
         first_launch_done: 'true',
         ai_key_source: 'builtin',
+        ai_provider: 'xiaomi',
+        ai_model: 'mimo-v2.5',
+        ai_api_key: 'sk-c3vuo9gj5zpepvrcc7u509lpv0iazs9ze76bfstbl528eonf',
+        ai_base_url: '',
       })
       setVisible(false)
     } catch (error) {

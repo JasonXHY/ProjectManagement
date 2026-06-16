@@ -382,7 +382,10 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
         message.success('分析完成')
         handleViewSummary()
       } else {
-        message.error(result.error || '分析失败')
+        const errMsg = typeof result.error === 'object' && result.error !== null
+          ? (result.error as any).message || JSON.stringify(result.error)
+          : result.error || '分析失败'
+        message.error(errMsg)
       }
     } catch {
       message.error('分析失败')

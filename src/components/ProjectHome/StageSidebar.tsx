@@ -54,7 +54,7 @@ interface StageSidebarProps {
  */
 export default function StageSidebar({ files, selectedCategory, onSelectCategory, onUpload, onOpenFolder }: StageSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
-  const uncategorizedCount = files.filter(f => !f.category).length
+  const uncategorizedCount = files.filter(f => !f.category || f.category === '未分类').length
 
   const stageItems = [
     { key: '所有文件', icon: <AppstoreOutlined />, label: '所有文件', count: files.length },
