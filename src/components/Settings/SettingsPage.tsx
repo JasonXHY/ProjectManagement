@@ -27,6 +27,15 @@ import {
   type AIProvider,
 } from "../../types";
 import {
+  getDefaultSubcategoryMap,
+  parseSubcategoryConfig,
+  serializeSubcategoryConfig,
+  addSubcategory,
+  removeSubcategory,
+  isDefaultSubcategory,
+  type SubcategoryMap,
+} from "../../../electron/shared/subcategory-config";
+import {
   getProviderList,
   getFullApiUrl,
   type AIModel,
@@ -53,6 +62,8 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const defaultStages = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'];
   const [customStages, setCustomStages] = useState<string[]>(defaultStages);
   const [newStageName, setNewStageName] = useState('');
+  const [subcategoryMap, setSubcategoryMap] = useState<SubcategoryMap>(getDefaultSubcategoryMap());
+  const [newSubInputs, setNewSubInputs] = useState<Record<string, string>>({});
 
   /** 加载配置 */
   useEffect(() => {
@@ -75,6 +86,8 @@ export default function SettingsPage(_props: SettingsPageProps) {
             // JSON parse error, use default stages
           }
         }
+        // 加载自定义子分类配置（null/非法时回退默认）
+        setSubcategoryMap(parseSubcategoryConfig(result.data.custom_subcategories));
         // 检测是否为内置API Key（内测版）
         if (result.data.ai_provider === 'xiaomi' && result.data.ai_model === 'mimo-v2.5') {
           setIsBuiltinApiKey(true);
@@ -120,7 +133,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
 
     setSaving(true);
     try {
-      const result = await configService.update({ ...values, custom_stages: JSON.stringify(customStages) });
+      const result = await configService.update({
+        ...values,
+        custom_stages: JSON.stringify(customStages),
+        custom_subcategories: serializeSubcategoryConfig(subcategoryMap),
+      });
       if (result.success) {
         message.success("保存成功");
       } else {
@@ -190,6 +207,19 @@ export default function SettingsPage(_props: SettingsPageProps) {
   /** 删除自定义阶段 */
   const handleDeleteStage = (stage: string) => {
     setCustomStages(customStages.filter(s => s !== stage));
+  };
+
+  /** 新增子分类 */
+  const handleAddSubcategory = (stage: string) => {
+    const name = (newSubInputs[stage] || '').trim();
+    if (!name) return;
+    setSubcategoryMap((prev) => addSubcategory(prev, stage, name));
+    setNewSubInputs((prev) => ({ ...prev, [stage]: '' }));
+  };
+
+  /** 删除子分类（默认子分类不可删除） */
+  const handleDeleteSubcategory = (stage: string, sub: string) => {
+    setSubcategoryMap((prev) => removeSubcategory(prev, stage, sub));
   };
 
   /** 获取模型选项 */
@@ -578,6 +608,65 @@ export default function SettingsPage(_props: SettingsPageProps) {
                     </Tag>
                   </Tooltip>
                 ))}
+              </div>
+
+              {/* 子分类管理（每个阶段下的子分类，默认子分类不可删除） */}
+              <div style={{ marginTop: '32px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  子分类管理
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                  为每个分类阶段管理子分类（按文档用途划分）。默认子分类不可删除，自定义子分类可删除。
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {customStages.map((stage) => (
+                    <div
+                      key={stage}
+                      data-testid={`subcat-stage-${stage}`}
+                      style={{
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '12px 16px',
+                      }}
+                    >
+                      <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '8px' }}>{stage}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                        {(subcategoryMap[stage] || []).map((sub) => {
+                          const isDefault = isDefaultSubcategory(stage, sub);
+                          return (
+                            <Tooltip key={sub} title={isDefault ? '默认子分类不可删除' : ''}>
+                              <Tag
+                                closable={!isDefault}
+                                onClose={() => handleDeleteSubcategory(stage, sub)}
+                                style={{ padding: '2px 10px', fontSize: '13px', borderRadius: '6px' }}
+                              >
+                                {sub}
+                              </Tag>
+                            </Tooltip>
+                          );
+                        })}
+                      </div>
+                      <Space>
+                        <Input
+                          size="small"
+                          placeholder="新增子分类"
+                          value={newSubInputs[stage] || ''}
+                          onChange={(e) => setNewSubInputs((prev) => ({ ...prev, [stage]: e.target.value }))}
+                          onPressEnter={() => handleAddSubcategory(stage)}
+                          style={{ width: '160px' }}
+                        />
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() => handleAddSubcategory(stage)}
+                          disabled={!(newSubInputs[stage] || '').trim()}
+                        >
+                          添加
+                        </Button>
+                      </Space>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

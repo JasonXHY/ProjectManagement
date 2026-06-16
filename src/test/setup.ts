@@ -8,6 +8,20 @@ afterEach(() => {
 
 // Mock window.api（Electron IPC）— 仅在浏览器(jsdom)环境注入；Node 环境(集成测试)跳过
 if (typeof window !== 'undefined') {
+// jsdom 未实现 matchMedia，AntD 响应式 hook 需要它
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }) as unknown as MediaQueryList
+}
+
 Object.defineProperty(window, 'api', {
   value: {
     project: {

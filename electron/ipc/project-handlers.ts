@@ -4,6 +4,8 @@ import { resolveProjectPath, createProjectDirectory, createStageFolders } from '
 import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { STAGE_DEFINITIONS, getSubcategories, type StageDef } from '../shared/stages'
+import { parseSubcategoryConfig } from '../shared/subcategory-config'
+import { getSetting } from '../database/settings'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -53,10 +55,14 @@ export function registerProjectHandlers() {
 
       // 根据分类方式创建「阶段/子分类」两级目录结构（v3.1 §4.2）
       if (categoryType === 'stage') {
-        // 自定义阶段（扁平字符串）映射为带子分类的定义；未自定义时用完整默认定义
-        const stages: StageDef[] = customStages
-          ? customStages.map((name) => ({ name, subcategories: getSubcategories(name) }))
-          : STAGE_DEFINITIONS
+        // 读取用户自定义子分类配置（未配置时为默认）
+        const subMap = parseSubcategoryConfig(getSetting('custom_subcategories'))
+        // 自定义阶段（扁平字符串）映射为带子分类的定义；未自定义阶段时用默认阶段列表
+        const stageNames = customStages ?? STAGE_DEFINITIONS.map((s) => s.name)
+        const stages: StageDef[] = stageNames.map((name) => ({
+          name,
+          subcategories: subMap[name] ?? getSubcategories(name),
+        }))
         await createStageFolders(projectPath, stages)
       }
       // 按内容/智能分类时，文件夹由AI分类后动态创建
