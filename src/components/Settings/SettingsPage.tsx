@@ -20,6 +20,8 @@ import {
   UserOutlined,
   PlusOutlined,
   FolderOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
 } from "@ant-design/icons";
 import { configService } from "../../services/configService";
 import {
@@ -35,6 +37,7 @@ import {
   isDefaultSubcategory,
   type SubcategoryMap,
 } from "../../../electron/shared/subcategory-config";
+import { moveItem } from "./stage-order";
 import {
   getProviderList,
   getFullApiUrl,
@@ -207,6 +210,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
   /** 删除自定义阶段 */
   const handleDeleteStage = (stage: string) => {
     setCustomStages(customStages.filter(s => s !== stage));
+  };
+
+  /** 阶段排序：上移/下移 */
+  const handleMoveStage = (index: number, direction: 'up' | 'down') => {
+    setCustomStages((prev) => moveItem(prev, index, direction));
   };
 
   /** 新增子分类 */
@@ -592,21 +600,43 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 </Space>
               </div>
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {customStages.map((stage) => (
-                  <Tooltip key={stage} title={defaultStages.includes(stage) ? '默认阶段不可删除' : ''}>
-                    <Tag
-                      closable={!defaultStages.includes(stage)}
-                      onClose={() => handleDeleteStage(stage)}
-                      style={{
-                        padding: '4px 12px',
-                        fontSize: '14px',
-                        borderRadius: '6px',
-                      }}
-                    >
-                      {stage}
-                    </Tag>
-                  </Tooltip>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {customStages.map((stage, index) => (
+                  <div
+                    key={stage}
+                    data-testid={`stage-row-${stage}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
+                      <Button
+                        type="text"
+                        size="small"
+                        aria-label={`上移 ${stage}`}
+                        icon={<ArrowUpOutlined />}
+                        disabled={index === 0}
+                        onClick={() => handleMoveStage(index, 'up')}
+                        style={{ height: '16px', lineHeight: '16px', padding: 0 }}
+                      />
+                      <Button
+                        type="text"
+                        size="small"
+                        aria-label={`下移 ${stage}`}
+                        icon={<ArrowDownOutlined />}
+                        disabled={index === customStages.length - 1}
+                        onClick={() => handleMoveStage(index, 'down')}
+                        style={{ height: '16px', lineHeight: '16px', padding: 0 }}
+                      />
+                    </span>
+                    <Tooltip title={defaultStages.includes(stage) ? '默认阶段不可删除' : ''}>
+                      <Tag
+                        closable={!defaultStages.includes(stage)}
+                        onClose={() => handleDeleteStage(stage)}
+                        style={{ padding: '4px 12px', fontSize: '14px', borderRadius: '6px', margin: 0 }}
+                      >
+                        {stage}
+                      </Tag>
+                    </Tooltip>
+                  </div>
                 ))}
               </div>
 
