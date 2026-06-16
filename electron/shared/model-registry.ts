@@ -22,7 +22,7 @@ export interface AIProviderConfig {
 
 export const PROVIDER_ORDER = [
   'xiaomi', 'zhipu', 'ali', 'tencent', 'baidu',
-  'deepseek', 'moonshot', 'xunfei', 'baichuan', 'minimax',
+  'deepseek', 'moonshot', 'lingyiwanwu', 'xunfei', 'baichuan', 'minimax',
 ]
 
 export const MODEL_REGISTRY: Record<string, AIProviderConfig> = {
@@ -130,6 +130,19 @@ export const MODEL_REGISTRY: Record<string, AIProviderConfig> = {
       { id: 'moonshot-v1-8k', name: 'Moonshot-V1-8K', isFree: false, deprecated: true, replacement: 'kimi-k2.6' },
       { id: 'moonshot-v1-32k', name: 'Moonshot-V1-32K', isFree: false, deprecated: true, replacement: 'kimi-k2.6' },
       { id: 'moonshot-v1-128k', name: 'Moonshot-V1-128K', isFree: false, deprecated: true, replacement: 'kimi-k2.6' },
+    ],
+  },
+  lingyiwanwu: {
+    id: 'lingyiwanwu',
+    name: '零一万物',
+    baseUrl: 'https://api.lingyiwanwu.com/v1',
+    chatPath: '/chat/completions',
+    apiKeyHint: '零一万物开放平台 API Key（在 platform.lingyiwanwu.com 生成）',
+    models: [
+      { id: 'yi-lightning', name: 'Yi-Lightning', isFree: false, contextWindow: 16000 },
+      { id: 'yi-large', name: 'Yi-Large', isFree: false, contextWindow: 32000 },
+      { id: 'yi-medium', name: 'Yi-Medium', isFree: false, contextWindow: 16000 },
+      { id: 'yi-vision', name: 'Yi-Vision', isFree: false, contextWindow: 16000 },
     ],
   },
   xunfei: {
