@@ -25,6 +25,7 @@ interface ProjectHomeProps {
 export default function ProjectHome({ project, onProjectUpdated }: ProjectHomeProps) {
   const {
     files,
+    allFiles,
     selectedCategory,
     setSelectedCategory,
     classifying,
@@ -62,7 +63,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 56px)' }}>
       <StageSidebar
-        files={files}
+        files={allFiles}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
         onUpload={handleUpload}
@@ -71,7 +72,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
         <ProjectStats
-          files={files}
+          files={allFiles}
           criticalIssues={criticalIssues}
           analyzing={analyzing}
           onViewSummary={handleViewSummary}

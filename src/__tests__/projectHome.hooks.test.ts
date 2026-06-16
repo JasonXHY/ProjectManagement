@@ -172,4 +172,35 @@ describe('useProjectHome', () => {
     expect(result.current.summaryVisible).toBe(true)
     expect(result.current.summaryContent).toBe('项目摘要内容')
   })
+
+  it('allFiles始终包含全部文件用于侧边栏计数', async () => {
+    const allFilesList = [
+      { id: 1, filename: 'a.txt', category: '需求', project_id: 1 } as any,
+      { id: 2, filename: 'b.txt', category: '测试', project_id: 1 } as any,
+      { id: 3, filename: 'c.txt', category: '需求', project_id: 1 } as any,
+    ]
+    const demandFiles = [allFilesList[0], allFilesList[2]]
+
+    vi.mocked(fileService.list).mockResolvedValue({ success: true, data: allFilesList })
+    vi.mocked(fileService.listByCategory).mockResolvedValue({ success: true, data: demandFiles })
+
+    const { result } = renderHook(() => useProjectHome(mockProject))
+
+    await waitFor(() => {
+      expect(result.current.allFiles.length).toBeGreaterThan(0)
+    })
+
+    expect(result.current.allFiles).toHaveLength(3)
+    expect(result.current.files).toHaveLength(3)
+
+    await act(async () => {
+      result.current.setSelectedCategory('需求')
+    })
+
+    await waitFor(() => {
+      expect(result.current.files).toHaveLength(2)
+    })
+
+    expect(result.current.allFiles).toHaveLength(3)
+  })
 })

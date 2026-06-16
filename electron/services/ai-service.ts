@@ -55,19 +55,23 @@ export class AIService {
   private initProviders() {
     const currentProvider = getSetting('ai_provider') || 'zhipu'
     const apiKey = getDecryptedApiKey('ai_api_key')
-    const baseUrl = getSetting('ai_base_url') || ''
+    const billingMode = (getSetting('ai_billing_mode') || 'paygo') as 'paygo' | 'token_plan' | 'coding_plan' | 'custom'
+    const customUrl = getSetting('ai_base_url') || ''
 
-    // 根据当前选择的供应商初始化
+    const resolveUrl = (providerId: string) => {
+      if (billingMode === 'custom' && customUrl) return customUrl
+      return getFullApiUrl(providerId, billingMode === 'custom' ? 'paygo' : billingMode)
+    }
+
     if (currentProvider === 'zhipu' && apiKey) {
-      const url = baseUrl || 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+      const url = resolveUrl('zhipu')
       this.providers.set('zhipu', new ZhipuProvider(apiKey, url))
     } else if (currentProvider === 'xiaomi' && apiKey) {
-      const url = (baseUrl || 'https://api.xiaomimimo.com').replace(/\/v1\/?$/, '')
+      const url = resolveUrl('xiaomi').replace(/\/v1\/?$/, '')
       this.providers.set('xiaomi', new MiMoProvider(apiKey, url, url, 'api'))
     } else if (apiKey) {
-      // 通用OpenAI兼容供应商
       const providerConfig = getProviderById(currentProvider)
-      const apiUrl = baseUrl || (providerConfig ? getFullApiUrl(currentProvider) : '')
+      const apiUrl = resolveUrl(currentProvider)
       if (apiUrl) {
         this.providers.set(currentProvider, new OpenAICompatibleProvider(apiKey, apiUrl))
       }

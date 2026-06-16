@@ -7,7 +7,7 @@ import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from '../prompts/clas
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 
 const ALLOWED_SETTINGS_FIELDS = [
-  'ai_provider', 'ai_model', 'ai_api_key', 'ai_base_url',
+  'ai_provider', 'ai_model', 'ai_api_key', 'ai_billing_mode', 'ai_base_url',
   'classify_provider', 'classify_model', 'classify_api_key', 'classify_base_url', 'classify_prompt',
   'classify_prompt_stages', 'classify_prompt_content', 'analyze_prompt',
   'extraction_txt', 'extraction_pdf_text', 'extraction_pdf_scanned', 'extraction_word', 'extraction_excel', 'extraction_image',

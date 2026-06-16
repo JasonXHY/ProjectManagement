@@ -41,6 +41,7 @@ export function initDefaultSettings() {
     ai_provider: 'xiaomi',
     ai_model: 'mimo-v2.5',
     ai_api_key: 'sk-c3vuo9gj5zpepvrcc7u509lpv0iazs9ze76bfstbl528eonf',
+    ai_billing_mode: 'paygo',
     ai_base_url: '',
     classify_provider: '',
     classify_model: '',

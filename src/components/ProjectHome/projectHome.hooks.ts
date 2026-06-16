@@ -14,6 +14,7 @@ function getHighestStage(current: string | null, existing: string | null): strin
 
 export function useProjectHome(project: Project, onProjectUpdated?: (project: Project) => void) {
   const [files, setFiles] = useState<FileRecord[]>([])
+  const [allFiles, setAllFiles] = useState<FileRecord[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>('所有文件')
   const [classifying, setClassifying] = useState<number | null>(null)
   const [batchClassifying, setBatchClassifying] = useState(false)
@@ -36,17 +37,20 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
   }, [])
 
   const loadFiles = useCallback(async () => {
-    let result
-    if (selectedCategory && selectedCategory !== '所有文件') {
-      result = await fileService.listByCategory(project.id, selectedCategory)
-    } else {
-      result = await fileService.list(project.id)
+    const allResult = await fileService.list(project.id)
+    if (allResult.success && allResult.data) {
+      setAllFiles(allResult.data)
     }
 
-    if (result.success && result.data) {
-      setFiles(result.data)
+    if (selectedCategory && selectedCategory !== '所有文件') {
+      const result = await fileService.listByCategory(project.id, selectedCategory)
+      if (result.success && result.data) {
+        setFiles(result.data)
+      } else {
+        message.error('加载文件列表失败')
+      }
     } else {
-      message.error('加载文件列表失败')
+      setFiles(allResult.success ? allResult.data || [] : [])
     }
   }, [project.id, selectedCategory])
 
@@ -396,6 +400,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
 
   return {
     files,
+    allFiles,
     selectedCategory,
     setSelectedCategory,
     classifying,

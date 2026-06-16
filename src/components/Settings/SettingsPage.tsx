@@ -28,6 +28,7 @@ import {
 } from "../../types";
 import {
   getProviderList,
+  getFullApiUrl,
   type AIModel,
 } from "@shared/model-registry";
 
@@ -148,16 +149,33 @@ export default function SettingsPage(_props: SettingsPageProps) {
 
       const currentModel = form.getFieldValue('ai_model');
       const modelExists = availableModels.some(m => m.id === currentModel);
+      const billingMode = form.getFieldValue('ai_billing_mode') || 'paygo';
+      const url = billingMode === 'custom'
+        ? ''
+        : getFullApiUrl(value, billingMode as 'paygo' | 'token_plan' | 'coding_plan')
+            .replace(/\/v1\/chat\/completions$/, '');
 
       if (modelExists) {
-        form.setFieldsValue({ ai_base_url: providerConfig.baseUrl });
+        form.setFieldsValue({ ai_base_url: url });
       } else {
         const firstModel = availableModels[0] || providerConfig.models[0];
         form.setFieldsValue({
           ai_model: firstModel?.id || "",
-          ai_base_url: providerConfig.baseUrl,
+          ai_base_url: url,
         });
       }
+    }
+  };
+
+  /** 计费模式切换 */
+  const handleBillingModeChange = (mode: string) => {
+    const provider = form.getFieldValue('ai_provider');
+    if (mode === 'custom') {
+      form.setFieldsValue({ ai_base_url: '' });
+    } else {
+      const url = getFullApiUrl(provider, mode as 'paygo' | 'token_plan' | 'coding_plan')
+        .replace(/\/v1\/chat\/completions$/, '');
+      form.setFieldsValue({ ai_base_url: url });
     }
   };
 
@@ -303,8 +321,20 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 />
               </Form.Item>
 
+              <Form.Item label="计费模式" name="ai_billing_mode">
+                <Radio.Group onChange={(e) => handleBillingModeChange(e.target.value)}>
+                  <Radio value="paygo">按量计费</Radio>
+                  <Radio value="token_plan">Token Plan</Radio>
+                  <Radio value="custom">自定义URL</Radio>
+                </Radio.Group>
+              </Form.Item>
+
               <Form.Item label="API地址" name="ai_base_url">
-                <Input placeholder="API地址" />
+                <Input
+                  placeholder="API地址"
+                  disabled={form.getFieldValue('ai_billing_mode') !== 'custom'}
+                  style={form.getFieldValue('ai_billing_mode') !== 'custom' ? { backgroundColor: '#f5f5f5' } : undefined}
+                />
               </Form.Item>
             </div>
           )}
