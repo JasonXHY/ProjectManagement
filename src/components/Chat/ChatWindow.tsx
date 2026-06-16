@@ -25,6 +25,7 @@ import type { ChatConversationMessage, FileRecord } from "../../types";
 import { aiService } from "../../services/aiService";
 import { fileService } from "../../services/fileService";
 import { formatTime, formatSessionTime } from "../../utils/time";
+import { useElapsedSeconds } from "./useElapsedSeconds";
 const { TextArea } = Input;
 
 /** 对话窗口属性 */
@@ -48,6 +49,9 @@ export default function ChatWindow({
   const messagesRef = useRef<ChatConversationMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const elapsedSeconds = useElapsedSeconds(isLoading);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRY = 2;
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -168,6 +172,7 @@ export default function ChatWindow({
         const finalMessages = [...messagesRef.current, aiMessage];
         messagesRef.current = finalMessages;
         setMessages(finalMessages);
+        setRetryCount(0);
       } else {
         const errMsg = typeof result.error === 'object' && result.error !== null
           ? (result.error as any).message || JSON.stringify(result.error)
@@ -204,13 +209,18 @@ export default function ChatWindow({
     }
   }, []);
 
-  /** 重试上一条用户消息 */
+  /** 重试上一条用户消息（最多 MAX_RETRY 次） */
   const handleRetry = useCallback(async () => {
+    if (retryCount >= MAX_RETRY) {
+      message.warning(`已达最大重试次数（${MAX_RETRY} 次）`);
+      return;
+    }
     const lastUserMessage = [...messagesRef.current].reverse().find(m => m.role === 'user');
     if (!lastUserMessage) return;
 
+    setRetryCount((c) => c + 1);
     setInputValue(lastUserMessage.content);
-  }, []);
+  }, [retryCount]);
 
   /** 切换会话 */
   const handleSessionSwitch = useCallback((sessionId: string) => {
@@ -519,20 +529,24 @@ export default function ChatWindow({
         {/* 加载状态提示 + 取消按钮 */}
         {isLoading && (
           <div style={{ padding: 'var(--space-3) var(--space-6)', background: 'var(--bg-hover)', borderTop: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: 'var(--space-1)', padding: 'var(--space-2)' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite' }} />
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite 0.2s' }} />
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite 0.4s' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-2)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite 0.2s' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-placeholder)', animation: 'typingBounce 1.4s infinite 0.4s' }} />
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>
+                已等待 {elapsedSeconds} 秒...
+              </span>
             </div>
             <Button
-              type="text"
+              danger
               size="small"
+              shape="circle"
+              aria-label="停止生成"
               icon={<StopOutlined />}
               onClick={handleCancel}
-              style={{ color: 'var(--text-placeholder)', fontSize: '12px' }}
-            >
-              取消
-            </Button>
+            />
           </div>
         )}
 
