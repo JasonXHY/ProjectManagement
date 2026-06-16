@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, dialog } from 'electron'
 import * as settingsDb from '../database/settings'
 import { aiService } from '../services/ai-service'
 import { validateType, validateSettingsKey } from '../utils/validators'
@@ -64,5 +64,14 @@ export function registerSettingsHandlers() {
         analyze: settings.analyze_prompt || ANALYZE_SYSTEM_PROMPT,
       }
     }
+  })
+
+  ipcMain.handle('settings:browseFolder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: '选择项目文件存储位置',
+    })
+    if (result.canceled || !result.filePaths[0]) return { success: false }
+    return { success: true, data: result.filePaths[0] }
   })
 }

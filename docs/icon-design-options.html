@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图标方案对比</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #8888aa;
+    margin-bottom: 48px;
+  }
+  .options {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1200px;
+  }
+  .option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .icon-frame {
+    width: 256px;
+    height: 256px;
+    border-radius: 40px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .icon-frame:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 28px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  .label {
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .desc {
+    font-size: 13px;
+    color: #8888aa;
+    text-align: center;
+    max-width: 256px;
+    line-height: 1.6;
+  }
+  .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag-a { background: rgba(79,70,229,0.2); color: #a5b4fc; }
+  .tag-b { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+  .tag-c { background: rgba(168,85,247,0.2); color: #c4b5fd; }
+
+  /* Size preview */
+  .sizes {
+    display: flex;
+    gap: 24px;
+    align-items: flex-end;
+    margin-top: 20px;
+    padding: 24px 32px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .size-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .size-label {
+    font-size: 11px;
+    color: #666;
+  }
+  .icon-sm { border-radius: 20%; }
+
+  /* Section */
+  .section-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #aaa;
+    margin: 48px 0 24px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<h1>项目管理助手 — 图标方案对比</h1>
+<p class="subtitle">选择你最喜欢的方向，我会进一步细化</p>
+
+<div class="options">
+
+  <!-- 方案A：花瓣层叠 -->
+  <div class="option">
+    <div class="icon-frame" style="background: linear-gradient(135deg, #F8F7F4 0%, #F0EEFF 100%);">
+      <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+        <defs>
+          <linearGradient id="petal1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4F46E5"/>
+            <stop offset="100%" stop-color="#6366F1"/>
+          </linearGradient>
+          <linearGradient id="petal2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6366F1"/>
+            <stop offset="100%" stop-color="#818CF8"/>
+          </linearGradient>
+          <linearGradient id="petal3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818CF8"/>
+            <stop offset="100%" stop-color="#A5B4FC"/>
+          </linearGradient>
+          <radialGradient id="glow-a" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- 后层花瓣 - 浅色 -->
+        <ellipse cx="140" cy="100" rx="72" ry="52" fill="url(#petal3)" opacity="0.6" transform="rotate(-25 140 100)"/>
+        <!-- 中层花瓣 -->
+        <ellipse cx="120" cy="120" rx="68" ry="48" fill="url(#petal2)" opacity="0.75" transform="rotate(-10 120 120)"/>
+        <!-- 前层花瓣 - 深色 -->
+        <ellipse cx="105" cy="140" rx="64" ry="44" fill="url(#petal1)" opacity="0.9" transform="rotate(5 105 140)"/>
+        <!-- 琥珀光点 -->
+        <circle cx="178" cy="82" r="14" fill="#F59E0B" opacity="0.9"/>
+        <circle cx="178" cy="82" r="22" fill="url(#glow-a)"/>
+        <!-- 光点上的小高光 -->
+        <circle cx="174" cy="78" r="4" fill="#fff" opacity="0.6"/>
+      </svg>
+    </div>
+    <span class="label">方案 A：花瓣层叠</span>
+    <span class="tag tag-a">柔美 · 自然 · 有呼吸感</span>
+    <p class="desc">三片有机弧形交叠，像抽象花瓣。全曲线无直线，靛蓝渐变，交叠处自然混色。</p>
+  </div>
+
+  <!-- 方案B：回声弧 -->
+  <div class="option">
+    <div class="icon-frame" style="background: linear-gradient(160deg, #F8F7F4 0%, #EEF0FF 100%);">
+      <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+        <defs>
+          <radialGradient id="glow-b" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- 最外层弧 - 最粗最浅 -->
+        <path d="M 56 190 Q 128 40 200 190" fill="none" stroke="#C7D2FE" stroke-width="16" stroke-linecap="round" opacity="0.6"/>
+        <!-- 中间层弧 -->
+        <path d="M 76 185 Q 128 70 180 185" fill="none" stroke="#818CF8" stroke-width="13" stroke-linecap="round" opacity="0.75"/>
+        <!-- 最内层弧 - 最细最深 -->
+        <path d="M 96 178 Q 128 98 160 178" fill="none" stroke="#4F46E5" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+        <!-- 琥珀光点 - 在最外层弧的右端附近 -->
+        <circle cx="186" cy="164" r="11" fill="#F59E0B" opacity="0.9"/>
+        <circle cx="186" cy="164" r="20" fill="url(#glow-b)"/>
+        <circle cx="183" cy="161" r="3.5" fill="#fff" opacity="0.6"/>
+      </svg>
+    </div>
+    <span class="label">方案 B：回声弧</span>
+    <span class="tag tag-b">科技 · 节奏 · 扩散感</span>
+    <p class="desc">三条同心弧线从底部扩散，像声波涟漪。弧线粗细递减，两端圆润，琥珀点嵌在弧线上。</p>
+  </div>
+
+  <!-- 方案C：螺旋光轨 -->
+  <div class="option">
+    <div class="icon-frame" style="background: linear-gradient(140deg, #F8F7F4 0%, #F5F0FF 100%);">
+      <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+        <defs>
+          <linearGradient id="spiral-grad" x1="30%" y1="70%" x2="80%" y2="20%">
+            <stop offset="0%" stop-color="#4F46E5"/>
+            <stop offset="50%" stop-color="#6366F1"/>
+            <stop offset="100%" stop-color="#A5B4FC"/>
+          </linearGradient>
+          <radialGradient id="glow-c" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- 螺旋曲线 - 从中心向外展开 -->
+        <path d="M 128 148
+                 C 128 138, 138 128, 148 128
+                 C 168 128, 178 148, 178 168
+                 C 178 198, 148 218, 118 218
+                 C 78 218, 58 178, 58 148
+                 C 58 98, 98 58, 148 58
+                 C 208 58, 238 108, 238 158"
+              fill="none" stroke="url(#spiral-grad)" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+        <!-- 内圈补充弧线 -->
+        <path d="M 128 158
+                 C 128 148, 136 140, 146 140
+                 C 160 140, 168 152, 168 166
+                 C 168 186, 152 198, 134 198"
+              fill="none" stroke="#4F46E5" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+        <!-- 琥珀光点 - 中心偏右 -->
+        <circle cx="136" cy="150" r="12" fill="#F59E0B" opacity="0.9"/>
+        <circle cx="136" cy="150" r="22" fill="url(#glow-c)"/>
+        <circle cx="133" cy="147" r="4" fill="#fff" opacity="0.6"/>
+      </svg>
+    </div>
+    <span class="label">方案 C：螺旋光轨</span>
+    <span class="tag tag-c">动感 · 未来 · 方向性</span>
+    <p class="desc">一条连续曲线从中心螺旋展开，线条粗细渐变，靛蓝到浅靛蓝渐变。中心琥珀光点。</p>
+  </div>
+
+</div>
+
+<!-- 不同尺寸预览 -->
+<div class="section-title">各尺寸预览</div>
+
+<div style="display:flex; gap:48px; flex-wrap:wrap; justify-content:center;">
+
+  <!-- 方案A 各尺寸 -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+    <span style="font-size:13px; color:#888;">方案 A</span>
+    <div style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="size-item">
+        <div style="width:128px;height:128px;border-radius:28px;overflow:hidden;background:linear-gradient(135deg,#F8F7F4,#F0EEFF);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <defs><linearGradient id="p1s" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4F46E5"/><stop offset="100%" stop-color="#6366F1"/></linearGradient><linearGradient id="p2s" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366F1"/><stop offset="100%" stop-color="#818CF8"/></linearGradient><linearGradient id="p3s" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#818CF8"/><stop offset="100%" stop-color="#A5B4FC"/></linearGradient></defs>
+            <ellipse cx="140" cy="100" rx="72" ry="52" fill="url(#p3s)" opacity="0.6" transform="rotate(-25 140 100)"/>
+            <ellipse cx="120" cy="120" rx="68" ry="48" fill="url(#p2s)" opacity="0.75" transform="rotate(-10 120 120)"/>
+            <ellipse cx="105" cy="140" rx="64" ry="44" fill="url(#p1s)" opacity="0.9" transform="rotate(5 105 140)"/>
+            <circle cx="178" cy="82" r="14" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">128px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:64px;height:64px;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#F8F7F4,#F0EEFF);box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <ellipse cx="140" cy="100" rx="72" ry="52" fill="#A5B4FC" opacity="0.5" transform="rotate(-25 140 100)"/>
+            <ellipse cx="115" cy="128" rx="66" ry="46" fill="#6366F1" opacity="0.75" transform="rotate(-5 115 128)"/>
+            <circle cx="178" cy="82" r="18" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">64px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,#F8F7F4,#F0EEFF);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <ellipse cx="120" cy="130" rx="70" ry="50" fill="#6366F1" opacity="0.7"/>
+            <circle cx="178" cy="82" r="28" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">32px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:16px;height:16px;border-radius:4px;overflow:hidden;background:#F8F7F4;">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <ellipse cx="120" cy="140" rx="80" ry="60" fill="#6366F1" opacity="0.8"/>
+            <circle cx="178" cy="82" r="40" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">16px</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案B 各尺寸 -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+    <span style="font-size:13px; color:#888;">方案 B</span>
+    <div style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="size-item">
+        <div style="width:128px;height:128px;border-radius:28px;overflow:hidden;background:linear-gradient(160deg,#F8F7F4,#EEF0FF);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 56 190 Q 128 40 200 190" fill="none" stroke="#C7D2FE" stroke-width="16" stroke-linecap="round" opacity="0.6"/>
+            <path d="M 76 185 Q 128 70 180 185" fill="none" stroke="#818CF8" stroke-width="13" stroke-linecap="round" opacity="0.75"/>
+            <path d="M 96 178 Q 128 98 160 178" fill="none" stroke="#4F46E5" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+            <circle cx="186" cy="164" r="11" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">128px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:64px;height:64px;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,#F8F7F4,#EEF0FF);box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 66 188 Q 128 50 190 188" fill="none" stroke="#A5B4FC" stroke-width="22" stroke-linecap="round" opacity="0.5"/>
+            <path d="M 86 182 Q 128 82 170 182" fill="none" stroke="#6366F1" stroke-width="16" stroke-linecap="round" opacity="0.8"/>
+            <circle cx="184" cy="160" r="16" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">64px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#F8F7F4,#EEF0FF);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 76 186 Q 128 60 180 186" fill="none" stroke="#6366F1" stroke-width="28" stroke-linecap="round" opacity="0.75"/>
+            <circle cx="180" cy="158" r="28" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">32px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:16px;height:16px;border-radius:4px;overflow:hidden;background:#F8F7F4;">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 76 186 Q 128 60 180 186" fill="none" stroke="#6366F1" stroke-width="40" stroke-linecap="round" opacity="0.75"/>
+            <circle cx="180" cy="158" r="38" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">16px</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 方案C 各尺寸 -->
+  <div style="display:flex; flex-direction:column; align-items:center; gap:12px;">
+    <span style="font-size:13px; color:#888;">方案 C</span>
+    <div style="display:flex; gap:16px; align-items:flex-end;">
+      <div class="size-item">
+        <div style="width:128px;height:128px;border-radius:28px;overflow:hidden;background:linear-gradient(140deg,#F8F7F4,#F5F0FF);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <defs><linearGradient id="sg2" x1="30%" y1="70%" x2="80%" y2="20%"><stop offset="0%" stop-color="#4F46E5"/><stop offset="50%" stop-color="#6366F1"/><stop offset="100%" stop-color="#A5B4FC"/></linearGradient></defs>
+            <path d="M 128 148 C 128 138 138 128 148 128 C 168 128 178 148 178 168 C 178 198 148 218 118 218 C 78 218 58 178 58 148 C 58 98 98 58 148 58 C 208 58 238 108 238 158" fill="none" stroke="url(#sg2)" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
+            <circle cx="136" cy="150" r="12" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">128px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:64px;height:64px;border-radius:16px;overflow:hidden;background:linear-gradient(140deg,#F8F7F4,#F5F0FF);box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <defs><linearGradient id="sg3" x1="30%" y1="70%" x2="80%" y2="20%"><stop offset="0%" stop-color="#4F46E5"/><stop offset="50%" stop-color="#6366F1"/><stop offset="100%" stop-color="#A5B4FC"/></linearGradient></defs>
+            <path d="M 128 148 C 128 138 138 128 148 128 C 168 128 178 148 178 168 C 178 198 148 218 118 218 C 78 218 58 178 58 148 C 58 98 98 58 148 58 C 208 58 238 108 238 158" fill="none" stroke="url(#sg3)" stroke-width="20" stroke-linecap="round" opacity="0.85"/>
+            <circle cx="136" cy="150" r="16" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">64px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:32px;height:32px;border-radius:8px;overflow:hidden;background:linear-gradient(140deg,#F8F7F4,#F5F0FF);box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 128 148 C 128 138 138 128 148 128 C 168 128 178 148 178 168 C 178 198 148 218 118 218 C 78 218 58 178 58 148 C 58 98 98 58 148 58" fill="none" stroke="#6366F1" stroke-width="30" stroke-linecap="round" opacity="0.8"/>
+            <circle cx="136" cy="150" r="28" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">32px</span>
+      </div>
+      <div class="size-item">
+        <div style="width:16px;height:16px;border-radius:4px;overflow:hidden;background:#F8F7F4;">
+          <svg viewBox="0 0 256 256" style="width:100%;height:100%;">
+            <path d="M 128 148 C 128 138 138 128 148 128 C 168 128 178 148 178 168 C 178 198 148 218 118 218 C 78 218 58 178 58 148" fill="none" stroke="#6366F1" stroke-width="40" stroke-linecap="round" opacity="0.8"/>
+            <circle cx="136" cy="150" r="40" fill="#F59E0B" opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="size-label">16px</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 配色参考 -->
+<div class="section-title">配色参考</div>
+<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#4F46E5;box-shadow:0 2px 8px rgba(79,70,229,0.3);"></div>
+    <span style="font-size:12px;color:#888;">Indigo-600</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#6366F1;box-shadow:0 2px 8px rgba(99,102,241,0.3);"></div>
+    <span style="font-size:12px;color:#888;">Indigo-500</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#A5B4FC;box-shadow:0 2px 8px rgba(165,180,252,0.3);"></div>
+    <span style="font-size:12px;color:#888;">Indigo-300</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#F59E0B;box-shadow:0 2px 8px rgba(245,158,11,0.3);"></div>
+    <span style="font-size:12px;color:#888;">Amber-500</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <div style="width:32px;height:32px;border-radius:8px;background:#F8F7F4;border:1px solid #e5e7eb;"></div>
+    <span style="font-size:12px;color:#888;">暖白底板</span>
+  </div>
+</div>
+
+</body>
+</html>

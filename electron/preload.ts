@@ -45,5 +45,6 @@ contextBridge.exposeInMainWorld('api', {
     update: (settings: Record<string, string>) => ipcRenderer.invoke('settings:update', settings),
     getModelList: () => ipcRenderer.invoke('settings:getModelList'),
     getPrompts: () => ipcRenderer.invoke('settings:getPrompts'),
+    browseFolder: () => ipcRenderer.invoke('settings:browseFolder'),
   },
 })

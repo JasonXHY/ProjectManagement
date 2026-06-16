@@ -177,7 +177,7 @@ export default function FileListTable({
       width: 120,
       render: (_: unknown, record: FileRecord) => (
         <div
-          style={{ display: 'flex', gap: '2px', opacity: 0, transition: 'opacity 150ms' }}
+          style={{ display: 'flex', gap: '2px' }}
           className="row-actions"
         >
           <Button

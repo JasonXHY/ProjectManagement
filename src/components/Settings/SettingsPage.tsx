@@ -143,15 +143,21 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const handleProviderChange = (value: AIProvider) => {
     const providerConfig = providerList.find((p) => p.id === value);
     if (providerConfig) {
-      // 过滤掉已废弃的模型，只显示当前可用的模型
       const availableModels = providerConfig.models.filter(m => !m.deprecated);
       setModels(availableModels.length > 0 ? availableModels : providerConfig.models);
-      
-      const firstModel = availableModels[0] || providerConfig.models[0];
-      form.setFieldsValue({
-        ai_model: firstModel?.id || "",
-        ai_base_url: providerConfig.baseUrl,
-      });
+
+      const currentModel = form.getFieldValue('ai_model');
+      const modelExists = availableModels.some(m => m.id === currentModel);
+
+      if (modelExists) {
+        form.setFieldsValue({ ai_base_url: providerConfig.baseUrl });
+      } else {
+        const firstModel = availableModels[0] || providerConfig.models[0];
+        form.setFieldsValue({
+          ai_model: firstModel?.id || "",
+          ai_base_url: providerConfig.baseUrl,
+        });
+      }
     }
   };
 
@@ -379,8 +385,21 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 extra="留空则使用默认路径（用户数据目录下的projects文件夹）"
               >
                 <Input
-                  placeholder="例如：D:\WORK 或 C:\Projects"
-                  style={{ width: '100%' }}
+                  placeholder="留空使用默认路径"
+                  addonAfter={
+                    <Button
+                      type="text"
+                      icon={<FolderOutlined />}
+                      onClick={async () => {
+                        const result = await window.api.settings.browseFolder()
+                        if (result.success && result.data) {
+                          form.setFieldsValue({ project_storage_path: result.data })
+                        }
+                      }}
+                    >
+                      浏览
+                    </Button>
+                  }
                 />
               </Form.Item>
             </div>

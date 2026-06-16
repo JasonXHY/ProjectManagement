@@ -34,7 +34,7 @@ export const MODEL_REGISTRY: Record<string, AIProviderConfig> = {
     tokenPlanBaseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
     apiKeyHint: '按量计费为普通 API Key；Token Plan 为 tp- 开头的订阅 Key',
     models: [
-      { id: 'mimo-v2.5-pro', name: 'MiMo-V2.5-Pro', isFree: false, pricing: { input: 3.0, output: 6.0 }, contextWindow: 128000 },
+      { id: 'mimo-v2.5-pro', name: 'MiMo-V2.5-Pro', isFree: false, deprecated: true, deprecationDate: '2026-06-16', replacement: 'mimo-v2.5', pricing: { input: 3.0, output: 6.0 }, contextWindow: 128000 },
       { id: 'mimo-v2.5', name: 'MiMo-V2.5', isFree: false, pricing: { input: 1.0, output: 2.0 }, contextWindow: 128000 },
       { id: 'mimo-v2-flash', name: 'MiMo-V2-Flash', isFree: true, deprecated: true, deprecationDate: '2026-06-30', replacement: 'mimo-v2.5' },
     ],

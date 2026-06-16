@@ -270,7 +270,7 @@ function App() {
 
   return (
     <Layout className="min-h-screen" style={{ background: '#F8F7F4' }}>
-      <BetaNoticeModal />
+      <BetaNoticeModal onNavigate={(page) => setCurrentPage(page as Page)} />
       <Header
         className="flex items-center justify-between"
         style={{

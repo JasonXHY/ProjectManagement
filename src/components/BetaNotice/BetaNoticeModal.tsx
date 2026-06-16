@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Modal } from 'antd'
-import { ExclamationCircleOutlined } from '@ant-design/icons'
+import { Modal, Button, Input, Space } from 'antd'
+import {
+  FolderOutlined,
+  SettingOutlined,
+  RocketOutlined,
+} from '@ant-design/icons'
 import { configService } from '../../services/configService'
 
-export default function BetaNoticeModal() {
+interface BetaNoticeModalProps {
+  onNavigate?: (page: string) => void
+}
+
+export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
   const [visible, setVisible] = useState(false)
+  const [step, setStep] = useState<1 | 2>(1)
+  const [storagePath, setStoragePath] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     checkFirstLaunch()
@@ -14,8 +25,7 @@ export default function BetaNoticeModal() {
     try {
       const result = await configService.get()
       if (result.success && result.data) {
-        const firstLaunchDone = result.data.first_launch_done
-        if (firstLaunchDone !== 'true') {
+        if (result.data.first_launch_done !== 'true') {
           setVisible(true)
         }
       }
@@ -24,70 +34,180 @@ export default function BetaNoticeModal() {
     }
   }
 
-  const handleOk = async () => {
+  const handleBrowseFolder = async () => {
     try {
-      await configService.update({ first_launch_done: 'true' })
-      setVisible(false)
+      const result = await window.api.settings.browseFolder()
+      if (result.success && result.data) {
+        setStoragePath(result.data)
+      }
     } catch (error) {
-      console.error('更新首次启动状态失败:', error)
-      setVisible(false)
+      console.error('浏览文件夹失败:', error)
     }
   }
 
+  const handleStep1Confirm = async () => {
+    setLoading(true)
+    try {
+      if (storagePath) {
+        await configService.update({ project_storage_path: storagePath })
+      }
+      setStep(2)
+    } catch (error) {
+      console.error('保存存储路径失败:', error)
+      setStep(2)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleStep1Close = () => {
+    setStep(2)
+  }
+
+  const handleUseBuiltin = async () => {
+    setLoading(true)
+    try {
+      await configService.update({
+        first_launch_done: 'true',
+        ai_key_source: 'builtin',
+      })
+      setVisible(false)
+    } catch (error) {
+      console.error('更新设置失败:', error)
+      setVisible(false)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSetupOwnKey = async () => {
+    setLoading(true)
+    try {
+      await configService.update({
+        first_launch_done: 'true',
+        ai_key_source: 'custom',
+      })
+      setVisible(false)
+      onNavigate?.('settings')
+    } catch (error) {
+      console.error('更新设置失败:', error)
+      setVisible(false)
+      onNavigate?.('settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!visible) return null
+
   return (
     <Modal
-      title={
-        <span>
-          <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
-          PMAer 内测版说明
-        </span>
-      }
       open={visible}
-      onOk={handleOk}
-      okText="我知道了"
-      cancelText={null}
       closable={false}
       maskClosable={false}
       keyboard={false}
-      footer={[
-        <button
-          key="ok"
-          type="button"
-          onClick={handleOk}
-          style={{
-            width: '100%',
-            padding: '8px 16px',
-            backgroundColor: '#1677ff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500,
-          }}
-        >
-          我知道了
-        </button>,
-      ]}
-      styles={{ body: { padding: '24px' } }}
+      footer={null}
+      styles={{ body: { padding: '32px' } }}
+      width={480}
     >
-      <div style={{ fontSize: '14px', lineHeight: 1.8 }}>
-        <p style={{ marginBottom: 12 }}>
-          <strong>欢迎使用 PMAer 内测版！</strong>
-        </p>
-        <p style={{ marginBottom: 12 }}>
-          本版本为内测版，已内置小米 MiMo V2.5 API，可直接体验 AI 智能分析功能。
-        </p>
-        <p style={{ marginBottom: 12, color: '#ff4d4f', fontWeight: 500 }}>
-          AI 功能将于 2026年7月31日 关闭。
-        </p>
-        <p style={{ marginBottom: 12 }}>
-          届时请在「设置 → AI模型」中配置您自己的 API Key 继续使用。
-        </p>
-        <p style={{ color: '#666', fontSize: '13px' }}>
-          如有疑问请联系开发团队。
-        </p>
-      </div>
+      {step === 1 ? (
+        <div>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: '#EEF2FF', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <FolderOutlined style={{ fontSize: 24, color: '#4F46E5' }} />
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>设置项目文件存储位置</h2>
+          </div>
+          <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.8, marginBottom: 20 }}>
+            PMAer 会为每个项目创建独立文件夹，用于存放项目文件和AI分析结果。请选择您希望的存储位置。
+          </p>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 13, color: '#374151', fontWeight: 500, display: 'block', marginBottom: 6 }}>
+              存储路径
+            </label>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input
+                value={storagePath}
+                placeholder="留空使用默认位置（用户数据目录下的projects文件夹）"
+                readOnly
+                style={{ flex: 1 }}
+              />
+              <Button icon={<FolderOutlined />} onClick={handleBrowseFolder}>
+                浏览
+              </Button>
+            </Space.Compact>
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              style={{ flex: 1, height: 40 }}
+              onClick={handleStep1Close}
+            >
+              跳过，使用默认位置
+            </Button>
+            <Button
+              type="primary"
+              style={{ flex: 1, height: 40 }}
+              loading={loading}
+              onClick={handleStep1Confirm}
+            >
+              确认
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: '#EEF2FF', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', margin: '0 auto 16px',
+            }}>
+              <SettingOutlined style={{ fontSize: 24, color: '#4F46E5' }} />
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>配置 AI 助手</h2>
+          </div>
+          <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.8, marginBottom: 8 }}>
+            PMAer 支持多家国内主流AI厂商，包括小米MiMo、智谱、阿里千问、百度文心、DeepSeek、腾讯混元、月之暗面Kimi、讯飞星火、百川、MiniMax等。
+          </p>
+          <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.8, marginBottom: 20 }}>
+            您可以选择使用开发者的内置API快速体验，或配置自己的API Key获得更稳定的使用体验。
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+            <Button
+              block
+              size="large"
+              style={{ height: 48, textAlign: 'left', padding: '0 16px' }}
+              onClick={handleSetupOwnKey}
+              loading={loading}
+            >
+              <Space>
+                <SettingOutlined />
+                <span>我有 API Key，自己设置</span>
+              </Space>
+            </Button>
+            <Button
+              block
+              size="large"
+              type="primary"
+              style={{ height: 48, textAlign: 'left', padding: '0 16px' }}
+              onClick={handleUseBuiltin}
+              loading={loading}
+            >
+              <Space>
+                <RocketOutlined />
+                <span>用开发者的，先试试看</span>
+              </Space>
+            </Button>
+          </div>
+          <p style={{ fontSize: 12, color: '#9CA3AF', textAlign: 'center', margin: 0 }}>
+            内置API Key将在 2026年7月31日 关闭，届时需配置自己的Key。
+          </p>
+        </div>
+      )}
     </Modal>
   )
 }

@@ -16,6 +16,50 @@ import path from 'path'
 // 50MB文件大小限制
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
+const VALID_CATEGORIES = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭', '未分类', '首页']
+
+function sanitizeCategory(category: string): string {
+  if (!category) return '未分类'
+  const trimmed = category.trim()
+  if (VALID_CATEGORIES.includes(trimmed)) return trimmed
+  const sanitized = trimmed.replace(/[<>:"/\\|?*]/g, '').substring(0, 50)
+  return sanitized || '未分类'
+}
+
+async function moveFileToCategory(
+  fileId: number, filePath: string, safeName: string,
+  projectPath: string, category: string
+) {
+  try {
+    const targetDir = path.join(projectPath, category)
+    await fs.mkdir(targetDir, { recursive: true })
+    let targetPath = path.join(targetDir, safeName)
+    if (await fs.access(targetPath).then(() => true).catch(() => false)) {
+      const ext = path.extname(safeName)
+      const base = path.basename(safeName, ext)
+      targetPath = path.join(targetDir, `${base}_${Date.now()}${ext}`)
+    }
+    await fs.rename(filePath, targetPath)
+    updateFile(fileId, { category, stored_path: targetPath })
+    console.log(`[分类] 文件 "${safeName}" 移入 "${category}"（文件名推断）`)
+  } catch (err) {
+    console.error('[分类] 文件移动失败:', err)
+    updateFile(fileId, { category })
+  }
+}
+
+function inferCategoryFromFilename(filename: string): string {
+  const name = filename.toLowerCase()
+  if (/^(con|contract|合同)/.test(name)) return '售前'
+  if (/验收|accept/.test(name)) return '验收'
+  if (/结算|付款|支付|payment/.test(name)) return '关闭'
+  if (/需求|requirement|方案|设计|design/.test(name)) return '需求'
+  if (/测试|test/.test(name)) return '测试'
+  if (/上线|deploy|部署/.test(name)) return '上线'
+  if (/启动|kickoff|start/.test(name)) return '启动'
+  return '未分类'
+}
+
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
     const projectIdValidation = validateRequired(projectId, 'projectId')
@@ -111,37 +155,50 @@ export function registerFileHandlers() {
       }
 
     // --- 自动 AI 分类（异步，不阻塞上传） ---
-    if (contentExtracted) {
-      const project = getProject(projectId)
-      if (project) {
+    const project = getProject(projectId)
+    if (project) {
+      const aiService = getAIService()
+      if (aiService.hasProviders() && contentExtracted) {
         const promptTemplate = project.category_type === 'stage'
           ? CLASSIFY_PROMPT_STAGES
           : CLASSIFY_PROMPT_CONTENT
 
         const classifyPrompt = promptTemplate.replace(/\{content\}/g, contentExtracted.substring(0, 2000))
 
-        getAIService().chat([
+        aiService.chat([
           { role: 'user', content: classifyPrompt }
         ]).then(async (result) => {
-          const { category } = parseClassifyResponse(result.content)
+          const { category, stage } = parseClassifyResponse(result.content)
+          const sanitizedCategory = sanitizeCategory(category)
 
-          // 先移动文件，成功后再更新数据库（事务性保护）
           try {
-            const targetDir = path.join(projectPath, category)
+            const targetDir = path.join(projectPath, sanitizedCategory)
             await fs.mkdir(targetDir, { recursive: true })
-            const targetPath = path.join(targetDir, safeName)
+            let targetPath = path.join(targetDir, safeName)
+            if (await fs.access(targetPath).then(() => true).catch(() => false)) {
+              const ext = path.extname(safeName)
+              const base = path.basename(safeName, ext)
+              targetPath = path.join(targetDir, `${base}_${Date.now()}${ext}`)
+            }
             await fs.rename(filePath, targetPath)
 
-            // 文件移动成功后，更新数据库（一次性更新 category 和 stored_path）
-            updateFile(id, { category, stored_path: targetPath })
-
-            console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${category}"`)
+            updateFile(id, { category: sanitizedCategory, stage, stored_path: targetPath })
+            console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}"`)
           } catch (err) {
             console.error('[AI分类] 文件移动或更新失败:', err)
           }
         }).catch(err => {
-          console.error('[AI分类] 分类失败:', err)
+          console.error('[AI分类] 分类失败:', err.message)
+          const fallbackCategory = inferCategoryFromFilename(safeName)
+          moveFileToCategory(id, filePath, safeName, projectPath, fallbackCategory)
         })
+      } else if (!aiService.hasProviders()) {
+        console.warn('[AI分类] 未配置AI供应商，使用文件名推断分类')
+        const fallbackCategory = inferCategoryFromFilename(safeName)
+        moveFileToCategory(id, filePath, safeName, projectPath, fallbackCategory)
+      } else {
+        const fallbackCategory = inferCategoryFromFilename(safeName)
+        moveFileToCategory(id, filePath, safeName, projectPath, fallbackCategory)
       }
     }
 

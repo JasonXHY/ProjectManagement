@@ -43,6 +43,7 @@ declare global {
         update: (settings: Record<string, string>) => Promise<{ success: boolean, error?: string }>
         getModelList: () => Promise<{ success: boolean, data?: any[], error?: string }>
         getPrompts: () => Promise<{ success: boolean, data?: Record<string, string>, error?: string }>
+        browseFolder: () => Promise<{ success: boolean, data?: string, error?: string }>
       }
     }
   }

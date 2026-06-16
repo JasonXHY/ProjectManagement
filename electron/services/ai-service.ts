@@ -104,6 +104,11 @@ export class AIService {
     return aiProvider.chat(messages, model)
   }
 
+  /** 检查是否有可用的AI供应商 */
+  hasProviders(): boolean {
+    return this.providers.size > 0
+  }
+
   /** 刷新供应商配置（设置变更后调用） */
   refreshProviders() {
     this.providers.clear()

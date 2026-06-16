@@ -41,6 +41,7 @@ Object.defineProperty(window, 'api', {
       update: vi.fn(),
       getModelList: vi.fn(),
       getPrompts: vi.fn(),
+      browseFolder: vi.fn(),
     },
   },
 })
