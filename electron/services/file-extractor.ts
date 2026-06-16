@@ -25,7 +25,13 @@ declare global {
   interface Blob { arrayBuffer(): Promise<ArrayBuffer> }
 }
 
-/** 文件内容提取服务，支持TXT/PDF/Word/Excel等格式 */
+/** 提取选项：可注入视觉识别能力用于图片 OCR */
+export interface ExtractOptions {
+  /** 接收 base64 dataURL，返回识别文本；用于图片内容提取 */
+  visionExtract?: (imageBase64: string) => Promise<string | null>
+}
+
+/** 文件内容提取服务，支持TXT/CSV/PDF/Word/Excel/图片等格式 */
 export class FileExtractor {
   /**
    * 提取文件内容
@@ -33,7 +39,11 @@ export class FileExtractor {
    * @param extractionSettings 可选的提取方式配置，key 为文件类型后缀对应的设置名
    * @returns 提取的文本内容，不支持的文件类型返回null
    */
-  static async extract(filePath: string, extractionSettings?: Record<string, string>): Promise<string | null> {
+  static async extract(
+    filePath: string,
+    extractionSettings?: Record<string, string>,
+    options?: ExtractOptions
+  ): Promise<string | null> {
     const ext = path.extname(filePath).toLowerCase()
 
     try {
@@ -42,6 +52,14 @@ export class FileExtractor {
         case '.md':
         case '.json':
           return await this.extractText(filePath)
+        case '.csv':
+          return await this.extractCSV(filePath)
+        case '.png':
+        case '.jpg':
+        case '.jpeg':
+        case '.gif':
+        case '.bmp':
+          return await this.extractImage(filePath, options)
         case '.pdf': {
           // 检查是否配置了云端提取（扫描版PDF）
           if (extractionSettings?.extraction_pdf_scanned === 'cloud') {
@@ -61,7 +79,7 @@ export class FileExtractor {
         case '.xlsx':
           return await this.extractExcel(filePath)
         default:
-          // 图片等需要云端OCR的文件，返回null
+          // 其它不支持的类型，返回null
           return null
       }
     } catch (error) {
@@ -75,6 +93,34 @@ export class FileExtractor {
    */
   private static async extractText(filePath: string): Promise<string> {
     return await fsPromises.readFile(filePath, 'utf-8')
+  }
+
+  /**
+   * 提取CSV内容（按文本读取，保留分隔结构供AI分析）
+   */
+  private static async extractCSV(filePath: string): Promise<string> {
+    return await fsPromises.readFile(filePath, 'utf-8')
+  }
+
+  /**
+   * 提取图片内容（通过多模态AI视觉识别）。
+   * 未注入 visionExtract 时优雅降级返回 null（不抛错），以便无 vision provider 时上传不中断。
+   */
+  private static async extractImage(filePath: string, options?: ExtractOptions): Promise<string | null> {
+    if (!options?.visionExtract) {
+      console.warn('[FileExtractor] 未配置视觉提取能力，图片内容跳过提取:', path.basename(filePath))
+      return null
+    }
+    try {
+      const buffer = await fsPromises.readFile(filePath)
+      const ext = path.extname(filePath).toLowerCase().replace('.', '') || 'png'
+      const base64 = `data:image/${ext};base64,${buffer.toString('base64')}`
+      const text = await options.visionExtract(base64)
+      return text && text.trim() ? text : null
+    } catch (error) {
+      console.error('[FileExtractor] 图片提取失败:', error)
+      return null
+    }
   }
 
   /**

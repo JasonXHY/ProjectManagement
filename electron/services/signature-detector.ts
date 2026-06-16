@@ -64,6 +64,28 @@ export class SignatureDetector {
     return false
   }
 
+  /**
+   * 通过多模态AI从图片提取文本（OCR/描述）。
+   * 无可用视觉供应商时返回 null（优雅降级）。
+   * @param imageBase64 base64 dataURL
+   */
+  static async extractTextFromImage(imageBase64: string): Promise<string | null> {
+    const prompt = '请识别这张图片中的所有文字内容，按原始顺序输出纯文本；若无文字，简要描述图片内容。'
+    try {
+      if (this.zhipuProvider) {
+        const result = await this.zhipuProvider.vision(imageBase64, prompt)
+        return result.content || null
+      }
+      if (this.mimoProvider) {
+        const result = await this.mimoProvider.vision(imageBase64, prompt)
+        return result.content || null
+      }
+    } catch (error) {
+      console.error('[图片提取] 视觉识别失败:', error)
+    }
+    return null
+  }
+
   /** 清理资源（无隐藏窗口，保留接口兼容） */
   static destroy() {
     // OffscreenCanvas 无需额外清理

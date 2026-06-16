@@ -121,7 +121,9 @@ export function registerFileHandlers() {
           const val = getSetting(key)
           if (val) extractionSettings[key] = val
         }
-        contentExtracted = await FileExtractor.extract(filePath, extractionSettings)
+        contentExtracted = await FileExtractor.extract(filePath, extractionSettings, {
+          visionExtract: (img) => SignatureDetector.extractTextFromImage(img),
+        })
       } catch (error) {
         console.error('文件内容提取失败:', error)
       }
