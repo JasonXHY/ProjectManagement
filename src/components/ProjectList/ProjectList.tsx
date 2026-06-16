@@ -284,16 +284,6 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
               transition: 'all var(--transition-normal)',
               animation: `fadeInUp 300ms ease-out ${index * 50}ms both`,
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--text-disabled)'
-              e.currentTarget.style.boxShadow = 'var(--shadow-md)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-default)'
-              e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
             onClick={() => onOpen?.(project)}
           >
             {/* 顶部彩色条 */}
@@ -391,13 +381,8 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                   {formatTimeRelative(project.updated_at)}
                 </span>
                 <div
-                  style={{ display: 'flex', gap: '4px', opacity: 0, transition: 'opacity 150ms' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0'
-                  }}
+                  className="card-actions"
+                  style={{ display: 'flex', gap: '4px' }}
                 >
                   <Button
                     type="text"
@@ -438,6 +423,8 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
   )
 
   /** 渲染空状态 */
+  const isFiltering = searchText.trim() !== '' || statusFilter !== 'all'
+
   const renderEmptyState = () => (
     <div
       style={{
@@ -463,22 +450,33 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
           fontSize: '32px',
         }}
       >
-        <FolderOpenOutlined />
+        {isFiltering ? <SearchOutlined /> : <FolderOpenOutlined />}
       </div>
       <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>
-        还没有项目
+        {isFiltering ? '未找到匹配的项目' : '还没有项目'}
       </div>
       <div style={{ fontSize: '14px', color: 'var(--text-placeholder)', marginBottom: 'var(--space-6)', maxWidth: '360px' }}>
-        创建你的第一个项目，开始用 AI 智能管理你的项目文件和文档
+        {isFiltering
+          ? '尝试调整搜索关键词或筛选条件'
+          : '创建你的第一个项目，开始用 AI 智能管理你的项目文件和文档'}
       </div>
-      <Button
-        type="primary"
-        icon={<PlusOutlined />}
-        onClick={() => setModalVisible(true)}
-        style={{ height: '42px', padding: '0 var(--space-6)', fontSize: '15px' }}
-      >
-        创建第一个项目
-      </Button>
+      {isFiltering ? (
+        <Button
+          onClick={() => { setSearchText(''); setStatusFilter('all') }}
+          style={{ height: '42px', padding: '0 var(--space-6)', fontSize: '15px' }}
+        >
+          清除筛选
+        </Button>
+      ) : (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setModalVisible(true)}
+          style={{ height: '42px', padding: '0 var(--space-6)', fontSize: '15px' }}
+        >
+          创建第一个项目
+        </Button>
+      )}
     </div>
   )
 

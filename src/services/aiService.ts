@@ -5,8 +5,8 @@ export const aiService = {
     return window.api.ai.chat(projectId, message, contextFileIds, sessionId)
   },
 
-  async classify(fileId: number) {
-    return window.api.ai.classify(fileId)
+  async classify(fileId: number, categoryType?: 'stage' | 'content') {
+    return window.api.ai.classify(fileId, categoryType)
   },
 
   async analyze(projectId: number) {

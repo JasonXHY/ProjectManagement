@@ -335,6 +335,7 @@ export default function ChatWindow({
                 {sessions.map((session) => (
                   <div
                     key={session.session_id}
+                    className={`session-item${currentSessionId === session.session_id ? ' active' : ''}`}
                     onClick={() => handleSessionSwitch(session.session_id)}
                     style={{
                       padding: 'var(--space-3)',
@@ -343,16 +344,6 @@ export default function ChatWindow({
                       transition: 'all var(--transition-fast)',
                       background: currentSessionId === session.session_id ? 'var(--color-primary-light)' : 'transparent',
                       border: currentSessionId === session.session_id ? '1px solid #C7D2FE' : '1px solid transparent',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentSessionId !== session.session_id) {
-                        e.currentTarget.style.background = 'var(--bg-secondary)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentSessionId !== session.session_id) {
-                        e.currentTarget.style.background = 'transparent';
-                      }
                     }}
                   >
                     <div
@@ -422,6 +413,7 @@ export default function ChatWindow({
                 {['分析文档内容', '总结关键信息', '提取待办事项'].map((suggestion) => (
                   <div
                     key={suggestion}
+                    className="suggestion-chip"
                     style={{
                       padding: 'var(--space-2) var(--space-4)',
                       background: 'var(--bg-surface)',
@@ -433,16 +425,6 @@ export default function ChatWindow({
                       transition: 'all var(--transition-fast)',
                     }}
                     onClick={() => setInputValue(suggestion)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--color-primary)'
-                      e.currentTarget.style.color = 'var(--color-primary)'
-                      e.currentTarget.style.background = 'var(--color-primary-light)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-default)'
-                      e.currentTarget.style.color = 'var(--text-secondary)'
-                      e.currentTarget.style.background = 'var(--bg-surface)'
-                    }}
                   >
                     {suggestion}
                   </div>

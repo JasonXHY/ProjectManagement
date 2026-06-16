@@ -109,7 +109,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
   const handleClassify = useCallback(async (fileId: number) => {
     setClassifying(fileId)
     try {
-      const result = await aiService.classify(fileId)
+      const result = await aiService.classify(fileId, project.category_type)
       if (result.success) {
         const data = typeof result.data === 'object' && result.data ? result.data : { category: result.data, stage: null, summary: null }
         const category = data.category
@@ -160,7 +160,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
         const file = uncategorizedFiles[i]
         setClassifyProgress({ current: i + 1, total: uncategorizedFiles.length })
         try {
-          const result = await aiService.classify(file.id)
+          const result = await aiService.classify(file.id, project.category_type)
           if (result.success) {
             successCount++
             const data = typeof result.data === 'object' && result.data ? result.data : { category: result.data, stage: null, summary: null }
@@ -264,7 +264,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
         const id = selectedRowKeys[i] as number
         setClassifyProgress({ current: i + 1, total: selectedRowKeys.length })
         try {
-          const result = await aiService.classify(id)
+          const result = await aiService.classify(id, project.category_type)
           if (result.success) {
             successCount++
             const data = typeof result.data === 'object' && result.data ? result.data : { category: result.data, stage: null, summary: null }

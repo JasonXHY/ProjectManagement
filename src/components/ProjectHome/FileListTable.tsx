@@ -20,6 +20,7 @@ interface FileListTableProps {
   selectedRowKeys: React.Key[]
   onSelectionChange: (keys: React.Key[]) => void
   onUpload: (file: File) => void
+  selectedCategory?: string | null
 }
 
 export default function FileListTable({
@@ -31,6 +32,7 @@ export default function FileListTable({
   selectedRowKeys,
   onSelectionChange,
   onUpload,
+  selectedCategory,
 }: FileListTableProps) {
   const columns = useMemo(() => [
     {
@@ -245,8 +247,12 @@ export default function FileListTable({
           emptyText: (
             <EmptyState
               icon={<RobotOutlined />}
-              title="还没有文件"
-              description="上传文件开始项目管理"
+              title={selectedCategory && selectedCategory !== '所有文件'
+                ? `当前阶段「${selectedCategory}」暂无文件`
+                : '还没有文件'}
+              description={selectedCategory && selectedCategory !== '所有文件'
+                ? '上传相关文档到此阶段，或切换到其他阶段查看'
+                : '上传文件开始项目管理'}
               action={{
                 label: '上传文件',
                 onClick: () => {
@@ -265,22 +271,7 @@ export default function FileListTable({
             />
           ),
         }}
-        onRow={(record) => ({
-          onMouseEnter: () => {
-            const row = document.querySelector(`[data-row-key="${record.id}"]`)
-            if (row) {
-              const actions = row.querySelector('.row-actions') as HTMLElement
-              if (actions) actions.style.opacity = '1'
-            }
-          },
-          onMouseLeave: () => {
-            const row = document.querySelector(`[data-row-key="${record.id}"]`)
-            if (row) {
-              const actions = row.querySelector('.row-actions') as HTMLElement
-              if (actions) actions.style.opacity = '0'
-            }
-          },
-        })}
+        onRow={() => ({})}
       />
     </div>
   )

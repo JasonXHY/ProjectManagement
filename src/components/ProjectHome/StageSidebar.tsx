@@ -108,6 +108,7 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
           const button = (
             <button
               key={item.key}
+              className={`stage-menu-item${isSelected ? ' selected' : ''}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -123,25 +124,13 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
                 width: '100%',
                 textAlign: 'left',
                 fontFamily: 'inherit',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: isSelected ? 500 : 400,
                 transition: 'all var(--transition-fast)',
                 position: 'relative',
                 marginBottom: '2px',
               }}
               onClick={() => onSelectCategory(item.key)}
-              onMouseEnter={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = 'var(--bg-hover)'
-                  e.currentTarget.style.color = 'var(--text-primary)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSelected) {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = 'var(--text-secondary)'
-                }
-              }}
             >
               {isSelected && (
                 <div

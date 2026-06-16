@@ -108,7 +108,7 @@ export function registerFileHandlers() {
         }).catch(err => {
           console.error('[签字检测] 检测失败:', err)
         })
-    }
+      }
 
     // --- 自动 AI 分类（异步，不阻塞上传） ---
     if (contentExtracted) {

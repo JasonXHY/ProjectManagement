@@ -380,3 +380,48 @@ textarea.ant-input:focus {
   max-width: 100%;
   border-radius: 8px;
 }
+
+/* === JS hover → CSS :hover 迁移 === */
+
+/* StageSidebar 菜单项 hover */
+.stage-menu-item:not(.selected):hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ProjectList 卡片 hover */
+.project-card:hover {
+  border-color: var(--text-disabled);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ProjectList 卡片操作按钮 hover */
+.project-card .card-actions {
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.project-card:hover .card-actions {
+  opacity: 1;
+}
+
+/* FileListTable 行 hover 显示操作按钮 */
+.row-actions {
+  opacity: 0;
+  transition: opacity 150ms;
+}
+.ant-table-row:hover .row-actions {
+  opacity: 1;
+}
+
+/* ChatWindow 会话项 hover */
+.session-item:not(.active):hover {
+  background: var(--bg-secondary);
+}
+
+/* ChatWindow 建议标签 hover */
+.suggestion-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}

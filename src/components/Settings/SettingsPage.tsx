@@ -29,7 +29,7 @@ import {
 import {
   getProviderList,
   type AIModel,
-} from "../../shared/model-registry";
+} from "@shared/model-registry";
 
 /** SettingsPage 组件属性 */
 interface SettingsPageProps {

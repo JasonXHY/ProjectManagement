@@ -9,9 +9,10 @@ interface FileDropZoneProps {
   projectId: number
   files: FileRecord[]
   onFilesChange: () => void
+  categoryType?: 'stage' | 'content'
 }
 
-export default function FileDropZone({ projectId, files, onFilesChange }: FileDropZoneProps) {
+export default function FileDropZone({ projectId, files, onFilesChange, categoryType }: FileDropZoneProps) {
   const [uploading, setUploading] = useState(false)
   const [classifying, setClassifying] = useState<number | null>(null)
 
@@ -42,7 +43,7 @@ export default function FileDropZone({ projectId, files, onFilesChange }: FileDr
 
   const handleClassify = async (fileId: number) => {
     setClassifying(fileId)
-    const result = await aiService.classify(fileId)
+    const result = await aiService.classify(fileId, categoryType)
     setClassifying(null)
 
     if (result.success) {

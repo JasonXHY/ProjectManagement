@@ -14,6 +14,12 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["electron/shared/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,

@@ -28,7 +28,7 @@ contextBridge.exposeInMainWorld('api', {
   ai: {
     chat: (projectId: number, message: string, contextFileIds: number[], sessionId: string) =>
       ipcRenderer.invoke('ai:chat', projectId, message, contextFileIds, sessionId),
-    classify: (fileId: number) => ipcRenderer.invoke('ai:classify', fileId),
+    classify: (fileId: number, categoryType?: 'stage' | 'content') => ipcRenderer.invoke('ai:classify', fileId, categoryType),
     analyze: (projectId: number) => ipcRenderer.invoke('ai:analyze', projectId),
     getHistory: (projectId: number, sessionId?: string) => ipcRenderer.invoke('ai:get-history', projectId, sessionId),
     getSessions: (projectId: number) => ipcRenderer.invoke('ai:get-sessions', projectId),

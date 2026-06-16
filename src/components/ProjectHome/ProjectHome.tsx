@@ -138,11 +138,12 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
             selectedRowKeys={selectedRowKeys}
             onSelectionChange={setSelectedRowKeys}
             onUpload={handleUpload}
+            selectedCategory={selectedCategory}
           />
         </div>
       </div>
 
-      <style>{`.row-actions{opacity:0;transition:opacity 150ms}`}</style>
+      
 
       <Modal title="项目摘要" open={summaryVisible} onCancel={() => setSummaryVisible(false)} footer={null} width={800}>
         <div style={{ whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto' }}>
