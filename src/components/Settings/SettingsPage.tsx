@@ -50,7 +50,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const [activeTab, setActiveTab] = useState("ai");
   const [models, setModels] = useState<AIModel[]>([]);
   const [isBuiltinApiKey, setIsBuiltinApiKey] = useState(false);
-  const defaultStages = ['售前', '进行中', '关闭'];
+  const defaultStages = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'];
   const [customStages, setCustomStages] = useState<string[]>(defaultStages);
   const [newStageName, setNewStageName] = useState('');
 
@@ -231,7 +231,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
             { key: 'storage', label: '存储设置', icon: <FolderOutlined /> },
             { key: 'prompt', label: 'Prompt配置', icon: <EditOutlined /> },
             { key: 'role', label: '用户角色', icon: <UserOutlined /> },
-            { key: 'stages', label: '自定义阶段', icon: <PlusOutlined /> },
+            { key: 'stages', label: '文件分类管理', icon: <PlusOutlined /> },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -536,16 +536,16 @@ export default function SettingsPage(_props: SettingsPageProps) {
               }}
             >
               <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                自定义阶段
+                文件分类管理
               </div>
               <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                管理项目的自定义阶段。这些阶段将用于文件分类和项目进度管理。
+                管理文件分类阶段。新增的分类阶段将用于AI自动分类，可自定义阶段名称。项目阶段（售前/进行中/关闭）由系统自动管理，不在此处配置。
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <Space>
                   <Input
-                    placeholder="输入新阶段名称"
+                    placeholder="输入新分类阶段名称"
                     value={newStageName}
                     onChange={(e) => setNewStageName(e.target.value)}
                     onPressEnter={handleAddStage}
@@ -557,7 +557,7 @@ export default function SettingsPage(_props: SettingsPageProps) {
                     onClick={handleAddStage}
                     disabled={!newStageName}
                   >
-                    添加阶段
+                    添加分类阶段
                   </Button>
                 </Space>
               </div>

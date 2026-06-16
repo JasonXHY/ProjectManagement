@@ -94,9 +94,14 @@ export interface ApiResponse<T> {
   error?: string
 }
 
-// 默认阶段（3个阶段：售前、进行中、关闭）
+// 项目阶段（3个：售前、进行中、关闭）— 不可自定义
 export const DEFAULT_STAGES = [
   '售前', '进行中', '关闭'
+]
+
+// 文件分类阶段（10个）— 可自定义
+export const FILE_CLASSIFICATION_STAGES = [
+  '售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'
 ]
 
 // 项目状态（简化为3种）
