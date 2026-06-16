@@ -44,4 +44,29 @@ describe('parseClassifyResponse', () => {
     expect(result.category).toBe('构建')
     expect(result.keyInfo).toEqual({ version: '1.0', author: '张三' })
   })
+
+  // G3 — 子分类解析
+  it('应该解析 subcategory 字段', () => {
+    const content = '{"category": "售前", "subcategory": "报价单", "stage": "售前"}'
+    const result = parseClassifyResponse(content)
+    expect(result.category).toBe('售前')
+    expect(result.subcategory).toBe('报价单')
+  })
+
+  it('应该解析验收阶段的待签/已签子分类', () => {
+    const content = '{"category": "验收", "subcategory": "验收材料待签"}'
+    const result = parseClassifyResponse(content)
+    expect(result.subcategory).toBe('验收材料待签')
+  })
+
+  it('无 subcategory 字段时应回退为 null（向后兼容）', () => {
+    const content = '{"category": "需求", "stage": "需求"}'
+    const result = parseClassifyResponse(content)
+    expect(result.subcategory).toBeNull()
+  })
+
+  it('纯文本响应时 subcategory 为 null', () => {
+    const result = parseClassifyResponse('这是一个非JSON格式的响应')
+    expect(result.subcategory).toBeNull()
+  })
 })

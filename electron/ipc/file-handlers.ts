@@ -133,6 +133,7 @@ export function registerFileHandlers() {
         original_path: null,
         stored_path: filePath,
         category: null,
+        subcategory: null,
         stage: null,
         file_type: fileData.type,
         file_size: stats.size,
@@ -168,11 +169,14 @@ export function registerFileHandlers() {
         aiService.chat([
           { role: 'user', content: classifyPrompt }
         ]).then(async (result) => {
-          const { category, stage } = parseClassifyResponse(result.content)
+          const { category, subcategory, stage } = parseClassifyResponse(result.content)
           const sanitizedCategory = sanitizeCategory(category)
+          const sanitizedSub = subcategory ? sanitizeCategory(subcategory) : null
 
           try {
-            const targetDir = path.join(projectPath, sanitizedCategory)
+            const targetDir = sanitizedSub
+              ? path.join(projectPath, sanitizedCategory, sanitizedSub)
+              : path.join(projectPath, sanitizedCategory)
             await fs.mkdir(targetDir, { recursive: true })
             let targetPath = path.join(targetDir, safeName)
             if (await fs.access(targetPath).then(() => true).catch(() => false)) {
@@ -182,8 +186,8 @@ export function registerFileHandlers() {
             }
             await fs.rename(filePath, targetPath)
 
-            updateFile(id, { category: sanitizedCategory, stage, stored_path: targetPath })
-            console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}"`)
+            updateFile(id, { category: sanitizedCategory, subcategory: sanitizedSub, stage, stored_path: targetPath })
+            console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}${sanitizedSub ? '/' + sanitizedSub : ''}"`)
           } catch (err) {
             console.error('[AI分类] 文件移动或更新失败:', err)
           }

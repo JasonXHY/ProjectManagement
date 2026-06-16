@@ -51,6 +51,7 @@ export async function initDatabase(): Promise<Database> {
       original_path TEXT,
       stored_path TEXT NOT NULL,
       category TEXT,
+      subcategory TEXT,
       stage TEXT,
       file_type TEXT,
       file_size INTEGER,
@@ -162,6 +163,14 @@ export async function initDatabase(): Promise<Database> {
   // 迁移：为 files 表添加 has_signature 字段
   try {
     db.run(`ALTER TABLE files ADD COLUMN has_signature BOOLEAN DEFAULT FALSE`)
+    saveDatabase()
+  } catch {
+    // 字段已存在，忽略
+  }
+
+  // 迁移：为 files 表添加 subcategory 字段（v3.1 子分类）
+  try {
+    db.run(`ALTER TABLE files ADD COLUMN subcategory TEXT`)
     saveDatabase()
   } catch {
     // 字段已存在，忽略

@@ -28,7 +28,7 @@ declare global {
       }
       ai: {
         chat: (projectId: number, message: string, contextFileIds: number[], sessionId: string) => Promise<{ success: boolean, data?: string, error?: string }>
-        classify: (fileId: number, categoryType?: 'stage' | 'content') => Promise<{ success: boolean, data?: { category: string, stage: string | null, summary: string | null } | string, error?: string }>
+        classify: (fileId: number, categoryType?: 'stage' | 'content') => Promise<{ success: boolean, data?: { category: string, subcategory: string | null, stage: string | null, summary: string | null } | string, error?: string }>
         analyze: (projectId: number) => Promise<{ success: boolean, data?: string, error?: string }>
         getHistory: (projectId: number, sessionId?: string) => Promise<{ success: boolean, data?: Array<{ id: number, project_id: number, session_id: string, role: string, content: string, token_count: number, created_at: string }>, error?: string }>
         getSessions: (projectId: number) => Promise<{ success: boolean, data?: Array<{ session_id: string, first_message: string, message_count: number, created_at: string, updated_at: string }>, error?: string }>

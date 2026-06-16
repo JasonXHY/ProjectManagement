@@ -105,7 +105,7 @@ describe('useProjectHome', () => {
   it('handleClassify成功后显示分类结果', async () => {
     vi.mocked(aiService.classify).mockResolvedValue({
       success: true,
-      data: { category: '需求', stage: null, summary: null },
+      data: { category: '需求', subcategory: null, stage: null, summary: null },
     })
     const { result } = renderHook(() => useProjectHome(mockProject))
 
@@ -121,7 +121,7 @@ describe('useProjectHome', () => {
   it('handleClassify传递category_type给AI', async () => {
     vi.mocked(aiService.classify).mockResolvedValue({
       success: true,
-      data: { category: '文档', stage: null, summary: null },
+      data: { category: '文档', subcategory: null, stage: null, summary: null },
     })
     const contentProject = { ...mockProject, category_type: 'content' as const }
     const { result } = renderHook(() => useProjectHome(contentProject))
@@ -136,7 +136,7 @@ describe('useProjectHome', () => {
   it('handleClassify检测阶段推进时触发Modal', async () => {
     vi.mocked(aiService.classify).mockResolvedValue({
       success: true,
-      data: { category: '进行中', stage: '进行中', summary: null },
+      data: { category: '进行中', subcategory: null, stage: '进行中', summary: null },
     })
     const { result } = renderHook(() => useProjectHome(mockProject))
 

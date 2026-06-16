@@ -88,7 +88,7 @@ describe('aiService', () => {
   it('classify调用window.api.ai.classify', async () => {
     vi.mocked(window.api.ai.classify).mockResolvedValue({
       success: true,
-      data: { category: '需求', stage: null, summary: null },
+      data: { category: '需求', subcategory: null, stage: null, summary: null },
     })
     const result = await aiService.classify(1, 'stage')
     expect(window.api.ai.classify).toHaveBeenCalledWith(1, 'stage')
@@ -98,7 +98,7 @@ describe('aiService', () => {
   it('classify不传categoryType时仅传fileId', async () => {
     vi.mocked(window.api.ai.classify).mockResolvedValue({
       success: true,
-      data: { category: '需求', stage: null, summary: null },
+      data: { category: '需求', subcategory: null, stage: null, summary: null },
     })
     await aiService.classify(1)
     expect(window.api.ai.classify).toHaveBeenCalledWith(1, undefined)

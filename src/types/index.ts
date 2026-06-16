@@ -39,6 +39,7 @@ export interface FileRecord {
   original_path: string | null
   stored_path: string
   category: string | null
+  subcategory: string | null
   stage: string | null
   file_type: string | null
   file_size: number | null

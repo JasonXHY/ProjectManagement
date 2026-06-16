@@ -177,7 +177,7 @@ export function registerAIHandlers() {
       const aiService = getAIService()
       const response = await aiService.chat(messages)
 
-      const { category, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
+      const { category, subcategory, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
 
       // 合并关键信息到项目 metadata
       if (keyInfo) {
@@ -223,35 +223,38 @@ export function registerAIHandlers() {
         const projectPath = await resolveProjectPath(file.project_id)
         if (projectPath) {
           try {
-            const targetDir = path.join(projectPath, category)
+            // 目标目录为「阶段/子分类」两级结构（v3.1）；无子分类时退化为阶段级
+            const targetDir = subcategory
+              ? path.join(projectPath, category, subcategory)
+              : path.join(projectPath, category)
             const resolvedTarget = path.resolve(targetDir)
 
             // 路径安全校验：确保目标目录在项目目录内
             if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
-              console.error('[AI分类] 路径安全校验失败，category可能包含路径穿越:', category)
-              fileDb.updateFile(fileId, { category: '未分类', content_extracted: content })
-              return { success: true, data: { category: '未分类', stage: null, summary } }
+              console.error('[AI分类] 路径安全校验失败，category/subcategory可能包含路径穿越:', category, subcategory)
+              fileDb.updateFile(fileId, { category: '未分类', subcategory: null, content_extracted: content })
+              return { success: true, data: { category: '未分类', subcategory: null, stage: null, summary } }
             }
 
             await fs.mkdir(targetDir, { recursive: true })
             const targetPath = path.join(targetDir, path.basename(file.stored_path))
             await fs.rename(file.stored_path, targetPath)
 
-            // 文件移动成功后，更新数据库（一次性更新 category、stored_path 和 content_extracted）
-            fileDb.updateFile(fileId, { category, stored_path: targetPath, content_extracted: content })
+            // 文件移动成功后，更新数据库（一次性更新 category、subcategory、stored_path 和 content_extracted）
+            fileDb.updateFile(fileId, { category, subcategory, stored_path: targetPath, content_extracted: content })
           } catch (err) {
             // 文件移动失败，不更新分类信息，返回错误
             console.error('[AI分类] 文件移动失败:', err)
             return { success: false, error: '文件移动失败，分类未应用', code: 'MOVE_FAILED' }
           }
         } else {
-          fileDb.updateFile(fileId, { category, content_extracted: content })
+          fileDb.updateFile(fileId, { category, subcategory, content_extracted: content })
         }
       } else {
-        fileDb.updateFile(fileId, { category, content_extracted: content })
+        fileDb.updateFile(fileId, { category, subcategory, content_extracted: content })
       }
 
-      return { success: true, data: { category, stage: fileStage, summary } }
+      return { success: true, data: { category, subcategory, stage: fileStage, summary } }
     } catch (error) {
       console.error('[AI] 分类失败:', error)
       return handleIpcError(error)

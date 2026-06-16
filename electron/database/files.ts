@@ -7,6 +7,7 @@ export interface FileRecord {
   original_path: string | null
   stored_path: string
   category: string | null
+  subcategory: string | null
   stage: string | null
   file_type: string | null
   file_size: number | null
@@ -17,7 +18,7 @@ export interface FileRecord {
 }
 
 // Column whitelist to prevent SQL injection via dynamic key names
-const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed', 'has_signature'] as const
+const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'subcategory', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed', 'has_signature'] as const
 
 export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] {
   if (!results || !results[0] || !results[0].values) return []
@@ -34,10 +35,10 @@ export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] 
 export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>): number {
   const db = getDatabase()
   db.run(
-    `INSERT INTO files (project_id, filename, original_path, stored_path, category, stage, file_type, file_size, content_extracted, is_analyzed, has_signature)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO files (project_id, filename, original_path, stored_path, category, subcategory, stage, file_type, file_size, content_extracted, is_analyzed, has_signature)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [projectId, data.filename, data.original_path, data.stored_path,
-     data.category, data.stage, data.file_type, data.file_size,
+     data.category, data.subcategory ?? null, data.stage, data.file_type, data.file_size,
      data.content_extracted, data.is_analyzed ? 1 : 0, data.has_signature ? 1 : 0]
   )
   saveDatabase()
