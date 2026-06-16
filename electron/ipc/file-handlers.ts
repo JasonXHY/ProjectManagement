@@ -305,7 +305,7 @@ export function registerFileHandlers() {
     return { success: true }
   })
 
-  ipcMain.handle('file:updateCategory', async (_, id: number, category: string) => {
+  ipcMain.handle('file:updateCategory', async (_, id: number, category: string, subcategory?: string | null) => {
     const idValidation = validateRequired(id, 'id')
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
@@ -347,7 +347,10 @@ export function registerFileHandlers() {
     }
 
     try {
-      const targetDir = path.join(projectPath, category)
+      // 目标目录为「阶段/子分类」两级结构（v3.1）；无子分类时退化为阶段级
+      const targetDir = subcategory
+        ? path.join(projectPath, category, subcategory)
+        : path.join(projectPath, category)
       const resolvedTarget = path.resolve(targetDir)
 
       if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
@@ -359,9 +362,9 @@ export function registerFileHandlers() {
 
       if (file.stored_path !== targetPath) {
         await fs.rename(file.stored_path, targetPath)
-        updateFile(id, { category, stored_path: targetPath })
+        updateFile(id, { category, subcategory: subcategory ?? null, stored_path: targetPath })
       } else {
-        updateFile(id, { category })
+        updateFile(id, { category, subcategory: subcategory ?? null })
       }
 
       return { success: true }

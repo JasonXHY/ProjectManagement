@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons'
 import { FileRecord } from '../../types'
 import { getStageStyle, getFileTypeStyle, getFileTypeLabel, getFileTypeDesc } from './projectHome.styles'
+import { buildStageMenuItems, parseStageMenuKey } from './stage-menu'
 import EmptyState from '../common/EmptyState'
 
 interface FileListTableProps {
@@ -16,7 +17,7 @@ interface FileListTableProps {
   classifying: number | null
   onClassify: (fileId: number) => void
   onDelete: (id: number) => void
-  onStageChange: (fileId: number, newStage: string) => void
+  onStageChange: (fileId: number, newStage: string, subcategory?: string | null) => void
   selectedRowKeys: React.Key[]
   onSelectionChange: (keys: React.Key[]) => void
   onUpload: (file: File) => void
@@ -121,38 +122,30 @@ export default function FileListTable({
       key: 'stage',
       width: 120,
       render: (_: unknown, record: FileRecord) => {
-        const stageItems: MenuProps['items'] = [
-          { key: '售前', label: '售前' },
-          { key: '启动', label: '启动' },
-          { key: '需求', label: '需求' },
-          { key: '方案', label: '方案' },
-          { key: '构建', label: '构建' },
-          { key: '测试', label: '测试' },
-          { key: '上线', label: '上线' },
-          { key: '验收', label: '验收' },
-          { key: '转客户成功', label: '转客户成功' },
-          { key: '关闭', label: '关闭' },
-        ]
+        const stageItems = buildStageMenuItems() as MenuProps['items']
 
         return (
           <Dropdown
             menu={{
               items: stageItems,
-              onClick: ({ key }) => onStageChange(record.id, key),
+              onClick: ({ key }) => {
+                const { stage, subcategory } = parseStageMenuKey(key)
+                onStageChange(record.id, stage, subcategory)
+              },
             }}
             trigger={['click']}
           >
             <Button
               type="text"
               size="small"
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
                 gap: 'var(--space-1)',
                 color: record.category ? getStageStyle(record.category).color : 'var(--text-secondary)',
               }}
             >
-              {record.category || '选择阶段'}
+              {record.category ? (record.subcategory ? `${record.category} / ${record.subcategory}` : record.category) : '选择阶段'}
               <DownOutlined style={{ fontSize: '10px' }} />
             </Button>
           </Dropdown>

@@ -22,8 +22,8 @@ export const fileService = {
     return window.api.file.delete(id)
   },
 
-  async updateCategory(id: number, category: string) {
-    return window.api.file.updateCategory(id, category)
+  async updateCategory(id: number, category: string, subcategory?: string | null) {
+    return window.api.file.updateCategory(id, category, subcategory)
   },
 
   async openFolder(projectId: number) {

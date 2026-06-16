@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('api', {
     list: (projectId: number) => ipcRenderer.invoke('file:list', projectId),
     listByCategory: (projectId: number, category: string) => ipcRenderer.invoke('file:listByCategory', projectId, category),
     delete: (id: number) => ipcRenderer.invoke('file:delete', id),
-    updateCategory: (id: number, category: string) => ipcRenderer.invoke('file:updateCategory', id, category),
+    updateCategory: (id: number, category: string, subcategory?: string | null) => ipcRenderer.invoke('file:updateCategory', id, category, subcategory),
     getSummary: (projectId: number) => ipcRenderer.invoke('file:getSummary', projectId),
     openFolder: (projectId: number) => ipcRenderer.invoke('file:openFolder', projectId),
     open: (fileId: number) => ipcRenderer.invoke('file:open', fileId),

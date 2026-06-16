@@ -21,7 +21,7 @@ declare global {
         list: (projectId: number) => Promise<{ success: boolean, data?: FileRecord[], error?: string }>
         listByCategory: (projectId: number, category: string) => Promise<{ success: boolean, data?: FileRecord[], error?: string }>
         delete: (id: number) => Promise<{ success: boolean, error?: string }>
-        updateCategory: (id: number, category: string) => Promise<{ success: boolean, error?: string }>
+        updateCategory: (id: number, category: string, subcategory?: string | null) => Promise<{ success: boolean, error?: string }>
         getSummary: (projectId: number) => Promise<{ success: boolean; data?: string; error?: string }>
         openFolder: (projectId: number) => Promise<{ success: boolean; error?: string }>
         open: (fileId: number) => Promise<{ success: boolean; error?: string }>

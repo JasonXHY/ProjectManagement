@@ -312,11 +312,12 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
     }
   }, [selectedRowKeys, project.current_stage, loadFiles])
 
-  const handleStageChange = useCallback(async (fileId: number, newStage: string) => {
+  const handleStageChange = useCallback(async (fileId: number, newStage: string, subcategory?: string | null) => {
     try {
-      const result = await fileService.updateCategory(fileId, newStage)
+      const result = await fileService.updateCategory(fileId, newStage, subcategory)
       if (result.success) {
-        message.success(`文件已移动到「${newStage}」阶段`)
+        const label = subcategory ? `「${newStage} / ${subcategory}」` : `「${newStage}」阶段`
+        message.success(`文件已移动到${label}`)
         loadFiles()
       } else {
         message.error(result.error || '操作失败')
