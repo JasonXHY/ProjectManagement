@@ -19,6 +19,12 @@ electron/dist/
 .qoderwork/
 .vscode/
 
+# Compiled TS artifacts that must never land beside source (would shadow .ts in bundler resolution)
+src/**/*.js
+src/**/*.js.map
+src/types/*.d.ts
+src/types/*.d.ts.map
+
 # Misc
 bug/
 *.bat

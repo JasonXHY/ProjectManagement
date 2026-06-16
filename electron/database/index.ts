@@ -9,7 +9,16 @@ let batchMode = false
 let saveQueue = Promise.resolve()
 
 export async function initDatabase(): Promise<Database> {
-  const SQL = await initSqlJs()
+  // 定位 sql.js 的 wasm 文件：打包后从 resources 读取（见 electron-builder.yml extraResources），
+  // 开发态从 node_modules 解析。否则打包后会因找不到 wasm 而启动即崩。
+  const SQL = await initSqlJs({
+    locateFile: (file: string) => {
+      if (app.isPackaged) {
+        return path.join(process.resourcesPath, file)
+      }
+      return path.join(path.dirname(require.resolve('sql.js')), file)
+    },
+  })
   dbPath = path.join(app.getPath('userData'), 'projects.db')
 
   // 如果数据库文件存在，读取它

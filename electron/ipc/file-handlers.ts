@@ -1,4 +1,4 @@
-import { ipcMain, app, shell } from 'electron'
+import { ipcMain, shell } from 'electron'
 import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById, updateFile } from '../database/files'
 import { getProject } from '../database/projects'
 import { getSetting } from '../database/settings'
@@ -281,7 +281,8 @@ export function registerFileHandlers() {
     }
 
     // Validate path safety — ensure stored_path is within the projects root
-    const projectsRoot = path.join(app.getPath('userData'), 'projects')
+    // 使用 getProjectsRoot() 以兼容自定义存储路径（NF-01），与 file:open 保持一致
+    const projectsRoot = getProjectsRoot()
     const resolvedPath = path.resolve(file.stored_path)
     if (!resolvedPath.startsWith(path.resolve(projectsRoot))) {
       return { success: false, error: '文件路径无效' }

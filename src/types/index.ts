@@ -94,15 +94,8 @@ export interface ApiResponse<T> {
   error?: string
 }
 
-// 项目阶段（3个：售前、进行中、关闭）— 不可自定义
-export const DEFAULT_STAGES = [
-  '售前', '进行中', '关闭'
-]
-
-// 文件分类阶段（10个）— 可自定义
-export const FILE_CLASSIFICATION_STAGES = [
-  '售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'
-]
+// 阶段常量统一定义在 electron/shared/stages.ts（单一数据源），此处重导出供 renderer 使用
+export { DEFAULT_STAGES, FILE_CLASSIFICATION_STAGES } from '../../electron/shared/stages'
 
 // 项目状态（简化为3种）
 export const PROJECT_STATUS = [

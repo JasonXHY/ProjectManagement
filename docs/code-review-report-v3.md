@@ -523,3 +523,79 @@ npm run build          # 生产构建成功
 - 不要升级主依赖大版本（React/AntD/Electron）。
 - 不要改动 `.archive/`、`docs/` 下的历史文档（本报告除外的状态更新）。
 - 不要在未确认前改动 3 vs 11 阶段的取舍。
+
+---
+
+## 十、修复进度复核（2026-06-16，对照 mainline `4741e17`）
+
+> 实现 Agent 已基于 v3 报告完成一轮修复并合入 mainline。本节为**对照当前代码的逐条复核**（不信 commit message，全部回到代码确认）。
+> 实测基线：`tsc --noEmit`（renderer）✅ 0；`vitest run` ✅ **79 passed / 9 files**（v3 时仅 1）；`eslint` ⚠️ **1 error + 26 warnings**（v3 时 0 error）；`cd electron && tsc` 🔴 **报错**（见 R1）。
+
+### 10.1 Bug 修复结果
+
+| 编号 | 状态 | 证据 |
+|------|------|------|
+| **B1** Key 掩码覆盖 | ✅ 已修 | 前端 `SettingsPage.tsx:114-119` 剔除 `'sk-***'`/undefined；后端 `settings-handlers.ts:40-42` `if (key.endsWith('_api_key') && value==='sk-***') continue` |
+| **B2** IPC 裸 reject | ✅ 已修 | `ai:classify` `ai-handlers.ts:146`、`ai:analyze` `:277`、`file:upload` `file-handlers.ts:100`、`project:delete` `project-handlers.ts:155`、`project:update` `:129` 均已 try/catch（内联，未用统一包装器） |
+| **B3** 移动失败谎报成功 | ✅ 已修 | `ai-handlers.ts:242` 与 `file-handlers.ts:363` 失败时 `return {success:false, code:'MOVE_FAILED'}` |
+| **B4** delete 孤儿/误报 | ⚠️ 部分 | `project-handlers.ts:162` `fs.rm` 仍在同一 try 内、无独立 catch；DB 已先删，rm 抛错则误报+残留（`force:true` 使概率低但路径未隔离） |
+| **B5** 自动阶段推进 | ⚠️ 部分（按重设计） | 项目阶段已定为 3（`types/index.ts:98`），文件分类独立为 `FILE_CLASSIFICATION_STAGES`(10)（`:103`）；但 `STAGE_PROGRESSION_RULES` 仍仅 2 条（`:115`），AI 识别出"测试/上线/验收"等仍不触发推进——该路径对 8 个取值依旧形同失效 |
+| **B6** 清空会话闭包 | ✅ 已修 | `ChatWindow.tsx:257` deps 含 `currentSessionId` |
+| **B7** 模型下拉为空 | ✅ 已修 | `SettingsPage.tsx:93-95` 加载后 `handleProviderChange` 回填 models |
+| **B8** 卡片永远"按阶段分类" | ✅ 已修 | `ProjectList.tsx:349` 按 `category_type` 三元判断 |
+| **B9** loadFiles/loadProjects 无取消 | ⚠️ 部分 | `ProjectList.tsx:59` 加了 `cancelled` 但 `useEffect:81` 未使用其返回的清理函数→守卫失效；`projectHome.hooks.ts:39` `loadFiles` 仍完全无守卫 |
+| **B10** 重置按钮 | ✅ 已修 | `SettingsPage.tsx:138-141` 改为 `await loadSettings()` 恢复已保存配置 |
+| **B11** isEncrypted 不可靠 | ✅ 已修（移除） | `settings.ts` 已删除 safeStorage 加密逻辑。⚠️ 副作用：API Key 现以**明文**存库，N01"加密存储"需求重新变为未满足 |
+
+### 10.2 需求缺口结果
+
+| 需求 | 状态 | 证据 |
+|------|------|------|
+| 阶段文件夹 3→多 | ✅ 已修 | `project-handlers.ts:55` 用 `FILE_CLASSIFICATION_STAGES`(10) 建文件夹 |
+| F01.3 编辑名称+分类方式 | ✅ 已修 | `ProjectList.tsx:651-678` 弹窗含 name/status/category_type，`handleEditProject:129` 全量提交 |
+| F02.1 后端 50MB | ⚠️ 部分 | `file-handlers.ts:17/96` 已校验，但常量仍**未抽共享**（前端各有一份） |
+| F02.1 CSV/图片提取 | ❌ 未修 | `file-extractor.ts:40-66` 仍只支持 txt/md/json/pdf/doc/xls，csv 与图片落 `default→null` |
+| F03.2 批量取消按钮 | ✅ 已修 | `BatchActionBar.tsx:45`→`ProjectHome.tsx:130`→`projectHome.hooks.ts:426`，循环内 `:163/:267` 检查 |
+| F05.2 Markdown 渲染 | ✅ 已修 | `ChatWindow.tsx:493` `<ReactMarkdown remarkPlugins={[remarkGfm]}>`；依赖已加 |
+| F05.3 上下文文件面板 | ✅ 已修 | `ChatWindow.tsx:618` 240px 面板 + `selectedFileIds`，`:154` 传入非空数组 |
+| F11/NF-05 角色注入 prompt | ✅ 已修 | `ai-handlers.ts:19` `ROLE_HINT`，chat `:99`、classify `:161` 注入 |
+| F14 阶段排序 + 保护默认 | ⚠️ 部分 | 保护✅ `SettingsPage.tsx:567` `closable={!defaultStages.includes(stage)}`；排序❌ 仍无 |
+| NF-01 自定义存储路径 | ⚠️ 几乎完成 | 白名单 `settings-handlers.ts:15`✅、`getProjectsRoot` 读取 `project-path.ts:16`✅、设置 UI `SettingsPage.tsx:412` + browse✅。**残留 R3**：`file:delete` `file-handlers.ts:284` 仍硬编码默认根，自定义路径下删文件会失败 |
+
+### 10.3 质量项结果
+
+| 项 | 状态 | 证据 |
+|----|------|------|
+| 生产安全 NODE_ENV→isPackaged | ✅ 已修 | `main.ts:12` `isDev=!app.isPackaged`，CSP/权限处理器在打包生效，prod 不开 DevTools |
+| STAGE_STYLE 单一数据源 | ✅ 已修 | 定义集中于 `projectHome.styles.ts:2/18`，5 个消费方均 import（`types/index.ts:108` `PROJECT_STATUS` 残留近似副本，仅用于编辑弹窗标签） |
+| classify 归一化合并 | ⚠️ 部分 | 后端已抽 `electron/utils/ai-response.ts`；renderer `projectHome.hooks.ts:118/170/274` 仍 3 处 `typeof...` 探测，未建 `ClassifyResult` 类型 |
+| model-registry 单源 | ✅ 已修 | 仅存 `electron/shared/model-registry.ts`，renderer 经 `@shared` 别名引用 |
+| electron-builder 配置 | ⚠️ 部分 | `electron-builder.yml` 有 appId/files/win；**无 sql.js wasm 的 extraResources**（见 R2），无 mac target |
+| `type:module` / any 削减 | ⚠️ 部分 | `package.json` 仍缺 `"type":"module"`；源码 `any`/`as unknown as` 约 11 处，未较 v3 减少 |
+
+### 10.4 ⚠️ 本轮修复**新引入**的问题 → ✅ 已于 2026-06-16 全部修复并验证
+
+| 编号 | 严重度 | 问题 | 状态 / 修复方式（已实施并验证） |
+|------|--------|------|-------------|
+| **R1** | 🔴 高 | **electron 主进程编译失败**：`project-handlers.ts:6` `import ... from '../../src/types'` 跨出 electron `rootDir`，`cd electron && tsc` 报 `TS6059`，打包链路断裂。 | ✅ **已修**：新增 `electron/shared/stages.ts` 作为阶段常量单一数据源；electron 改为 `import from '../shared/stages'`；`src/types/index.ts` 改为 `export { ... } from '../../electron/shared/stages'` 重导出，renderer 消费方与测试零改动。`cd electron && tsc` → exit 0。**附带清理**：删除了 R1 旧 bug 残留的 `src/types/index.{js,js.map,d.ts,d.ts.map}` 编译产物（曾导致 Rollup 解析到陈旧 `.js` 使 `vite build` 报 `PROJECT_STATUS is not exported`），并在 `.gitignore` 加入 `src/**/*.js` 等规则防止复发。 |
+| **R2** | 🔴 高 | **sql.js wasm 未配置**：`initSqlJs()` 无 `locateFile`，yml 无 `extraResources`，打包后启动即崩。 | ✅ **已修**：`database/index.ts` 的 `initSqlJs({ locateFile })` 在 `app.isPackaged` 时指向 `process.resourcesPath`，开发态用 `require.resolve('sql.js')`；`electron-builder.yml` 增加 `extraResources: [{from: node_modules/sql.js/dist/sql-wasm.wasm, to: sql-wasm.wasm}]`。**端到端验证**：`electron-builder --dir` 成功产出 `PMAer.app`，且 `Contents/Resources/sql-wasm.wasm` 确实存在（与 locateFile 路径一致）。 |
+| **R3** | 🟠 中 | **NF-01 自洽缺口**：`file:delete` 路径校验硬编码默认根，自定义路径下删文件报"路径无效"。 | ✅ **已修**：`file-handlers.ts` `file:delete` 改用 `getProjectsRoot()`，与 `file:open` 一致；同步移除不再使用的 `app` 导入。 |
+| **R4** | 🟡 低 | **lint 回归**：1 error（`ai-service.ts:73` `providerConfig` 未用）。 | ✅ **已修**：删除未用的 `providerConfig` 变量及随之失效的 `getProviderById` 导入。`eslint` → **0 error**（26 warnings 为既有 `any`/`no-console`，未新增）。 |
+
+**R1–R4 修复后整体验证（2026-06-16）**：
+
+| 检查 | 结果 |
+|------|------|
+| `tsc --noEmit`（renderer） | ✅ 0 errors |
+| `npm run electron:compile`（main） | ✅ exit 0（R1 修复前为失败） |
+| `eslint .` | ✅ **0 errors** / 26 warnings（R4 修复前为 1 error） |
+| `vitest run` | ✅ 79 passed / 9 files |
+| `vite build` | ✅ 成功（清理陈旧产物后） |
+| `electron-builder --dir` | ✅ 产出 `PMAer.app`，wasm 已入 Resources（R2 端到端验证） |
+
+### 10.5 复核小结
+
+- **修复质量良好**：v3 列出的 11 个 Bug 中 **8 个完全修复**、3 个部分；致命 B1 已闭环；需求缺口大部分补齐；测试从 1 → **79**，生产安全加固已真正生效。
+- **本轮新引入的 R1–R4 已全部修复并验证**，打包链路恢复可用（已实测产出含 wasm 的 `.app`）。
+- **遗留待办（按序）**：B11 重新引入 safeStorage 加密（当前 API Key 明文存储，N01 倒退）→ 收尾 B4（delete 的 fs.rm 独立 catch）/ B5（文件阶段→项目推进对 8 个取值仍失效）/ B9（loadFiles/loadProjects 取消守卫）→ F02.1（csv/图片提取）、F14（阶段排序）、classify renderer 端归一化、`type:module` 与 any 削减。
+- 验证标准不变：`npm run typecheck && cd electron && npx tsc && npm run lint && npm test && npm run build` 全绿，且 `npm run electron:build` 能产出含 wasm 的安装包。

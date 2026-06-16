@@ -2,7 +2,7 @@ import { AIProviderInterface, AIMessage, AIResponse, OpenAIResponse } from './ai
 import { ZhipuProvider } from './ai-providers/zhipu'
 import { MiMoProvider } from './ai-providers/mimo'
 import { getSetting, getDecryptedApiKey } from '../database/settings'
-import { getProviderById, getFullApiUrl } from '../shared/model-registry'
+import { getFullApiUrl } from '../shared/model-registry'
 
 // AI模型供应商类型（与 src/types 中的 AIProvider 保持一致）
 export type AIProvider = 'xiaomi' | 'zhipu' | 'ali' | 'tencent' | 'baidu' | 'deepseek' | 'moonshot' | 'xunfei' | 'baichuan' | 'minimax' | 'custom'
@@ -70,7 +70,6 @@ export class AIService {
       const url = resolveUrl('xiaomi').replace(/\/v1\/?$/, '')
       this.providers.set('xiaomi', new MiMoProvider(apiKey, url, url, 'api'))
     } else if (apiKey) {
-      const providerConfig = getProviderById(currentProvider)
       const apiUrl = resolveUrl(currentProvider)
       if (apiUrl) {
         this.providers.set(currentProvider, new OpenAICompatibleProvider(apiKey, apiUrl))

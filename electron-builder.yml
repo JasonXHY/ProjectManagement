@@ -12,6 +12,11 @@ files:
   - "!**/.gitignore"
   - "!**/node_modules/.cache"
 
+# sql.js 的 wasm 必须随包分发，并由 initDatabase() 的 locateFile 从 resourcesPath 读取
+extraResources:
+  - from: node_modules/sql.js/dist/sql-wasm.wasm
+    to: sql-wasm.wasm
+
 win:
   target:
     - target: nsis

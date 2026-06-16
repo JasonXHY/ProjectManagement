@@ -3,7 +3,7 @@ import * as projectDb from '../database/projects'
 import { sanitizeFileName, resolveProjectPath, createProjectDirectory } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
-import { FILE_CLASSIFICATION_STAGES } from '../../src/types'
+import { FILE_CLASSIFICATION_STAGES } from '../shared/stages'
 import fs from 'fs/promises'
 import path from 'path'
 
