@@ -38,12 +38,12 @@ const EmptyState = memo(function EmptyState({ icon, title, description, action }
         width: '64px',
         height: '64px',
         borderRadius: '50%',
-        background: '#F3F4F6',
+        background: 'var(--bg-secondary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '28px',
-        color: '#D1D5DB',
+        color: 'var(--text-disabled)',
         marginBottom: '16px',
       }}>
         {icon || ICON_MAP.inbox}
@@ -51,7 +51,7 @@ const EmptyState = memo(function EmptyState({ icon, title, description, action }
       <div style={{
         fontSize: '16px',
         fontWeight: 500,
-        color: '#6B7280',
+        color: 'var(--text-secondary)',
         marginBottom: '8px',
       }}>
         {title}
@@ -59,7 +59,7 @@ const EmptyState = memo(function EmptyState({ icon, title, description, action }
       {description && (
         <div style={{
           fontSize: '14px',
-          color: '#9CA3AF',
+          color: 'var(--text-placeholder)',
           marginBottom: action ? '16px' : 0,
         }}>
           {description}
