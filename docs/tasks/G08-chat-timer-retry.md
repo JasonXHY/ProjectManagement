@@ -1,5 +1,7 @@
 # G8 — 对话「已等待 X 秒」+ retry 上限 2
 
+> **状态：✅ 完成（TDD，commit `71df9ee`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F05.2
 > 依赖：无（独立）
 > 阻塞：无

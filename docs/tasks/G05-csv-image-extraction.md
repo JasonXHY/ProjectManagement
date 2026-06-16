@@ -1,5 +1,7 @@
 # G5 — CSV + 图片内容提取
 
+> **状态：✅ 完成（TDD，commit `443d699`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F02.1（支持类型 CSV/PNG/JPG + 上传后自动提取内容）
 > 依赖：无（独立）
 > 阻塞：无

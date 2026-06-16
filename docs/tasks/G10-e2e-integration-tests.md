@@ -1,5 +1,7 @@
 # G10 — E2E 集成测试框架 + 用例
 
+> **状态：✅ 完成（TDD，commit `077cda7`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F01–F09 验收标准、N02/N04/N06
 > 依赖：G1、G2、G3、G6、G9（功能稳定后再覆盖）
 > 阻塞：无

@@ -1,5 +1,7 @@
 # G3 — 分类 Prompt 支持子分类 + 待签/已签
 
+> **状态：✅ 完成（TDD，commit `b43411e`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F03.3、F03.1、§1.1
 > 依赖：G1
 > 阻塞：G10

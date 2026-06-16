@@ -1,5 +1,7 @@
 # G9 — 补全 AI 供应商（零一万物）
 
+> **状态：✅ 完成（TDD，commit `4b0b486`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F10.1
 > 依赖：无（独立）
 > 阻塞：G10

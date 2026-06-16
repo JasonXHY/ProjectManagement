@@ -1,5 +1,7 @@
 # G6 — 手动分类下拉 11 阶段 + 子分类
 
+> **状态：✅ 完成（TDD，commit `ec84689`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F02.5
 > 依赖：G1
 > 阻塞：G10

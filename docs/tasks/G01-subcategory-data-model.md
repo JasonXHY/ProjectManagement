@@ -1,5 +1,7 @@
 # G1 — 子分类数据模型
 
+> **状态：✅ 完成（TDD，commit `54f138c`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：业务需求 v3.1 §1.1、F04.2
 > 依赖：无（基础任务）
 > 阻塞：G2、G3、G4、G6、G10

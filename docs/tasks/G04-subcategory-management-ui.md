@@ -1,5 +1,7 @@
 # G4 — 子分类管理 UI
 
+> **状态：✅ 完成（TDD，commit `ec6178a`，分支 feat/v3.1-subcategories-and-fixes）**
+
 > 关联需求：F14.1、F04.2（§4.2 第5条 子分类自定义）
 > 依赖：G1
 > 阻塞：无
