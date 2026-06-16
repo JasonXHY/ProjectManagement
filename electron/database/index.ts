@@ -229,9 +229,23 @@ export function endBatch() {
   saveDatabase()
 }
 
+/** 同步将当前内存 DB 落盘（用于退出前确保不丢数据） */
+function saveDatabaseSync() {
+  if (!db || !dbPath) return
+  const data = db.export()
+  const buffer = Buffer.from(data)
+  fs.writeFileSync(dbPath, buffer)
+}
+
+/** 等待异步保存队列完成（供测试/退出流程 await） */
+export function flushDatabase(): Promise<void> {
+  return saveQueue.then(() => undefined).catch(() => undefined)
+}
+
 export function closeDatabase() {
   if (db) {
-    saveDatabase()
+    // 同步落盘，避免异步队列在 db.close() 之后才执行（会写入已关闭的 DB 并丢数据）
+    saveDatabaseSync()
     db.close()
   }
 }

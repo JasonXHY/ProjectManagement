@@ -142,6 +142,25 @@
 
 ---
 
+## 四点五、实施进度（2026-06-16）
+
+G1–G10 全部以 TDD 完成（test-first，RED→GREEN，每项独立 commit）。测试数从 79 增至 151。
+
+| ID | 状态 | 测试类型补充 |
+|----|------|--------------|
+| G1 子分类数据模型 | ✅ | UNIT-PURE（stages-subcategory）|
+| G2 嵌套文件夹 | ✅ | 真实 fs（folder-structure）→ E2E（db-fs.integration F01.1）|
+| G3 分类 Prompt + subcategory | ✅ | UNIT（ai-response/classify-prompt）→ E2E（subcategory 持久化）|
+| G4 子分类管理 UI | ✅ | UNIT-PURE + 组件（SettingsSubcategory）|
+| G5 CSV/图片提取 | ✅ | 真实 fs（file-extractor）|
+| G6 手动分类 11 阶段+子分类 | ✅ | UNIT-PURE（stage-menu）|
+| G7 阶段排序 | ✅ | UNIT-PURE + 组件（SettingsStageReorder）|
+| G8 对话计时 + retry 上限 | ✅ | hook（useElapsedSeconds）+ 组件（ChatTimerRetry）|
+| G9 零一万物 | ✅ | UNIT-PURE（model-registry）|
+| G10 E2E 集成框架 | ✅ | **E2E-INTEGRATION**：真实 sql.js + 真实临时 fs，覆盖 F01.1 目录树 / N06 持久化 / F03 subcategory 持久化 / F01.4 级联删除；`npm run test:integration` |
+
+> G10 顺带修复一个生产隐患：`closeDatabase()` 原先异步排队保存后立即 `db.close()`，导致退出时写入已关闭的 DB 且丢数据；改为同步落盘 `saveDatabaseSync()`，并新增可 await 的 `flushDatabase()`。
+
 ## 五、备注
 
 - 本规格只列**未达标**项；已 ✅ 项不重复展开。

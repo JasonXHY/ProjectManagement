@@ -13,6 +13,7 @@
     "electron:compile": "cd electron && tsc",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:integration": "vitest run electron/__tests__/integration",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
