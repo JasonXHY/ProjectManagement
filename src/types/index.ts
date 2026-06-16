@@ -95,7 +95,13 @@ export interface ApiResponse<T> {
 }
 
 // 阶段常量统一定义在 electron/shared/stages.ts（单一数据源），此处重导出供 renderer 使用
-export { DEFAULT_STAGES, FILE_CLASSIFICATION_STAGES } from '../../electron/shared/stages'
+export {
+  DEFAULT_STAGES,
+  FILE_CLASSIFICATION_STAGES,
+  STAGE_DEFINITIONS,
+  getSubcategories,
+  type StageDef,
+} from '../../electron/shared/stages'
 
 // 项目状态（简化为3种）
 export const PROJECT_STATUS = [
