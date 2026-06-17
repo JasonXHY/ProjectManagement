@@ -55,18 +55,35 @@ const providerList = getProviderList()
  * 设置页面
  * 包含AI模型配置和文件提取配置
  */
-export default function SettingsPage(_props: SettingsPageProps) {
+export default function SettingsPage({ onBack: _onBack }: SettingsPageProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("ai");
   const [models, setModels] = useState<AIModel[]>([]);
   const [isBuiltinApiKey, setIsBuiltinApiKey] = useState(false);
+  const [isCustomKeyMode, setIsCustomKeyMode] = useState(false);
+  const [builtinKeySnapshot, setBuiltinKeySnapshot] = useState('');
   const defaultStages = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'];
   const [customStages, setCustomStages] = useState<string[]>(defaultStages);
   const [newStageName, setNewStageName] = useState('');
   const [subcategoryMap, setSubcategoryMap] = useState<SubcategoryMap>(getDefaultSubcategoryMap());
   const [newSubInputs, setNewSubInputs] = useState<Record<string, string>>({});
+
+  /** 组件卸载时，如果在自定义Key模式下且未保存，恢复内置Key */
+  useEffect(() => {
+    return () => {
+      if (isCustomKeyMode && builtinKeySnapshot) {
+        const currentKey = form.getFieldValue('ai_api_key');
+        if (!currentKey) {
+          configService.update({
+            ai_key_source: 'builtin',
+            ai_api_key: builtinKeySnapshot,
+          });
+        }
+      }
+    };
+  }, [isCustomKeyMode, builtinKeySnapshot, form]);
 
   /** 加载配置 */
   useEffect(() => {
@@ -98,9 +115,19 @@ export default function SettingsPage(_props: SettingsPageProps) {
         }
         // 加载自定义子分类配置（null/非法时回退默认）
         setSubcategoryMap(parseSubcategoryConfig(result.data.custom_subcategories));
+        
         // 检测是否为内置API Key（内测版）
-        if (result.data.ai_provider === 'xiaomi' && result.data.ai_model === 'mimo-v2.5') {
-          setIsBuiltinApiKey(true);
+        const isBuiltin = result.data.ai_provider === 'xiaomi' && result.data.ai_model === 'mimo-v2.5';
+        
+        // 检测是否从首次弹窗跳转过来（ai_key_source === 'custom'）
+        if (result.data.ai_key_source === 'custom' && isBuiltin) {
+          // 用户选择自有API，快照内置Key，清空字段让用户填写
+          setIsCustomKeyMode(true);
+          setBuiltinKeySnapshot(result.data.ai_api_key || '');
+          setIsBuiltinApiKey(false);
+          form.setFieldsValue({ ai_api_key: '' });
+        } else {
+          setIsBuiltinApiKey(isBuiltin);
         }
       }
       
@@ -147,9 +174,13 @@ export default function SettingsPage(_props: SettingsPageProps) {
         ...values,
         custom_stages: JSON.stringify(customStages),
         custom_subcategories: serializeSubcategoryConfig(subcategoryMap),
+        ...(isCustomKeyMode ? { ai_key_source: 'custom' } : {}),
       });
       if (result.success) {
         message.success("保存成功");
+        if (isCustomKeyMode) {
+          setIsCustomKeyMode(false);
+        }
       } else {
         message.error(result.error || "保存失败");
       }
@@ -165,6 +196,20 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const handleReset = async () => {
     await loadSettings();
     message.success("已恢复到保存的配置");
+  };
+
+  /** 恢复内置API Key */
+  const handleRestoreBuiltinKey = async () => {
+    if (builtinKeySnapshot) {
+      form.setFieldsValue({ ai_api_key: builtinKeySnapshot });
+      await configService.update({
+        ai_key_source: 'builtin',
+        ai_api_key: builtinKeySnapshot,
+      });
+      setIsCustomKeyMode(false);
+      setIsBuiltinApiKey(true);
+      message.success("已恢复内置API Key");
+    }
   };
 
   /** 供应商切换 */
@@ -348,10 +393,10 @@ export default function SettingsPage(_props: SettingsPageProps) {
                 label="API Key"
                 name="ai_api_key"
                 rules={[{ required: !isBuiltinApiKey, message: "请输入API Key" }]}
-                extra={isBuiltinApiKey ? "内测版已内置API Key，不可编辑" : undefined}
+                extra={isBuiltinApiKey ? "内测版已内置API Key，不可编辑" : isCustomKeyMode ? "填写自己的API Key，或点击恢复内置Key" : undefined}
               >
                 <Input.Password
-                  placeholder={isBuiltinApiKey ? "内测版已内置" : "输入API Key"}
+                  placeholder={isBuiltinApiKey ? "内测版已内置" : isCustomKeyMode ? "输入您的API Key" : "输入API Key"}
                   readOnly={isBuiltinApiKey}
                   disabled={isBuiltinApiKey}
                   onCopy={(e) => isBuiltinApiKey && e.preventDefault()}
@@ -367,6 +412,11 @@ export default function SettingsPage(_props: SettingsPageProps) {
                     }
                   }}
                   style={isBuiltinApiKey ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : undefined}
+                  addonAfter={isCustomKeyMode ? (
+                    <a onClick={handleRestoreBuiltinKey} style={{ fontSize: '12px' }}>
+                      恢复内置Key
+                    </a>
+                  ) : undefined}
                 />
               </Form.Item>
 

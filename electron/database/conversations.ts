@@ -53,17 +53,13 @@ export function getChatSessions(projectId: number): ChatSession[] {
   const results = db.exec(`
     SELECT 
       cm.session_id,
-      first_msg.content as first_message,
+      (SELECT content FROM chat_messages 
+       WHERE session_id = cm.session_id AND project_id = ? 
+       ORDER BY id ASC LIMIT 1) as first_message,
       COUNT(*) as message_count,
       MIN(cm.created_at) as created_at,
       MAX(cm.created_at) as updated_at
     FROM chat_messages cm
-    INNER JOIN (
-      SELECT session_id, MIN(id) as min_id
-      FROM chat_messages
-      WHERE project_id = ?
-      GROUP BY session_id
-    ) fm ON cm.session_id = fm.session_id AND cm.id = fm.min_id
     WHERE cm.project_id = ?
     GROUP BY cm.session_id
     ORDER BY MAX(cm.created_at) DESC

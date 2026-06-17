@@ -31,7 +31,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true
     }
   })
 
@@ -42,6 +42,17 @@ function createWindow() {
     console.log('Loading index from:', indexPath)
     mainWindow.loadFile(indexPath)
   }
+
+  // 渲染进程崩溃诊断
+  mainWindow.on('unresponsive', () => {
+    console.error('=== 渲染进程无响应 ===')
+  })
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('=== 渲染进程异常退出 ===')
+    console.error('reason:', details.reason)
+    console.error('exitCode:', details.exitCode)
+  })
 
   // 仅在开发模式下打开DevTools
   if (isDev) {
@@ -96,6 +107,11 @@ app.whenReady().then(async () => {
   setupSecurityHeaders()
 
   createWindow()
+}).catch((error) => {
+  console.error('应用初始化失败:', error)
+  const { dialog } = require('electron')
+  dialog.showErrorBox('启动失败', `应用初始化失败: ${error.message}`)
+  app.quit()
 })
 
 app.on('window-all-closed', () => {

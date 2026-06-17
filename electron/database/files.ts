@@ -66,7 +66,12 @@ export function listFiles(projectId: number): FileRecord[] {
 
 export function getFilesByCategory(projectId: number, category: string): FileRecord[] {
   const db = getDatabase()
-  const results = db.exec('SELECT * FROM files WHERE project_id = ? AND category = ?', [projectId, category])
+  let results
+  if (category === '未分类') {
+    results = db.exec("SELECT * FROM files WHERE project_id = ? AND (category IS NULL OR category = '' OR category = '未分类')", [projectId])
+  } else {
+    results = db.exec('SELECT * FROM files WHERE project_id = ? AND category = ?', [projectId, category])
+  }
   return rowsToObjectArray<FileRecord>(results)
 }
 

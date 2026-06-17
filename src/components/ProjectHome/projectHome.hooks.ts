@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { message, Modal } from 'antd'
-import { Project, FileRecord, checkStageProgression, DEFAULT_STAGES } from '../../types'
+import { Project, FileRecord, checkStageProgression, STAGE_PROGRESSION_RULES, DEFAULT_STAGES } from '../../types'
 import { fileService } from '../../services/fileService'
 import { aiService } from '../../services/aiService'
 import { projectService } from '../../services/projectService'
@@ -353,16 +353,17 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
   }, [project, progressionModal.targetStage, loadFiles, onProjectUpdated])
 
   const handleManualProgression = useCallback(() => {
-    const progression = checkStageProgression(project.current_stage, '')
-    if (progression) {
-      setProgressionModal({
-        open: true,
-        targetStage: progression.targetStage,
-        detectedType: '手动推进',
-      })
-    } else {
-      message.info('当前阶段已是最终阶段，无法继续推进')
+    for (const rule of Object.values(STAGE_PROGRESSION_RULES)) {
+      if (project.current_stage === rule.from) {
+        setProgressionModal({
+          open: true,
+          targetStage: rule.to,
+          detectedType: '手动推进',
+        })
+        return
+      }
     }
+    message.info('当前阶段已是最终阶段，无法继续推进')
   }, [project.current_stage])
 
   const handleViewSummary = useCallback(async () => {

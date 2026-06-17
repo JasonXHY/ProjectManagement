@@ -21,7 +21,14 @@ function parseMilestones(raw: string | null): Milestone[] {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed
+    if (!Array.isArray(parsed)) return []
+    // 过滤掉明显虚假的日期（如 AI 默认的 2026-01-01）
+    return parsed.filter((m: Milestone) => {
+      if (!m.date || !m.title) return false
+      // 过滤掉常见默认日期
+      if (m.date === '2026-01-01' || m.date === '2025-01-01' || m.date === '2024-01-01') return false
+      return true
+    })
   } catch {
     // ignore
   }
