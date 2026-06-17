@@ -166,7 +166,7 @@ export function registerAIHandlers() {
       } else {
         promptTemplate = settings.classify_prompt_stages || CLASSIFY_PROMPT_STAGES
       }
-      const classifyPrompt = promptTemplate.replace(/\{content\}/g, content.substring(0, 2000))
+      const classifyPrompt = promptTemplate.replace(/\{content\}/g, content)
 
       // 调用AI分类（注入角色差异化Prompt）
       const messages = [
@@ -240,18 +240,33 @@ export function registerAIHandlers() {
             const targetPath = path.join(targetDir, path.basename(file.stored_path))
             await fs.rename(file.stored_path, targetPath)
 
-            // 文件移动成功后，更新数据库（一次性更新 category、subcategory、stored_path 和 content_extracted）
-            fileDb.updateFile(fileId, { category, subcategory, stored_path: targetPath, content_extracted: content })
+            // 文件移动成功后，更新数据库（一次性更新 category、subcategory、stored_path、content_extracted 和 AI 分析结果）
+            fileDb.updateFile(fileId, {
+              category, subcategory, stored_path: targetPath, content_extracted: content,
+              stage: fileStage ?? null,
+              ai_summary: summary ?? null,
+              ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
+            })
           } catch (err) {
             // 文件移动失败，不更新分类信息，返回错误
             console.error('[AI分类] 文件移动失败:', err)
             return { success: false, error: '文件移动失败，分类未应用', code: 'MOVE_FAILED' }
           }
         } else {
-          fileDb.updateFile(fileId, { category, subcategory, content_extracted: content })
+          fileDb.updateFile(fileId, {
+            category, subcategory, content_extracted: content,
+            stage: fileStage ?? null,
+            ai_summary: summary ?? null,
+            ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
+          })
         }
       } else {
-        fileDb.updateFile(fileId, { category, subcategory, content_extracted: content })
+        fileDb.updateFile(fileId, {
+          category, subcategory, content_extracted: content,
+          stage: fileStage ?? null,
+          ai_summary: summary ?? null,
+          ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
+        })
       }
 
       return { success: true, data: { category, subcategory, stage: fileStage, summary } }
@@ -320,7 +335,7 @@ export function registerAIHandlers() {
 
       // 提取关键信息
       try {
-        const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+        const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents)
         const extractMessages = [
           { role: 'user' as const, content: extractPrompt }
         ]
@@ -363,7 +378,7 @@ export function registerAIHandlers() {
 
       // 提取里程碑
       try {
-        const extractMilestonesPrompt = EXTRACT_MILESTONES_PROMPT.replace(/\{content\}/g, fileContents.substring(0, 4000))
+        const extractMilestonesPrompt = EXTRACT_MILESTONES_PROMPT.replace(/\{content\}/g, fileContents)
         const extractMilestonesMessages = [
           { role: 'user' as const, content: extractMilestonesPrompt }
         ]

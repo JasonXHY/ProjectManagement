@@ -58,6 +58,9 @@ export async function initDatabase(): Promise<Database> {
       content_extracted TEXT,
       is_analyzed BOOLEAN DEFAULT FALSE,
       has_signature BOOLEAN DEFAULT FALSE,
+      signature_status TEXT DEFAULT 'unsigned',
+      ai_summary TEXT,
+      ai_key_info TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (project_id) REFERENCES projects(id)
     )
@@ -163,6 +166,28 @@ export async function initDatabase(): Promise<Database> {
   // 迁移：为 files 表添加 has_signature 字段
   try {
     db.run(`ALTER TABLE files ADD COLUMN has_signature BOOLEAN DEFAULT FALSE`)
+    saveDatabase()
+  } catch {
+    // 字段已存在，忽略
+  }
+
+  // 迁移：为 files 表添加 signature_status 字段（签名状态）
+  try {
+    db.run(`ALTER TABLE files ADD COLUMN signature_status TEXT DEFAULT 'unsigned'`)
+    saveDatabase()
+  } catch {
+    // 字段已存在，忽略
+  }
+
+  // 迁移：为 files 表添加 ai_summary 和 ai_key_info 字段（AI分析结果）
+  try {
+    db.run(`ALTER TABLE files ADD COLUMN ai_summary TEXT`)
+    saveDatabase()
+  } catch {
+    // 字段已存在，忽略
+  }
+  try {
+    db.run(`ALTER TABLE files ADD COLUMN ai_key_info TEXT`)
     saveDatabase()
   } catch {
     // 字段已存在，忽略

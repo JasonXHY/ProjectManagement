@@ -14,11 +14,14 @@ export interface FileRecord {
   content_extracted: string | null
   is_analyzed: boolean
   has_signature: boolean
+  signature_status: 'unsigned' | 'pending' | 'signed' | 'rejected'
+  ai_summary: string | null
+  ai_key_info: string | null
   created_at: string
 }
 
 // Column whitelist to prevent SQL injection via dynamic key names
-const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'subcategory', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed', 'has_signature'] as const
+const ALLOWED_FILE_FIELDS = ['filename', 'original_path', 'stored_path', 'category', 'subcategory', 'stage', 'file_type', 'file_size', 'content_extracted', 'is_analyzed', 'has_signature', 'signature_status', 'ai_summary', 'ai_key_info'] as const
 
 export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] {
   if (!results || !results[0] || !results[0].values) return []
@@ -35,11 +38,12 @@ export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] 
 export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>): number {
   const db = getDatabase()
   db.run(
-    `INSERT INTO files (project_id, filename, original_path, stored_path, category, subcategory, stage, file_type, file_size, content_extracted, is_analyzed, has_signature)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO files (project_id, filename, original_path, stored_path, category, subcategory, stage, file_type, file_size, content_extracted, is_analyzed, has_signature, signature_status, ai_summary, ai_key_info)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [projectId, data.filename, data.original_path, data.stored_path,
      data.category, data.subcategory ?? null, data.stage, data.file_type, data.file_size,
-     data.content_extracted, data.is_analyzed ? 1 : 0, data.has_signature ? 1 : 0]
+     data.content_extracted, data.is_analyzed ? 1 : 0, data.has_signature ? 1 : 0, data.signature_status ?? 'unsigned',
+     data.ai_summary ?? null, data.ai_key_info ?? null]
   )
   saveDatabase()
 

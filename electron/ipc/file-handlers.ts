@@ -166,12 +166,12 @@ export function registerFileHandlers() {
           ? CLASSIFY_PROMPT_STAGES
           : CLASSIFY_PROMPT_CONTENT
 
-        const classifyPrompt = promptTemplate.replace(/\{content\}/g, contentExtracted.substring(0, 2000))
+        const classifyPrompt = promptTemplate.replace(/\{content\}/g, contentExtracted)
 
         aiService.chat([
           { role: 'user', content: classifyPrompt }
         ]).then(async (result) => {
-          const { category, subcategory, stage } = parseClassifyResponse(result.content)
+          const { category, subcategory, stage, summary, keyInfo } = parseClassifyResponse(result.content)
           const sanitizedCategory = sanitizeCategory(category)
           const sanitizedSub = subcategory ? sanitizeCategory(subcategory) : null
 
@@ -188,7 +188,11 @@ export function registerFileHandlers() {
             }
             await fs.rename(filePath, targetPath)
 
-            updateFile(id, { category: sanitizedCategory, subcategory: sanitizedSub, stage, stored_path: targetPath })
+            updateFile(id, {
+              category: sanitizedCategory, subcategory: sanitizedSub, stage, stored_path: targetPath,
+              ai_summary: summary ?? null,
+              ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
+            })
             console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}${sanitizedSub ? '/' + sanitizedSub : ''}"`)
           } catch (err) {
             console.error('[AI分类] 文件移动或更新失败:', err)
