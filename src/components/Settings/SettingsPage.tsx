@@ -83,7 +83,14 @@ export default function SettingsPage(_props: SettingsPageProps) {
           try {
             const parsed = JSON.parse(result.data.custom_stages);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setCustomStages(parsed);
+              // 检测是否为旧的3阶段格式（项目阶段：售前、进行中、关闭）
+              // 旧格式不包含文件分类阶段（如：启动、需求、方案等）
+              const isOldFormat = parsed.length <= 3 && 
+                parsed.every((s: string) => ['售前', '进行中', '关闭'].includes(s));
+              if (!isOldFormat) {
+                setCustomStages(parsed);
+              }
+              // 旧格式时保持默认的10个文件分类阶段
             }
           } catch {
             // JSON parse error, use default stages
@@ -221,6 +228,10 @@ export default function SettingsPage(_props: SettingsPageProps) {
   const handleAddSubcategory = (stage: string) => {
     const name = (newSubInputs[stage] || '').trim();
     if (!name) return;
+    if (name.length > 50) {
+      message.warning('子分类名称不能超过50个字符');
+      return;
+    }
     setSubcategoryMap((prev) => addSubcategory(prev, stage, name));
     setNewSubInputs((prev) => ({ ...prev, [stage]: '' }));
   };
