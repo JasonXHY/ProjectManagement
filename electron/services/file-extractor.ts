@@ -1,7 +1,6 @@
 import { promises as fsPromises } from 'fs'
 import * as path from 'path'
 import mammoth from 'mammoth'
-import WordExtractor from 'word-extractor'
 import ExcelJS from 'exceljs'
 import { PDFParse } from 'pdf-parse'
 import * as pdfjsLib from 'pdfjs-dist'
@@ -141,13 +140,14 @@ export class FileExtractor {
 
   /**
    * 提取Word文档内容
-   * .docx使用mammoth，.doc使用word-extractor
+   * .docx使用mammoth，.doc使用word-extractor（动态导入）
    */
   private static async extractWord(filePath: string): Promise<string> {
     const ext = path.extname(filePath).toLowerCase()
 
     if (ext === '.doc') {
-      // 旧版.doc格式使用word-extractor
+      // 旧版.doc格式使用word-extractor（动态导入避免启动时加载）
+      const { default: WordExtractor } = await import('word-extractor')
       const extractor = new WordExtractor()
       const doc = await extractor.extract(filePath)
       return doc.getText()
