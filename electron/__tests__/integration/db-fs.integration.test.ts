@@ -79,7 +79,6 @@ describe('F03/G3 文件分类：subcategory 持久化', () => {
   it('createFile 携带 subcategory 并可读回', async () => {
     const pid = projectDb.createProject('分类项目', 'stage')
     const fid = fileDb.createFile(pid, {
-      project_id: pid,
       filename: 'quote.pdf',
       original_path: null,
       stored_path: path.join(tmpRoot, 'quote.pdf'),

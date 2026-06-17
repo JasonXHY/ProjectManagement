@@ -56,6 +56,8 @@ describe('signature_status字段', () => {
       is_analyzed: false,
       has_signature: false,
       signature_status: 'unsigned',
+      ai_summary: null,
+      ai_key_info: null,
     })
 
     const file = fileDb.getFileById(fileId)

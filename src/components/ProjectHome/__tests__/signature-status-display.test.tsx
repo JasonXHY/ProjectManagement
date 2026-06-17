@@ -1,6 +1,5 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import React from 'react'
 import FileListTable from '../FileListTable'
 import { FileRecord } from '../../../types'
 
@@ -69,9 +68,13 @@ describe('FileListTable signature_status显示', () => {
     render(
       <FileListTable
         files={mockFiles}
-        loading={false}
+        classifying={null}
+        onClassify={vi.fn()}
         onDelete={vi.fn()}
-        onRefresh={vi.fn()}
+        onStageChange={vi.fn()}
+        selectedRowKeys={[]}
+        onSelectionChange={vi.fn()}
+        onUpload={vi.fn()}
       />
     )
 
@@ -82,9 +85,13 @@ describe('FileListTable signature_status显示', () => {
     render(
       <FileListTable
         files={mockFiles}
-        loading={false}
+        classifying={null}
+        onClassify={vi.fn()}
         onDelete={vi.fn()}
-        onRefresh={vi.fn()}
+        onStageChange={vi.fn()}
+        selectedRowKeys={[]}
+        onSelectionChange={vi.fn()}
+        onUpload={vi.fn()}
       />
     )
 
@@ -95,9 +102,13 @@ describe('FileListTable signature_status显示', () => {
     render(
       <FileListTable
         files={mockFiles}
-        loading={false}
+        classifying={null}
+        onClassify={vi.fn()}
         onDelete={vi.fn()}
-        onRefresh={vi.fn()}
+        onStageChange={vi.fn()}
+        selectedRowKeys={[]}
+        onSelectionChange={vi.fn()}
+        onUpload={vi.fn()}
       />
     )
 

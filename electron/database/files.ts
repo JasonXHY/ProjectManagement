@@ -35,7 +35,13 @@ export function rowsToObjectArray<T = Record<string, any>>(results: any[]): T[] 
   })
 }
 
-export function createFile(projectId: number, data: Omit<FileRecord, 'id' | 'created_at'>): number {
+type CreateFileData = Omit<FileRecord, 'id' | 'created_at' | 'project_id' | 'signature_status' | 'ai_summary' | 'ai_key_info'> & {
+  signature_status?: 'unsigned' | 'pending' | 'signed' | 'rejected'
+  ai_summary?: string | null
+  ai_key_info?: string | null
+}
+
+export function createFile(projectId: number, data: CreateFileData): number {
   const db = getDatabase()
   db.run(
     `INSERT INTO files (project_id, filename, original_path, stored_path, category, subcategory, stage, file_type, file_size, content_extracted, is_analyzed, has_signature, signature_status, ai_summary, ai_key_info)
