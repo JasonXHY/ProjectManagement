@@ -46,6 +46,9 @@ export interface FileRecord {
   content_extracted: string | null
   is_analyzed: boolean
   has_signature: boolean
+  signature_status: 'unsigned' | 'pending' | 'signed' | 'rejected'
+  ai_summary: string | null
+  ai_key_info: string | null
   created_at: string
 }
 

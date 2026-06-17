@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Table, Button, Popconfirm, Tag, message, MenuProps, Dropdown } from 'antd'
+import { Table, Button, Popconfirm, Tag, Tooltip, message, MenuProps, Dropdown } from 'antd'
 import {
   RobotOutlined,
   DeleteOutlined,
@@ -40,11 +40,40 @@ export default function FileListTable({
       title: '文件名',
       dataIndex: 'filename',
       key: 'filename',
-      render: (name: string) => {
+      render: (name: string, record: FileRecord) => {
         const typeStyle = getFileTypeStyle(name)
         const typeLabel = getFileTypeLabel(name)
         const typeDesc = getFileTypeDesc(name)
-        return (
+        const hasAiInfo = record.ai_summary || record.ai_key_info
+        const tooltipContent = hasAiInfo ? (
+          <div style={{ maxWidth: '300px' }}>
+            {record.ai_summary && (
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>AI摘要</div>
+                <div>{record.ai_summary}</div>
+              </div>
+            )}
+            {record.ai_key_info && (
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>关键信息</div>
+                <div style={{ fontSize: '12px' }}>
+                  {(() => {
+                    try {
+                      const info = JSON.parse(record.ai_key_info)
+                      return Object.entries(info).map(([key, value]) => (
+                        <div key={key}>{key}: {String(value)}</div>
+                      ))
+                    } catch {
+                      return <div>{record.ai_key_info}</div>
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null
+
+        const filenameElement = (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <div
               style={{
@@ -69,6 +98,12 @@ export default function FileListTable({
             </div>
           </div>
         )
+
+        return hasAiInfo ? (
+          <Tooltip title={tooltipContent} placement="topLeft" styles={{ root: { maxWidth: '350px' } }}>
+            {filenameElement}
+          </Tooltip>
+        ) : filenameElement
       },
     },
     {
@@ -98,24 +133,29 @@ export default function FileListTable({
     },
     {
       title: '签字',
-      dataIndex: 'has_signature',
-      key: 'has_signature',
+      dataIndex: 'signature_status',
+      key: 'signature_status',
       width: 80,
-      render: (hasSignature: boolean) => (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {hasSignature ? (
+      render: (signatureStatus: string) => {
+        const statusConfig: Record<string, { color: string; label: string }> = {
+          signed: { color: 'success', label: '已签' },
+          pending: { color: 'warning', label: '待签' },
+          rejected: { color: 'error', label: '拒签' },
+          unsigned: { color: 'default', label: '未签' },
+        }
+        const config = statusConfig[signatureStatus] || statusConfig.unsigned
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Tag
-              color="success"
-              icon={<SignatureOutlined />}
+              color={config.color}
+              icon={signatureStatus === 'signed' ? <SignatureOutlined /> : undefined}
               style={{ borderRadius: 'var(--radius-full)', padding: '2px 8px', fontSize: '12px' }}
             >
-              有签字
+              {config.label}
             </Tag>
-          ) : (
-            <span style={{ color: 'var(--text-placeholder)', fontSize: '12px' }}>-</span>
-          )}
-        </div>
-      ),
+          </div>
+        )
+      },
     },
     {
       title: '阶段',
