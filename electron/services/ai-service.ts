@@ -67,7 +67,7 @@ export class AIService {
       const url = resolveUrl('zhipu')
       this.providers.set('zhipu', new ZhipuProvider(apiKey, url))
     } else if (currentProvider === 'xiaomi' && apiKey) {
-      const url = resolveUrl('xiaomi').replace(/\/v1\/?$/, '')
+      const url = resolveUrl('xiaomi').replace(/\/v1\/chat\/completions$/, '')
       this.providers.set('xiaomi', new MiMoProvider(apiKey, url, url, 'api'))
     } else if (apiKey) {
       const apiUrl = resolveUrl(currentProvider)
@@ -84,7 +84,7 @@ export class AIService {
     }
 
     const mimoKey = getDecryptedApiKey('mimo_api_key')
-    const mimoUrl = (getSetting('mimo_api_url') || 'https://api.xiaomimimo.com').replace(/\/v1\/?$/, '')
+    const mimoUrl = (getSetting('mimo_api_url') || 'https://api.xiaomimimo.com').replace(/\/v1\/chat\/completions$/, '').replace(/\/v1\/?$/, '')
     if (mimoKey && !this.providers.has('xiaomi')) {
       this.providers.set('xiaomi', new MiMoProvider(mimoKey, mimoUrl, mimoUrl, 'api'))
     }
