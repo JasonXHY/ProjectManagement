@@ -14,6 +14,12 @@ contextBridge.exposeInMainWorld('api', {
     get: (id: number) => ipcRenderer.invoke('project:get', id),
     update: (id: number, data: Record<string, unknown>) => ipcRenderer.invoke('project:update', id, data),
     delete: (id: number) => ipcRenderer.invoke('project:delete', id),
+    onStageProgressionNeeded: (callback: (data: { projectId: number, targetStage: string, detectedType: string }) => void) => {
+      ipcRenderer.on('project:stage-progression-needed', (_event, data) => callback(data))
+    },
+    removeStageProgressionListener: () => {
+      ipcRenderer.removeAllListeners('project:stage-progression-needed')
+    },
   },
   file: {
     upload: (projectId: number, fileData: FileUploadData) => ipcRenderer.invoke('file:upload', projectId, fileData),
@@ -45,6 +51,7 @@ contextBridge.exposeInMainWorld('api', {
     update: (settings: Record<string, string>) => ipcRenderer.invoke('settings:update', settings),
     getModelList: () => ipcRenderer.invoke('settings:getModelList'),
     getPrompts: () => ipcRenderer.invoke('settings:getPrompts'),
+    resetPrompts: () => ipcRenderer.invoke('settings:resetPrompts'),
     browseFolder: () => ipcRenderer.invoke('settings:browseFolder'),
   },
 })

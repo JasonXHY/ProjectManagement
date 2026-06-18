@@ -1,5 +1,6 @@
 import { ipcMain, dialog } from 'electron'
 import * as settingsDb from '../database/settings'
+import { getDatabase, saveDatabase } from '../database'
 import { aiService } from '../services/ai-service'
 import { validateType, validateSettingsKey } from '../utils/validators'
 import { getProviderList } from '../shared/model-registry'
@@ -13,6 +14,7 @@ const ALLOWED_SETTINGS_FIELDS = [
   'extraction_txt', 'extraction_pdf_text', 'extraction_pdf_scanned', 'extraction_word', 'extraction_excel', 'extraction_image',
   'zhipu_api_key', 'mimo_api_key', 'zhipu_api_url', 'mimo_api_url',
   'user_role', 'custom_stages', 'custom_subcategories', 'project_storage_path', 'first_launch_done',
+  'ai_key_source',
 ]
 
 export function registerSettingsHandlers() {
@@ -64,6 +66,13 @@ export function registerSettingsHandlers() {
         analyze: settings.analyze_prompt || ANALYZE_SYSTEM_PROMPT,
       }
     }
+  })
+
+  ipcMain.handle('settings:resetPrompts', async () => {
+    const db = getDatabase()
+    db.run('DELETE FROM settings WHERE key IN (?, ?, ?)', ['classify_prompt_stages', 'classify_prompt_content', 'analyze_prompt'])
+    saveDatabase()
+    return { success: true }
   })
 
   ipcMain.handle('settings:browseFolder', async () => {

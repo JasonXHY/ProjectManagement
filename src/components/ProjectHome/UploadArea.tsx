@@ -25,41 +25,44 @@ export default function UploadArea({ onUpload }: UploadAreaProps) {
       }}
       style={{
         width: '100%',
-        minHeight: '100px',
+        minHeight: '64px',
+        maxHeight: '80px',
         border: '2px dashed #E5E7EB',
-        borderRadius: '12px',
-        padding: '12px',
+        borderRadius: '8px',
+        padding: '8px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         background: '#FFFFFF',
-        marginBottom: '16px',
+        marginBottom: '12px',
         transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
-      <div style={{ fontSize: '32px', color: '#D1D5DB', marginBottom: '8px', transition: 'all 200ms' }}>
-        <InboxOutlined />
-      </div>
-      <div style={{ fontSize: '14px', fontWeight: 500, color: '#6B7280', marginBottom: '2px' }}>
-        拖拽文件到此处，或点击上传
-      </div>
-      <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-        {['PDF', 'Word', 'Excel', 'PPT', 'TXT', 'MD'].map((format) => (
-          <span
-            key={format}
-            style={{
-              padding: '1px 6px',
-              background: '#F3F4F6',
-              borderRadius: '4px',
-              fontSize: '10px',
-              color: '#9CA3AF',
-              fontWeight: 500,
-            }}
-          >
-            {format}
-          </span>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ fontSize: '20px', color: '#D1D5DB' }}>
+          <InboxOutlined />
+        </div>
+        <span style={{ fontSize: '13px', fontWeight: 500, color: '#6B7280' }}>
+          拖拽文件到此处，或点击上传
+        </span>
+        <div style={{ display: 'flex', gap: '3px' }}>
+          {['PDF', 'Word', 'Excel'].map((format) => (
+            <span
+              key={format}
+              style={{
+                padding: '1px 4px',
+                background: '#F3F4F6',
+                borderRadius: '3px',
+                fontSize: '9px',
+                color: '#9CA3AF',
+                fontWeight: 500,
+              }}
+            >
+              {format}
+            </span>
+          ))}
+        </div>
       </div>
     </Dragger>
   )

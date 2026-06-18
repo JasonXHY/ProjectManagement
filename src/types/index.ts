@@ -107,42 +107,12 @@ export {
   type StageDef,
 } from '../../electron/shared/stages'
 
+// Re-export stage progression from shared module (single source of truth)
+export { STAGE_PROGRESSION_RULES, checkStageProgression } from '@shared/stages'
+
 // 项目状态（简化为3种）
 export const PROJECT_STATUS = [
   { value: '售前', label: '售前', color: '#975a16', bg: '#fefcbf' },
   { value: '进行中', label: '进行中', color: '#553c9a', bg: '#e9d8fd' },
   { value: '关闭', label: '关闭', color: '#4a5568', bg: '#e2e8f0' }
 ]
-
-// 阶段推进触发规则（AI阶段判断替代关键词匹配）
-export const STAGE_PROGRESSION_RULES = {
-  '售前→进行中': {
-    from: '售前',
-    to: '进行中',
-    stages: ['进行中'],
-  },
-  '进行中→关闭': {
-    from: '进行中',
-    to: '关闭',
-    stages: ['关闭'],
-  },
-}
-
-/** 检查文件是否触发阶段推进（基于AI识别的文件阶段） */
-export function checkStageProgression(
-  projectStage: string,
-  fileStage: string
-): { shouldProgress: boolean; targetStage: string; detectedType: string } | null {
-  if (!fileStage) return null
-
-  for (const [, rule] of Object.entries(STAGE_PROGRESSION_RULES)) {
-    if (projectStage === rule.from && rule.stages.includes(fileStage)) {
-      return {
-        shouldProgress: true,
-        targetStage: rule.to,
-        detectedType: fileStage,
-      }
-    }
-  }
-  return null
-}

@@ -26,7 +26,10 @@ function createWindow() {
     width: 1200,
     height: 800,
     title: 'PMAer',
-    icon: path.join(__dirname, '../build/icon.ico'), // 添加图标
+    icon: isDev
+      ? path.join(__dirname, '../build/icon.256x256.png')
+      : path.join(process.resourcesPath, 'icon.png'),
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

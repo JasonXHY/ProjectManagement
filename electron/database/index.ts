@@ -201,6 +201,30 @@ export async function initDatabase(): Promise<Database> {
     // 字段已存在，忽略
   }
 
+  // 迁移：修正旧版阶段值（10阶段→3阶段映射）
+  const VALID_STAGES = ['售前', '进行中', '关闭']
+  const STAGE_MIGRATION: Record<string, string> = {
+    '启动': '进行中', '需求': '进行中', '方案': '进行中',
+    '构建': '进行中', '测试': '进行中', '上线': '进行中',
+    '验收': '进行中', '转客户成功': '关闭',
+  }
+  try {
+    const result = db.exec('SELECT id, current_stage FROM projects')
+    if (result.length > 0) {
+      for (const row of result[0].values) {
+        const [id, stage] = row
+        if (stage && !VALID_STAGES.includes(stage as string)) {
+          const newStage = STAGE_MIGRATION[stage as string] || '售前'
+          db.run('UPDATE projects SET current_stage = ? WHERE id = ?', [newStage, id])
+          console.log(`[迁移] 项目#${id} 阶段 "${stage}" → "${newStage}"`)
+        }
+      }
+      saveDatabase()
+    }
+  } catch {
+    // 迁移失败不影响启动
+  }
+
   saveDatabase()
 
   return db

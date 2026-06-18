@@ -37,3 +37,36 @@ export const FILE_CLASSIFICATION_STAGES = STAGE_DEFINITIONS.map((s) => s.name)
 export function getSubcategories(stageName: string): string[] {
   return STAGE_DEFINITIONS.find((s) => s.name === stageName)?.subcategories ?? []
 }
+
+// 阶段推进触发规则（AI阶段判断替代关键词匹配）
+export const STAGE_PROGRESSION_RULES = {
+  '售前→进行中': {
+    from: '售前',
+    to: '进行中',
+    stages: ['进行中'],
+  },
+  '进行中→关闭': {
+    from: '进行中',
+    to: '关闭',
+    stages: ['关闭'],
+  },
+}
+
+/** 检查文件是否触发阶段推进（基于AI识别的文件阶段） */
+export function checkStageProgression(
+  projectStage: string,
+  fileStage: string
+): { shouldProgress: boolean; targetStage: string; detectedType: string } | null {
+  if (!fileStage) return null
+
+  for (const [, rule] of Object.entries(STAGE_PROGRESSION_RULES)) {
+    if (projectStage === rule.from && rule.stages.includes(fileStage)) {
+      return {
+        shouldProgress: true,
+        targetStage: rule.to,
+        detectedType: fileStage,
+      }
+    }
+  }
+  return null
+}

@@ -42,10 +42,11 @@ textarea.ant-input:focus {
 /* 原因：需要自定义虚线边框和拖拽态样式，以及限制高度 */
 .ant-upload-drag {
   border: 2px dashed var(--border-default) !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-md) !important;
   background: var(--bg-surface) !important;
   transition: all var(--transition-normal) !important;
-  min-height: 100px !important;
+  min-height: 64px !important;
+  max-height: 80px !important;
 }
 
 .ant-upload-drag:hover {

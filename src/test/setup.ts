@@ -44,6 +44,8 @@ Object.defineProperty(window, 'api', {
       get: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      onStageProgressionNeeded: vi.fn(),
+      removeStageProgressionListener: vi.fn(),
     },
     file: {
       upload: vi.fn(),

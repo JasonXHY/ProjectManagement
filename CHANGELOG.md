@@ -4,6 +4,39 @@
 
 ---
 
+## v0.1.2 首版内部发版（2026-06-18 MiMoCode）
+
+### 发版说明
+首个内部验证版本，安装包分发给同事体验测试。
+
+### Bug修复（7项）
+1. **手动推进阶段修复** — DB旧阶段值自动迁移（启动/需求→进行中，转客户成功→关闭）+ console.warn调试日志
+2. **自动推进闭包过期** — file-handlers.ts .then()中重新getProject()获取最新阶段
+3. **侧边栏文件数归0** — loadFiles移除selectedCategory依赖，files改用useMemo客户端过滤
+4. **上传区域高度过大** — minHeight 100→64px, maxHeight 80px, 图标缩小, 去掉多余格式标签
+5. **API Key不可修改** — ai_key_source加入白名单 + "使用自己的Key"按钮 + 移除防复制拦截
+6. **Prompt显示旧版** — 后端settings:resetPrompts删除旧值 + UI添加"恢复默认"按钮
+7. **Invalid Date** — time.ts统一处理SQLite格式和ISO格式日期
+
+### 功能新增
+- 项目阶段自动推进：文件上传后AI判断阶段变化，弹窗确认推进
+- 隐藏Electron菜单栏（autoHideMenuBar）
+- 安装向导使用专用横幅图（164x314），提升清晰度
+- 生成用户操作手册（docs/用户操作手册-PMAer.md）
+
+### 打包配置
+- NSIS安装包：PMAer-0.1.0-Setup.exe（148MB）
+- 文件存储默认路径改为安装目录/projects（便携模式）
+- 图标资源通过extraResources随包分发
+- electron-builder.yml更新：ICO重新生成 + header使用专用PNG
+
+### 测试
+- 183个测试全通过
+- TypeScript编译通过
+- 安装包构建验证通过
+
+---
+
 ## 2026-06-11 MiMoCode — UI调整需求记录
 
 ### 需求来源：用户反馈（项目详情页验证）

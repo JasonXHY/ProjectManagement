@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron'
+import { ipcMain, shell, BrowserWindow } from 'electron'
 import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById, updateFile } from '../database/files'
 import { getProject } from '../database/projects'
 import { getSetting } from '../database/settings'
@@ -6,7 +6,8 @@ import { FileExtractor } from '../services/file-extractor'
 import { resolveProjectPath, getProjectsRoot } from '../utils/project-path'
 import { getAIService } from '../services/ai-service'
 import { SignatureDetector } from '../services/signature-detector'
-import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from '../prompts/classify'
+import { CLASSIFY_PROMPT_STAGES } from '../prompts/classify'
+import { checkStageProgression } from '../shared/stages'
 import { validateRequired, validateType, validateProjectExists, validateFileExists } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { parseClassifyResponse } from '../utils/ai-response'
@@ -130,7 +131,6 @@ export function registerFileHandlers() {
 
       // 创建数据库记录
       const id = createFile(projectId, {
-        project_id: projectId,
         filename: safeName,
         original_path: null,
         stored_path: filePath,
@@ -162,9 +162,8 @@ export function registerFileHandlers() {
     if (project) {
       const aiService = getAIService()
       if (aiService.hasProviders() && contentExtracted) {
-        const promptTemplate = project.category_type === 'stage'
-          ? CLASSIFY_PROMPT_STAGES
-          : CLASSIFY_PROMPT_CONTENT
+        // 自动分类始终使用stage prompt，确保AI返回stage字段用于阶段推进判断
+        const promptTemplate = CLASSIFY_PROMPT_STAGES
 
         const classifyPrompt = promptTemplate.replace(/\{content\}/g, contentExtracted)
 
@@ -194,6 +193,24 @@ export function registerFileHandlers() {
               ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
             })
             console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}${sanitizedSub ? '/' + sanitizedSub : ''}"`)
+
+            // 检查是否触发项目阶段推进（重新读取最新项目数据，避免闭包过期）
+            if (stage) {
+              const latestProject = getProject(projectId)
+              if (latestProject) {
+                const progression = checkStageProgression(latestProject.current_stage, stage)
+                if (progression) {
+                  const windows = BrowserWindow.getAllWindows()
+                  if (windows.length > 0) {
+                    windows[0].webContents.send('project:stage-progression-needed', {
+                      projectId: latestProject.id,
+                      targetStage: progression.targetStage,
+                      detectedType: progression.detectedType,
+                    })
+                  }
+                }
+              }
+            }
           } catch (err) {
             console.error('[AI分类] 文件移动或更新失败:', err)
           }

@@ -11,5 +11,9 @@ export const configService = {
 
   async getPrompts() {
     return window.api.settings.getPrompts()
+  },
+
+  async resetPrompts() {
+    return window.api.settings.resetPrompts()
   }
 }

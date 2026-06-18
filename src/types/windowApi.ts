@@ -15,6 +15,8 @@ declare global {
         get: (id: number) => Promise<{ success: boolean, data?: Project, error?: string }>
         update: (id: number, data: Partial<Project>) => Promise<{ success: boolean, error?: string }>
         delete: (id: number) => Promise<{ success: boolean, error?: string }>
+        onStageProgressionNeeded: (callback: (data: { projectId: number, targetStage: string, detectedType: string }) => void) => void
+        removeStageProgressionListener: () => void
       }
       file: {
         upload: (projectId: number, fileData: FileUploadData) => Promise<{ success: boolean, data?: number, error?: string }>
@@ -43,6 +45,7 @@ declare global {
         update: (settings: Record<string, string>) => Promise<{ success: boolean, error?: string }>
         getModelList: () => Promise<{ success: boolean, data?: any[], error?: string }>
         getPrompts: () => Promise<{ success: boolean, data?: Record<string, string>, error?: string }>
+        resetPrompts: () => Promise<{ success: boolean, error?: string }>
         browseFolder: () => Promise<{ success: boolean, data?: string, error?: string }>
       }
     }

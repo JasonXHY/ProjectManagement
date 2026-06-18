@@ -392,29 +392,26 @@ export default function SettingsPage({ onBack: _onBack }: SettingsPageProps) {
               <Form.Item
                 label="API Key"
                 name="ai_api_key"
-                rules={[{ required: !isBuiltinApiKey, message: "请输入API Key" }]}
-                extra={isBuiltinApiKey ? "内测版已内置API Key，不可编辑" : isCustomKeyMode ? "填写自己的API Key，或点击恢复内置Key" : undefined}
+                rules={[{ required: !isBuiltinApiKey || isCustomKeyMode, message: "请输入API Key" }]}
+                extra={isBuiltinApiKey && !isCustomKeyMode ? "内测版已内置API Key" : isCustomKeyMode ? "填写自己的API Key，或点击恢复内置Key" : undefined}
               >
                 <Input.Password
-                  placeholder={isBuiltinApiKey ? "内测版已内置" : isCustomKeyMode ? "输入您的API Key" : "输入API Key"}
-                  readOnly={isBuiltinApiKey}
-                  disabled={isBuiltinApiKey}
-                  onCopy={(e) => isBuiltinApiKey && e.preventDefault()}
-                  onCut={(e) => isBuiltinApiKey && e.preventDefault()}
-                  onPaste={(e) => isBuiltinApiKey && e.preventDefault()}
-                  onContextMenu={(e) => isBuiltinApiKey && e.preventDefault()}
-                  onKeyDown={(e) => {
-                    if (isBuiltinApiKey) {
-                      // 阻止 Ctrl+C, Ctrl+A, Ctrl+X 等
-                      if (e.ctrlKey && ['c', 'a', 'x'].includes(e.key.toLowerCase())) {
-                        e.preventDefault();
-                      }
-                    }
-                  }}
-                  style={isBuiltinApiKey ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : undefined}
+                  placeholder={isBuiltinApiKey && !isCustomKeyMode ? "内测版已内置" : "输入API Key"}
+                  readOnly={isBuiltinApiKey && !isCustomKeyMode}
+                  disabled={isBuiltinApiKey && !isCustomKeyMode}
+                  style={isBuiltinApiKey && !isCustomKeyMode ? { backgroundColor: '#f5f5f5', cursor: 'not-allowed' } : undefined}
                   addonAfter={isCustomKeyMode ? (
                     <a onClick={handleRestoreBuiltinKey} style={{ fontSize: '12px' }}>
                       恢复内置Key
+                    </a>
+                  ) : isBuiltinApiKey ? (
+                    <a onClick={() => {
+                      setBuiltinKeySnapshot(form.getFieldValue('ai_api_key') || '')
+                      setIsCustomKeyMode(true)
+                      setIsBuiltinApiKey(false)
+                      form.setFieldsValue({ ai_api_key: '' })
+                    }} style={{ fontSize: '12px' }}>
+                      使用自己的Key
                     </a>
                   ) : undefined}
                 />
@@ -545,8 +542,25 @@ export default function SettingsPage({ onBack: _onBack }: SettingsPageProps) {
                 marginBottom: 'var(--space-6)',
               }}
             >
-              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 Prompt配置
+                <Button size="small" onClick={async () => {
+                  const result = await configService.resetPrompts()
+                  if (result.success) {
+                    // 重新加载默认prompt
+                    const promptsResult = await configService.getPrompts()
+                    if (promptsResult.success && promptsResult.data) {
+                      form.setFieldsValue({
+                        classify_prompt_stages: promptsResult.data.classify_stages,
+                        classify_prompt_content: promptsResult.data.classify_content,
+                        analyze_prompt: promptsResult.data.analyze,
+                      })
+                    }
+                    message.success('已恢复默认Prompt')
+                  }
+                }}>
+                  恢复默认
+                </Button>
               </div>
               <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
                 配置AI分类和分析的Prompt模板。使用 {'{content}'} 作为文件内容占位符。

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { message, Modal } from 'antd'
 import { Project, FileRecord, checkStageProgression, STAGE_PROGRESSION_RULES, DEFAULT_STAGES } from '../../types'
 import { fileService } from '../../services/fileService'
@@ -13,7 +13,6 @@ function getHighestStage(current: string | null, existing: string | null): strin
 }
 
 export function useProjectHome(project: Project, onProjectUpdated?: (project: Project) => void) {
-  const [files, setFiles] = useState<FileRecord[]>([])
   const [allFiles, setAllFiles] = useState<FileRecord[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>('所有文件')
   const [classifying, setClassifying] = useState<number | null>(null)
@@ -36,23 +35,37 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
     return () => { batchCancelledRef.current = true }
   }, [])
 
+  // 监听后端自动分类触发的阶段推进事件
+  useEffect(() => {
+    window.api.project.onStageProgressionNeeded((data) => {
+      if (data.projectId === project.id) {
+        setProgressionModal({
+          open: true,
+          targetStage: data.targetStage,
+          detectedType: data.detectedType,
+        })
+      }
+    })
+    return () => {
+      window.api.project.removeStageProgressionListener()
+    }
+  }, [project.id])
+
   const loadFiles = useCallback(async () => {
     const allResult = await fileService.list(project.id)
     if (allResult.success && allResult.data) {
       setAllFiles(allResult.data)
     }
+  }, [project.id])
 
-    if (selectedCategory && selectedCategory !== '所有文件') {
-      const result = await fileService.listByCategory(project.id, selectedCategory)
-      if (result.success && result.data) {
-        setFiles(result.data)
-      } else {
-        message.error('加载文件列表失败')
-      }
-    } else {
-      setFiles(allResult.success ? allResult.data || [] : [])
+  // files 由 allFiles + selectedCategory 派生，不再触发 IPC
+  const files = useMemo(() => {
+    if (!selectedCategory || selectedCategory === '所有文件') return allFiles
+    if (selectedCategory === '未分类') {
+      return allFiles.filter(f => !f.category || f.category === '未分类')
     }
-  }, [project.id, selectedCategory])
+    return allFiles.filter(f => f.category === selectedCategory)
+  }, [allFiles, selectedCategory])
 
   const loadCriticalIssues = useCallback(async () => {
     try {
@@ -363,6 +376,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
         return
       }
     }
+    console.warn('[手动推进] 未找到匹配规则, current_stage:', project.current_stage)
     message.info('当前阶段已是最终阶段，无法继续推进')
   }, [project.current_stage])
 

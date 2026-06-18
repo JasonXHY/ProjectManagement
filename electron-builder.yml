@@ -11,11 +11,15 @@ files:
   - "!**/*.ts"
   - "!**/.gitignore"
   - "!**/node_modules/.cache"
+  - "!**/node_modules"
+  - "!**/__tests__"
 
 # sql.js 的 wasm 必须随包分发，并由 initDatabase() 的 locateFile 从 resourcesPath 读取
 extraResources:
   - from: node_modules/sql.js/dist/sql-wasm.wasm
     to: sql-wasm.wasm
+  - from: build/icon.256x256.png
+    to: icon.png
 
 win:
   target:
@@ -30,7 +34,7 @@ nsis:
   allowToChangeInstallationDirectory: true
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
-  installerHeaderIcon: build/icon.ico
+  installerHeaderIcon: build/installer-header.png
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: PMAer

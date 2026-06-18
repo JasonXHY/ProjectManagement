@@ -13,13 +13,20 @@ export function sanitizeFileName(name: string): string {
 
 /**
  * 获取项目根目录（优先使用用户自定义路径）
+ * 打包后默认放在安装目录下的 projects 文件夹（便携模式）
+ * 开发模式下放在 userData 目录
  */
 export function getProjectsRoot(): string {
   const customPath = getSetting('project_storage_path')
   if (customPath && customPath.trim()) {
     return customPath.trim()
   }
-  return path.join(app.getPath('userData'), 'projects')
+  // 打包后：安装目录/projects（用户可见、方便分享）
+  // 开发模式：userData/projects
+  const baseDir = app.isPackaged
+    ? path.dirname(app.getPath('exe'))
+    : app.getPath('userData')
+  return path.join(baseDir, 'projects')
 }
 
 /**
