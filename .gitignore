@@ -29,3 +29,5 @@ src/types/*.d.ts.map
 bug/
 *.bat
 *.ps1
+
+dist_electron/
