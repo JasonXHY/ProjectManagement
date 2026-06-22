@@ -6,6 +6,20 @@ export interface FileUploadData {
   type: string
 }
 
+export interface HandoverFileInfo {
+  filename: string
+  relative_path: string
+  category: string | null
+  subcategory: string | null
+  stage: string | null
+  file_type: string | null
+  file_size: number | null
+  content_extracted: string | null
+  signature_status: string
+  ai_summary: string | null
+  ai_key_info: any
+}
+
 declare global {
   interface Window {
     api: {
@@ -48,6 +62,12 @@ declare global {
         getPrompts: () => Promise<{ success: boolean, data?: Record<string, string>, error?: string }>
         resetPrompts: () => Promise<{ success: boolean, error?: string }>
         browseFolder: () => Promise<{ success: boolean, data?: string, error?: string }>
+      }
+      handover: {
+        export: (params: { projectId: number, mode: 'full' | 'selective', selectedFiles?: string[], handoverNote?: string }) => Promise<{ success: boolean, data?: { zipPath: string, fileSize: number }, error?: string }>
+        import: (params: { zipPath: string, projectName?: string }) => Promise<{ success: boolean, data?: { projectId: number }, error?: string }>
+        preview: (zipPath: string) => Promise<{ success: boolean, data?: any, error?: string }>
+        aiSelect: (projectId: number, description: string) => Promise<{ success: boolean, data?: HandoverFileInfo[], error?: string }>
       }
     }
   }

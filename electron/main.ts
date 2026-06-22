@@ -6,6 +6,7 @@ import { registerProjectHandlers } from './ipc/project-handlers'
 import { registerFileHandlers } from './ipc/file-handlers'
 import { registerSettingsHandlers } from './ipc/settings-handlers'
 import { registerAIHandlers } from './ipc/ai-handlers'
+import { registerHandoverHandlers } from './ipc/handover-handlers'
 import { SignatureDetector } from './services/signature-detector'
 
 // 使用 app.isPackaged 判断环境，比 process.env.NODE_ENV 更可靠
@@ -104,6 +105,7 @@ app.whenReady().then(async () => {
   registerFileHandlers()
   registerSettingsHandlers()
   registerAIHandlers()
+  registerHandoverHandlers()
 
   SignatureDetector.init()
 

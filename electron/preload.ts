@@ -55,4 +55,13 @@ contextBridge.exposeInMainWorld('api', {
     resetPrompts: () => ipcRenderer.invoke('settings:resetPrompts'),
     browseFolder: () => ipcRenderer.invoke('settings:browseFolder'),
   },
+  handover: {
+    export: (params: { projectId: number, mode: 'full' | 'selective', selectedFiles?: string[], handoverNote?: string }) =>
+      ipcRenderer.invoke('handover:export', params),
+    import: (params: { zipPath: string, projectName?: string }) =>
+      ipcRenderer.invoke('handover:import', params),
+    preview: (zipPath: string) => ipcRenderer.invoke('handover:preview', { zipPath }),
+    aiSelect: (projectId: number, description: string) =>
+      ipcRenderer.invoke('handover:ai-select', { projectId, description }),
+  },
 })
