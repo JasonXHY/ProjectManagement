@@ -1,0 +1,9 @@
+.markdown-body h2 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 20px 0 10px; }
+.markdown-body h3 { font-size: 16px; font-weight: 500; color: var(--text-primary); margin: 16px 0 8px; }
+.markdown-body pre { background: #F8F7F4; border: 1px solid #E5E7EB; border-radius: 6px; padding: 12px; overflow-x: auto; font-size: 13px; }
+.markdown-body code { font-size: 13px; font-family: 'Fira Code', 'Consolas', monospace; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.markdown-body th { background: #F3F4F6; padding: 10px 16px; text-align: left; font-size: 12px; border-bottom: 1px solid #E5E7EB; }
+.markdown-body td { padding: 10px 16px; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+.markdown-body a { color: #4F46E5; text-decoration: none; }
+.markdown-body a:hover { text-decoration: underline; }
