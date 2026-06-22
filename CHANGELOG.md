@@ -4,6 +4,35 @@
 
 ---
 
+## v0.2.0 体验深化版本（2026-06-22 MiMoCode）
+
+### 规划目标
+1. 详情页卡片系统 — 按项目阶段差异化展示关键信息
+2. 项目转交功能 — 支持整体打包和AI辅助选择性转交
+3. Markdown预览 — 统一渲染能力，提升文档查看体验
+
+### 设计变更
+- 详情页统计行：文件数量 + 里程碑 + 待处理 + AI摘要
+- 特色卡片系统：侧边栏驱动，售前/进行中/关闭三组
+- 里程碑展示：不使用进度比例，显示下一步节点
+- 首页卡片简化：移除里程碑时间轴，右上角阶段标签
+- 转交包格式：.pmaer.zip（ZIP压缩包）
+- 转交模式：整体转交 + 协作转交（AI智能选择文件）
+
+### 文档新增
+- `docs/development/v0.2.0-design.md` — 设计文档
+- `docs/development/v0.2.0-dev-guide.md` — 开发指南
+- `docs/requirements/v0.2.0-requirements.md` — 需求文档
+- `docs/v0.2.0-plan-final.md` — 版本规划终稿（Qoder审核）
+- `docs/design/ui-design-spec.md` v1.1 — UI设计规范更新
+- `.qoderwork/mockups/04-card-system-v020.html` — 卡片系统Mockup
+
+### 测试
+- 183个测试全通过
+- TypeScript编译通过
+
+---
+
 ## v0.1.2 首版内部发版（2026-06-18 MiMoCode）
 
 ### 发版说明
