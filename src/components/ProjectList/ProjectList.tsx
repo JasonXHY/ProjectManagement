@@ -6,34 +6,11 @@ import {
   DeleteOutlined,
   FolderOpenOutlined,
   EditOutlined,
-  ProjectOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { Project, CategoryType, PROJECT_STATUS, Milestone } from '../../types'
+import { Project, CategoryType, PROJECT_STATUS, FileRecord } from '../../types'
 import { projectService } from '../../services/projectService'
-import { getStageStyle } from '../ProjectHome/projectHome.styles'
 import { formatTimeRelative } from '../../utils/time'
-import ProjectTimeline from './ProjectTimeline'
-
-/** 解析里程碑JSON */
-function parseMilestones(raw: string | null): Milestone[] {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    // 过滤掉明显虚假的日期（如 AI 默认的 2026-01-01）
-    return parsed.filter((m: Milestone) => {
-      if (!m.date || !m.title) return false
-      // 过滤掉常见默认日期
-      if (m.date === '2026-01-01' || m.date === '2025-01-01' || m.date === '2024-01-01') return false
-      return true
-    })
-  } catch {
-    // ignore
-  }
-  return []
-}
 
 /** 项目列表页面属性 */
 interface ProjectListProps {
@@ -46,6 +23,7 @@ interface ProjectListProps {
  */
 export default function ProjectList({ onOpen }: ProjectListProps) {
   const [projects, setProjects] = useState<Project[]>([])
+  const [projectFileCounts, setProjectFileCounts] = useState<Record<number, { total: number, pending: number }>>({})
   const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -71,6 +49,19 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
       if (cancelled) return
       if (result.success && result.data) {
         setProjects(result.data)
+        const counts: Record<number, { total: number, pending: number }> = {}
+        for (const proj of result.data) {
+          const fileResult = await window.api.file.list(proj.id)
+          if (fileResult.success && fileResult.data) {
+            counts[proj.id] = {
+              total: fileResult.data.length,
+              pending: fileResult.data.filter((f: FileRecord) => !f.is_analyzed).length,
+            }
+          } else {
+            counts[proj.id] = { total: 0, pending: 0 }
+          }
+        }
+        if (!cancelled) setProjectFileCounts(counts)
       } else {
         message.error(result.error || '加载项目列表失败')
       }
@@ -302,10 +293,6 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
       }}
     >
       {filteredProjects.map((project, index) => {
-        const stageStyle = getStageStyle(project.current_stage)
-        const isPresale = project.current_stage === '售前'
-        const isClosed = project.current_stage === '关闭'
-
         return (
           <div
             key={project.id}
@@ -326,9 +313,9 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             <div
               style={{
                 height: '4px',
-                background: isClosed
+                background: project.current_stage === '关闭'
                   ? '#D1D5DB'
-                  : isPresale
+                  : project.current_stage === '售前'
                     ? 'linear-gradient(90deg, #F59E0B, #FBBF24)'
                     : 'linear-gradient(90deg, #4F46E5, #6366F1)',
               }}
@@ -350,8 +337,8 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                 </div>
                 <Tag
                   style={{
-                    color: stageStyle.color,
-                    backgroundColor: stageStyle.bg,
+                    color: project.current_stage === '售前' ? '#92400E' : project.current_stage === '进行中' ? '#553C9A' : '#374151',
+                    backgroundColor: project.current_stage === '售前' ? '#FEF3C7' : project.current_stage === '进行中' ? '#E9D8FD' : '#F3F4F6',
                     border: 'none',
                     borderRadius: 'var(--radius-full)',
                     padding: '2px 10px',
@@ -364,44 +351,12 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
                 </Tag>
               </div>
 
-              {/* 元信息 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: 'var(--space-4)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  <FileTextOutlined style={{ width: '14px', textAlign: 'center' }} />
-                  <span>文件</span>
-                  <span style={{ margin: '0 4px', color: 'var(--border-default)' }}>|</span>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '1px 8px',
-                      background: 'var(--bg-secondary)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '11px',
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    {project.category_type === 'content' ? '按内容分类' : '按阶段分类'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  <ProjectOutlined style={{ width: '14px', textAlign: 'center' }} />
-                  <span>当前阶段: {project.current_stage}</span>
-                </div>
+              {/* 统计信息 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  📁 {projectFileCounts[project.id]?.total ?? 0} 个文件 · {projectFileCounts[project.id]?.pending ?? 0} 待处理
+                </span>
               </div>
-
-              {/* 甘特图进度 */}
-              {(() => {
-                const milestones = parseMilestones(project.milestones)
-                if (milestones.length === 0) return null
-                return (
-                  <div style={{ marginBottom: '16px' }}>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>进度</div>
-                    <ProjectTimeline milestones={milestones} currentStage={project.current_stage} />
-                  </div>
-                )
-              })()}
 
               {/* 底部 */}
               <div
