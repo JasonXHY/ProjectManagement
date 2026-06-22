@@ -11,6 +11,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { Project, CategoryType, PROJECT_STATUS, FileRecord } from '../../types'
 import { projectService } from '../../services/projectService'
 import { formatTimeRelative } from '../../utils/time'
+import { getStageStyle } from '../ProjectHome/projectHome.styles'
 
 /** 项目列表页面属性 */
 interface ProjectListProps {
