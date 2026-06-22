@@ -6,12 +6,14 @@ import {
   DeleteOutlined,
   FolderOpenOutlined,
   EditOutlined,
+  ImportOutlined,
 } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { Project, CategoryType, PROJECT_STATUS, FileRecord } from '../../types'
 import { projectService } from '../../services/projectService'
 import { formatTimeRelative } from '../../utils/time'
 import { getStageStyle } from '../ProjectHome/projectHome.styles'
+import ImportDialog from '../Handover/ImportDialog'
 
 /** 项目列表页面属性 */
 interface ProjectListProps {
@@ -36,6 +38,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
   const [editingName, setEditingName] = useState<string>('')
   const [editingStatus, setEditingStatus] = useState<string>('')
   const [editingCategoryType, setEditingCategoryType] = useState<string>('stage')
+  const [importVisible, setImportVisible] = useState(false)
   const [newProject, setNewProject] = useState({
     name: '',
     categoryType: 'stage' as CategoryType,
@@ -527,6 +530,12 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             <Radio.Button value="table">列表</Radio.Button>
           </Radio.Group>
           <Button
+            icon={<ImportOutlined />}
+            onClick={() => setImportVisible(true)}
+          >
+            导入转交
+          </Button>
+          <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setModalVisible(true)}
@@ -683,6 +692,13 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
           }
         }
       `}</style>
+
+      {/* 导入转交弹窗 */}
+      <ImportDialog
+        open={importVisible}
+        onClose={() => setImportVisible(false)}
+        onImported={() => loadProjects()}
+      />
     </div>
   )
 }
