@@ -27,8 +27,21 @@
 - `docs/design/ui-design-spec.md` v1.1 — UI设计规范更新
 - `.qoderwork/mockups/04-card-system-v020.html` — 卡片系统Mockup
 
+### UI实现（v0.2.0续）
+- SummaryRow统计行：4卡片（文件数量/里程碑/待处理/AI摘要），里程碑点击弹窗
+- FeatureCards特色卡片：9个完整UI实现（项目信息/合同概览/项目评估/需求跟踪/关键问题/签字追踪/拓展商机/交付物清单/项目总结）
+- CSS样式：510行新增（feature-card/fc-header/ms-compact/req-row/issue-row/sig-bar/info-grid/eval-row/opp-row）
+- 首页卡片简化：移除里程碑时间轴，右上角阶段标签
+- 项目转交：HandoverDialog（整体/协作转交）+ ImportDialog（导入.pmaer.zip）
+- Markdown预览：rehype-highlight代码高亮 + rehype-raw HTML + rehype-sanitize安全过滤
+
+### 待优化（记录，未实施）
+- AI分类准确率：签字验收文件误分类问题，方案1(Prompt增强)+2(文件名启发式)+3(签字检测反馈)组合
+- 卡片数据模型：RequirementCard/OpportunityCard数据源需设计
+- 文件输入输出分析：哪些文件需提取关键信息、哪些可基于记录快速查询
+
 ### 测试
-- 183个测试全通过
+- 238个测试全通过（+55新测试）
 - TypeScript编译通过
 
 ---
