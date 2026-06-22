@@ -1,20 +1,24 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Modal, Progress, Button } from 'antd'
 import {
   FolderOpenOutlined,
   FolderOutlined,
   TagsOutlined,
   RocketOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons'
 import { Project } from '../../types'
 import { fileService } from '../../services/fileService'
 import StageProgressionModal from '../StageProgressionModal'
 import ProjectInfoCard from './ProjectInfoCard'
 import StageSidebar from './StageSidebar'
-import ProjectStats from './ProjectStats'
+import SummaryRow from './SummaryRow'
+import FeatureCards from './FeatureCards'
 import FileListTable from './FileListTable'
 import BatchActionBar from './BatchActionBar'
 import UploadArea from './UploadArea'
+import MarkdownPreview from '../MarkdownPreview'
+import HandoverDialog from '../Handover/HandoverDialog'
 import { useProjectHome } from './projectHome.hooks'
 
 interface ProjectHomeProps {
@@ -33,14 +37,12 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
     summaryVisible,
     setSummaryVisible,
     summaryContent,
-    analyzing,
     selectedRowKeys,
     setSelectedRowKeys,
     classifyProgress,
     progressionModal,
     setProgressionModal,
     progressionLoading,
-    criticalIssues,
     loadFiles,
     handleUpload,
     handleDelete,
@@ -55,6 +57,8 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
     handleViewSummary,
     handleGenerateSummary,
   } = useProjectHome(project, onProjectUpdated)
+
+  const [handoverVisible, setHandoverVisible] = useState(false)
 
   const handleOpenFolder = useCallback(async () => {
     await fileService.openFolder(project.id)
@@ -71,12 +75,17 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
       />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-        <ProjectStats
+        <SummaryRow
+          project={project}
           files={allFiles}
-          criticalIssues={criticalIssues}
-          analyzing={analyzing}
           onViewSummary={handleViewSummary}
           onGenerateSummary={handleGenerateSummary}
+        />
+
+        <FeatureCards
+          project={project}
+          selectedCategory={selectedCategory}
+          allFiles={allFiles}
         />
 
         <ProjectInfoCard metadata={project.metadata} />
@@ -113,6 +122,13 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
                   format={() => `${classifyProgress.current}/${classifyProgress.total}`}
                 />
               )}
+              <Button
+                size="small"
+                icon={<ShareAltOutlined />}
+                onClick={() => setHandoverVisible(true)}
+              >
+                转交项目
+              </Button>
               {project.current_stage !== '关闭' && (
                 <Button type="primary" size="small" icon={<RocketOutlined />} onClick={handleManualProgression}>
                   推进到下一阶段
@@ -147,9 +163,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
       
 
       <Modal title="项目摘要" open={summaryVisible} onCancel={() => setSummaryVisible(false)} footer={null} width={800}>
-        <div style={{ whiteSpace: 'pre-wrap', maxHeight: '60vh', overflow: 'auto' }}>
-          {summaryContent || '暂无摘要'}
-        </div>
+        <MarkdownPreview content={summaryContent || '暂无摘要'} />
       </Modal>
 
       <StageProgressionModal
@@ -160,6 +174,13 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
         onConfirm={handleConfirmProgression}
         onCancel={() => setProgressionModal({ open: false, targetStage: '', detectedType: '' })}
         loading={progressionLoading}
+      />
+
+      <HandoverDialog
+        open={handoverVisible}
+        onClose={() => setHandoverVisible(false)}
+        projectId={project.id}
+        projectName={project.name}
       />
     </div>
   )
