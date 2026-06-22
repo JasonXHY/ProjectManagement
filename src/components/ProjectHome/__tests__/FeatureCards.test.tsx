@@ -28,15 +28,15 @@ describe('FeatureCards', () => {
       />
     )
 
-    expect(screen.getByText('需求')).toBeInTheDocument()
-    expect(screen.getByText('问题')).toBeInTheDocument()
-    expect(screen.getByText('签字')).toBeInTheDocument()
+    expect(screen.getByText('需求跟踪')).toBeInTheDocument()
+    expect(screen.getByText('关键问题')).toBeInTheDocument()
+    expect(screen.getByText('签字追踪')).toBeInTheDocument()
     expect(screen.queryByText('项目信息')).not.toBeInTheDocument()
-    expect(screen.queryByText('合同')).not.toBeInTheDocument()
-    expect(screen.queryByText('评估')).not.toBeInTheDocument()
-    expect(screen.queryByText('商机')).not.toBeInTheDocument()
-    expect(screen.queryByText('交付物')).not.toBeInTheDocument()
-    expect(screen.queryByText('总结')).not.toBeInTheDocument()
+    expect(screen.queryByText('合同概览')).not.toBeInTheDocument()
+    expect(screen.queryByText('项目评估')).not.toBeInTheDocument()
+    expect(screen.queryByText('拓展商机')).not.toBeInTheDocument()
+    expect(screen.queryByText('交付物清单')).not.toBeInTheDocument()
+    expect(screen.queryByText('项目总结')).not.toBeInTheDocument()
   })
 
   it('shows presale cards when sidebar is 售前', () => {
@@ -49,11 +49,11 @@ describe('FeatureCards', () => {
     )
 
     expect(screen.getByText('项目信息')).toBeInTheDocument()
-    expect(screen.getByText('合同')).toBeInTheDocument()
-    expect(screen.getByText('评估')).toBeInTheDocument()
-    expect(screen.queryByText('需求')).not.toBeInTheDocument()
-    expect(screen.queryByText('问题')).not.toBeInTheDocument()
-    expect(screen.queryByText('签字')).not.toBeInTheDocument()
+    expect(screen.getByText('合同概览')).toBeInTheDocument()
+    expect(screen.getByText('项目评估')).toBeInTheDocument()
+    expect(screen.queryByText('需求跟踪')).not.toBeInTheDocument()
+    expect(screen.queryByText('关键问题')).not.toBeInTheDocument()
+    expect(screen.queryByText('签字追踪')).not.toBeInTheDocument()
   })
 
   it('shows closed cards when sidebar is 关闭', () => {
@@ -65,10 +65,10 @@ describe('FeatureCards', () => {
       />
     )
 
-    expect(screen.getByText('商机')).toBeInTheDocument()
-    expect(screen.getByText('交付物')).toBeInTheDocument()
-    expect(screen.getByText('总结')).toBeInTheDocument()
-    expect(screen.queryByText('需求')).not.toBeInTheDocument()
+    expect(screen.getByText('拓展商机')).toBeInTheDocument()
+    expect(screen.getByText('交付物清单')).toBeInTheDocument()
+    expect(screen.getByText('项目总结')).toBeInTheDocument()
+    expect(screen.queryByText('需求跟踪')).not.toBeInTheDocument()
     expect(screen.queryByText('项目信息')).not.toBeInTheDocument()
   })
 })
