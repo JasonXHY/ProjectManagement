@@ -113,7 +113,7 @@ describe('SummaryRow', () => {
   it('shows dash when no milestones', () => {
     render(<SummaryRow project={mockProject} files={mockFiles} />)
 
-    const milestoneValues = screen.getAllByText('-')
+    const milestoneValues = screen.getAllByText('—')
     expect(milestoneValues.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -133,7 +133,7 @@ describe('SummaryRow', () => {
       />
     )
 
-    screen.getByText('查看').click()
+    screen.getByText('查看摘要').click()
     expect(onViewSummary).toHaveBeenCalled()
   })
 
@@ -147,7 +147,7 @@ describe('SummaryRow', () => {
       />
     )
 
-    screen.getByText('生成').click()
+    screen.getByText('生成/更新').click()
     expect(onGenerateSummary).toHaveBeenCalled()
   })
 })
