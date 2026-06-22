@@ -74,6 +74,12 @@ Object.defineProperty(window, 'api', {
       getPrompts: vi.fn(),
       browseFolder: vi.fn(),
     },
+    handover: {
+      export: vi.fn(),
+      import: vi.fn(),
+      preview: vi.fn(),
+      aiSelect: vi.fn(),
+    },
   },
 })
 }
