@@ -15,6 +15,7 @@ declare global {
         get: (id: number) => Promise<{ success: boolean, data?: Project, error?: string }>
         update: (id: number, data: Partial<Project>) => Promise<{ success: boolean, error?: string }>
         delete: (id: number) => Promise<{ success: boolean, error?: string }>
+        checkFolder: (id: number) => Promise<{ success: boolean, exists?: boolean, path?: string, error?: string }>
         onStageProgressionNeeded: (callback: (data: { projectId: number, targetStage: string, detectedType: string }) => void) => void
         removeStageProgressionListener: () => void
       }

@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import * as projectDb from '../database/projects'
-import { resolveProjectPath, createProjectDirectory, createStageFolders } from '../utils/project-path'
+import { resolveProjectPath, resolveProjectPathForProject, createProjectDirectory, createStageFolders, generateProjectUuid } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { STAGE_DEFINITIONS, getSubcategories, type StageDef } from '../shared/stages'
@@ -46,12 +46,15 @@ export function registerProjectHandlers() {
       }
     }
 
+    // 生成 UUID 用于文件夹标识
+    const folderUuid = generateProjectUuid()
+
     // 先创建数据库记录
-    const id = projectDb.createProject(name, categoryType as any, customStages)
+    const id = projectDb.createProject(name, categoryType as any, customStages, folderUuid)
 
     try {
-      // 创建项目文件夹（使用项目名称作为目录名）
-      const projectPath = await createProjectDirectory(id, name)
+      // 创建项目文件夹（UUID 写入 .uuid 文件，文件夹名不含编号）
+      const projectPath = await createProjectDirectory(id, name, folderUuid)
 
       // 根据分类方式创建「阶段/子分类」两级目录结构（v3.1 §4.2）
       if (categoryType === 'stage') {
@@ -159,11 +162,16 @@ export function registerProjectHandlers() {
     }
 
     try {
+      // 先获取项目信息（用于文件夹路径查找）
+      const deleteProject = projectDb.getProject(id)
+
       // 先删除数据库记录（确保即使文件系统删除失败，数据库也不会留下孤儿记录）
       projectDb.deleteProject(id)
 
       // 再删除文件系统
-      const projectPath = await resolveProjectPath(id)
+      const projectPath = deleteProject
+        ? await resolveProjectPathForProject(deleteProject)
+        : await resolveProjectPath(id)
       if (projectPath) {
         await fs.rm(projectPath, { recursive: true, force: true })
       }
@@ -173,5 +181,25 @@ export function registerProjectHandlers() {
       console.error('[项目删除] 失败:', error)
       return handleIpcError(error)
     }
+  })
+
+  ipcMain.handle('project:checkFolder', async (_, id: number) => {
+    const idValidation = validateRequired(id, 'id')
+    if (!idValidation.valid) {
+      return { success: false, error: idValidation.error }
+    }
+
+    const idTypeValidation = validateType(id, 'number', 'id')
+    if (!idTypeValidation.valid) {
+      return { success: false, error: idTypeValidation.error }
+    }
+
+    const project = projectDb.getProject(id)
+    if (!project) {
+      return { success: false, exists: false, error: '项目不存在' }
+    }
+
+    const projectPath = await resolveProjectPathForProject(project)
+    return { success: true, exists: !!projectPath, path: projectPath }
   })
 }

@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('api', {
     get: (id: number) => ipcRenderer.invoke('project:get', id),
     update: (id: number, data: Record<string, unknown>) => ipcRenderer.invoke('project:update', id, data),
     delete: (id: number) => ipcRenderer.invoke('project:delete', id),
+    checkFolder: (id: number) => ipcRenderer.invoke('project:checkFolder', id),
     onStageProgressionNeeded: (callback: (data: { projectId: number, targetStage: string, detectedType: string }) => void) => {
       ipcRenderer.on('project:stage-progression-needed', (_event, data) => callback(data))
     },

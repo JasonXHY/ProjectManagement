@@ -4,7 +4,7 @@ import * as fileDb from '../database/files'
 import * as projectDb from '../database/projects'
 import * as conversationDb from '../database/conversations'
 import { getDatabase, saveDatabase } from '../database'
-import { resolveProjectPath } from '../utils/project-path'
+import { resolveProjectPath, resolveProjectPathForProject } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateFileExists, validateNumberArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { parseClassifyResponse } from '../utils/ai-response'
@@ -75,7 +75,10 @@ export function registerAIHandlers() {
       const contextContents: string[] = []
 
       // 添加项目MD摘要
-      const projectPath = await resolveProjectPath(projectId)
+      const chatProject = projectDb.getProject(projectId)
+      const projectPath = chatProject
+        ? await resolveProjectPathForProject(chatProject)
+        : await resolveProjectPath(projectId)
       if (!projectPath) {
         return { success: false, error: '项目文件夹不存在' }
       }
@@ -194,7 +197,10 @@ export function registerAIHandlers() {
             projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
 
             // 同步写入 MD 文件
-            const projectPath = await resolveProjectPath(file.project_id)
+            const infoProject = projectDb.getProject(file.project_id)
+            const projectPath = infoProject
+              ? await resolveProjectPathForProject(infoProject)
+              : await resolveProjectPath(file.project_id)
             if (projectPath) {
               const infoPath = path.join(projectPath, '.ai', 'project-info.md')
               const infoMd = `# 项目关键信息
@@ -218,9 +224,9 @@ export function registerAIHandlers() {
       }
 
       // 移动文件到对应分类文件夹（与file:upload保持一致）
-      const project = projectDb.getProject(file.project_id)
-      if (project) {
-        const projectPath = await resolveProjectPath(file.project_id)
+      const moveProject = projectDb.getProject(file.project_id)
+      if (moveProject) {
+        const projectPath = await resolveProjectPathForProject(moveProject)
         if (projectPath) {
           try {
             // 目标目录为「阶段/子分类」两级结构（v3.1）；无子分类时退化为阶段级
@@ -302,7 +308,7 @@ export function registerAIHandlers() {
       const unanalyzedFiles = fileDb.getUnanalyzedFiles(projectId)
 
       // 读取已有的MD摘要
-      const projectPath = await resolveProjectPath(projectId)
+      const projectPath = await resolveProjectPathForProject(project)
       if (!projectPath) {
         return { success: false, error: '项目文件夹不存在' }
       }

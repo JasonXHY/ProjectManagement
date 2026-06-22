@@ -128,6 +128,35 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
     }
   }
 
+  /** 检查项目文件夹是否存在，不存在则提示用户 */
+  const handleOpenWithCheck = useCallback(async (project: Project) => {
+    try {
+      const result = await projectService.checkFolder(project.id)
+      if (result.success && result.exists) {
+        onOpen?.(project)
+      } else {
+        Modal.confirm({
+          title: '项目文件夹不存在',
+          content: `"${project.name}" 的文件夹已被删除或移动。是否删除此项目记录？`,
+          okText: '删除记录',
+          cancelText: '取消',
+          okButtonProps: { danger: true },
+          onOk: async () => {
+            const deleteResult = await projectService.delete(project.id)
+            if (deleteResult.success) {
+              message.success('项目记录已删除')
+              loadProjects()
+            } else {
+              message.error(deleteResult.error || '删除失败')
+            }
+          },
+        })
+      }
+    } catch {
+      onOpen?.(project)
+    }
+  }, [onOpen, loadProjects])
+
   /** 编辑项目 */
   const handleEditProject = async () => {
     if (!editingProject) return
@@ -233,7 +262,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
             type="primary"
             size="small"
             icon={<FolderOpenOutlined />}
-            onClick={() => onOpen?.(record)}
+            onClick={() => handleOpenWithCheck(record)}
           >
             管理
           </Button>
@@ -291,7 +320,7 @@ export default function ProjectList({ onOpen }: ProjectListProps) {
               transition: 'all var(--transition-normal)',
               animation: `fadeInUp 300ms ease-out ${index * 50}ms both`,
             }}
-            onClick={() => onOpen?.(project)}
+            onClick={() => handleOpenWithCheck(project)}
           >
             {/* 顶部彩色条 */}
             <div

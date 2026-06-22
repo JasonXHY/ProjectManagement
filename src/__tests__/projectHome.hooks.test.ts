@@ -45,6 +45,7 @@ const mockProject: Project = {
   current_stage: '售前',
   category_type: 'stage',
   custom_stages: null,
+  folder_uuid: null,
   created_at: '2026-06-16 10:00:00',
   updated_at: '2026-06-16 10:00:00',
   milestones: null,

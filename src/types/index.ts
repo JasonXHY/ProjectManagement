@@ -25,6 +25,7 @@ export interface Project {
   category_type: CategoryType
   custom_stages: string | null
   current_stage: string
+  folder_uuid: string | null
   metadata: string | null
   milestones: string | null
   created_at: string

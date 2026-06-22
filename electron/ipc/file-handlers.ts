@@ -3,7 +3,7 @@ import { createFile, deleteFile, listFiles, getFilesByCategory, getFileById, upd
 import { getProject } from '../database/projects'
 import { getSetting } from '../database/settings'
 import { FileExtractor } from '../services/file-extractor'
-import { resolveProjectPath, getProjectsRoot } from '../utils/project-path'
+import { resolveProjectPath, resolveProjectPathForProject, getProjectsRoot } from '../utils/project-path'
 import { getAIService } from '../services/ai-service'
 import { SignatureDetector } from '../services/signature-detector'
 import { CLASSIFY_PROMPT_STAGES } from '../prompts/classify'
@@ -99,7 +99,10 @@ export function registerFileHandlers() {
     }
 
     try {
-      const projectPath = await resolveProjectPath(projectId)
+      const project = getProject(projectId)
+      const projectPath = project
+        ? await resolveProjectPathForProject(project)
+        : await resolveProjectPath(projectId)
       if (!projectPath) {
         return { success: false, error: '项目文件夹不存在' }
       }
@@ -158,7 +161,6 @@ export function registerFileHandlers() {
       }
 
     // --- 自动 AI 分类（异步，不阻塞上传） ---
-    const project = getProject(projectId)
     if (project) {
       const aiService = getAIService()
       if (aiService.hasProviders() && contentExtracted) {
@@ -364,7 +366,7 @@ export function registerFileHandlers() {
       return { success: false, error: '项目不存在' }
     }
 
-    const projectPath = await resolveProjectPath(file.project_id)
+    const projectPath = await resolveProjectPathForProject(project)
     if (!projectPath) {
       return { success: false, error: '项目文件夹不存在' }
     }
@@ -414,7 +416,10 @@ export function registerFileHandlers() {
       return { success: false, error: projectExistsValidation.error }
     }
 
-    const projectPath = await resolveProjectPath(projectId)
+    const summaryProject = getProject(projectId)
+    const projectPath = summaryProject
+      ? await resolveProjectPathForProject(summaryProject)
+      : await resolveProjectPath(projectId)
     if (!projectPath) {
       return { success: false, error: '项目文件夹不存在' }
     }
@@ -479,7 +484,10 @@ export function registerFileHandlers() {
       return { success: false, error: projectExistsValidation.error }
     }
 
-    const projectPath = await resolveProjectPath(projectId)
+    const openProject = getProject(projectId)
+    const projectPath = openProject
+      ? await resolveProjectPathForProject(openProject)
+      : await resolveProjectPath(projectId)
     if (!projectPath) {
       return { success: false, error: '项目文件夹不存在' }
     }

@@ -20,5 +20,9 @@ export const projectService = {
 
   async delete(id: number) {
     return window.api.project.delete(id)
+  },
+
+  async checkFolder(id: number) {
+    return window.api.project.checkFolder(id)
   }
 }

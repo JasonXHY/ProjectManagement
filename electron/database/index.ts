@@ -201,6 +201,31 @@ export async function initDatabase(): Promise<Database> {
     // 字段已存在，忽略
   }
 
+  // 迁移：为 projects 表添加 folder_uuid 字段
+  try {
+    db.run(`ALTER TABLE projects ADD COLUMN folder_uuid TEXT`)
+    saveDatabase()
+  } catch {
+    // 字段已存在，忽略
+  }
+
+  // 迁移：为缺少 folder_uuid 的项目生成 UUID
+  try {
+    const { v4: uuidv4 } = await import('uuid')
+    const result = db.exec('SELECT id FROM projects WHERE folder_uuid IS NULL')
+    if (result.length > 0 && result[0].values.length > 0) {
+      for (const row of result[0].values) {
+        const id = row[0] as number
+        const uuid = uuidv4()
+        db.run('UPDATE projects SET folder_uuid = ? WHERE id = ?', [uuid, id])
+        console.log(`[迁移] 项目#${id} 生成 UUID: ${uuid}`)
+      }
+      saveDatabase()
+    }
+  } catch (error) {
+    console.error('迁移 folder_uuid 失败:', error)
+  }
+
   // 迁移：修正旧版阶段值（10阶段→3阶段映射）
   const VALID_STAGES = ['售前', '进行中', '关闭']
   const STAGE_MIGRATION: Record<string, string> = {

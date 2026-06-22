@@ -7,6 +7,7 @@ export interface Project {
   category_type: 'stage' | 'content'
   custom_stages: string | null
   current_stage: string
+  folder_uuid: string | null
   metadata: string | null
   milestones: string | null
   created_at: string
@@ -14,13 +15,13 @@ export interface Project {
 }
 
 // Column whitelist to prevent SQL injection via dynamic key names
-const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'metadata', 'milestones'] as const
+const ALLOWED_PROJECT_FIELDS = ['name', 'category_type', 'custom_stages', 'current_stage', 'folder_uuid', 'metadata', 'milestones'] as const
 
-export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[]): number {
+export function createProject(name: string, categoryType: Project['category_type'], customStages?: string[], folderUuid?: string): number {
   const db = getDatabase()
   db.run(
-    `INSERT INTO projects (name, category_type, custom_stages) VALUES (?, ?, ?)`,
-    [name, categoryType, customStages ? JSON.stringify(customStages) : null]
+    `INSERT INTO projects (name, category_type, custom_stages, folder_uuid) VALUES (?, ?, ?, ?)`,
+    [name, categoryType, customStages ? JSON.stringify(customStages) : null, folderUuid || null]
   )
 
   // 获取最后插入的ID（必须在saveDatabase之前）
