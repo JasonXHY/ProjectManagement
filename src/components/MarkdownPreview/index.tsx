@@ -3,6 +3,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize from 'rehype-sanitize'
+import MermaidChart from '../MermaidChart'
 import '../../styles/markdown-preview.css'
 
 interface MarkdownPreviewProps {
@@ -16,6 +17,15 @@ export default function MarkdownPreview({ content, maxHeight = 600 }: MarkdownPr
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight, rehypeRaw, rehypeSanitize]}
+        components={{
+          code({ node, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '')
+            if (match && match[1] === 'mermaid') {
+              return <MermaidChart code={String(children).replace(/\n$/, '')} />
+            }
+            return <code className={className} {...props}>{children}</code>
+          }
+        }}
       >
         {content}
       </ReactMarkdown>

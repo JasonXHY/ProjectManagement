@@ -71,4 +71,20 @@ describe('FeatureCards', () => {
     expect(screen.queryByText('需求跟踪')).not.toBeInTheDocument()
     expect(screen.queryByText('项目信息')).not.toBeInTheDocument()
   })
+
+  it('shows handover cards when sidebar is 转客户成功', () => {
+    render(
+      <FeatureCards
+        project={mockProject}
+        selectedCategory="转客户成功"
+        allFiles={mockFiles}
+      />
+    )
+
+    expect(screen.getByText('签字追踪')).toBeInTheDocument()
+    expect(screen.getByText('拓展商机')).toBeInTheDocument()
+    expect(screen.getByText('交付物清单')).toBeInTheDocument()
+    expect(screen.queryByText('需求跟踪')).not.toBeInTheDocument()
+    expect(screen.queryByText('项目总结')).not.toBeInTheDocument()
+  })
 })

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Modal, Progress, Button } from 'antd'
+import { Progress, Button } from 'antd'
 import {
   FolderOpenOutlined,
   FolderOutlined,
@@ -10,6 +10,7 @@ import {
 import { Project } from '../../types'
 import { fileService } from '../../services/fileService'
 import StageProgressionModal from '../StageProgressionModal'
+import AISummaryModal from './AISummaryModal'
 import ProjectInfoCard from './ProjectInfoCard'
 import StageSidebar from './StageSidebar'
 import SummaryRow from './SummaryRow'
@@ -17,7 +18,6 @@ import FeatureCards from './FeatureCards'
 import FileListTable from './FileListTable'
 import BatchActionBar from './BatchActionBar'
 import UploadArea from './UploadArea'
-import MarkdownPreview from '../MarkdownPreview'
 import HandoverDialog from '../Handover/HandoverDialog'
 import { useProjectHome } from './projectHome.hooks'
 
@@ -88,7 +88,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
           allFiles={allFiles}
         />
 
-        <ProjectInfoCard metadata={project.metadata} />
+        {/* ProjectInfoCard 已隐藏，使用 FeatureCards 中的 ProjectInfoPlaceholderCard */}
 
         {selectedCategory === '所有文件' && <UploadArea onUpload={handleUpload} />}
 
@@ -162,9 +162,11 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
 
       
 
-      <Modal title="项目摘要" open={summaryVisible} onCancel={() => setSummaryVisible(false)} footer={null} width={800}>
-        <MarkdownPreview content={summaryContent || '暂无摘要'} />
-      </Modal>
+      <AISummaryModal
+        open={summaryVisible}
+        onClose={() => setSummaryVisible(false)}
+        summary={summaryContent || ''}
+      />
 
       <StageProgressionModal
         open={progressionModal.open}

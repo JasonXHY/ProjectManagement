@@ -171,30 +171,53 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
     let highestStage: string | null = null
     let highestDetectedType: string | null = null
 
+    // 并行分类配置
+    const CONCURRENCY_LIMIT = 3 // 并发数限制，避免AI限流
+    const batchSize = Math.min(CONCURRENCY_LIMIT, uncategorizedFiles.length)
+
     try {
-      for (let i = 0; i < uncategorizedFiles.length; i++) {
+      // 分批并行处理
+      for (let i = 0; i < uncategorizedFiles.length; i += batchSize) {
         if (batchCancelledRef.current) break
-        const file = uncategorizedFiles[i]
-        setClassifyProgress({ current: i + 1, total: uncategorizedFiles.length })
-        try {
-          const result = await aiService.classify(file.id, project.category_type)
+
+        const batch = uncategorizedFiles.slice(i, i + batchSize)
+        const batchPromises = batch.map(async (file, batchIndex) => {
+          if (batchCancelledRef.current) return null
+
+          try {
+            const result = await aiService.classify(file.id, project.category_type)
+            if (result.success) {
+              const data = typeof result.data === 'object' && result.data ? result.data : { category: result.data, stage: null, summary: null }
+              const fileStage = 'stage' in data ? data.stage : null
+              return { success: true, fileStage }
+            }
+            return { success: false, fileStage: null }
+          } catch {
+            return { success: false, fileStage: null }
+          }
+        })
+
+        const batchResults = await Promise.all(batchPromises)
+
+        // 处理批次结果
+        batchResults.forEach(result => {
+          if (result === null) return
           if (result.success) {
             successCount++
-            const data = typeof result.data === 'object' && result.data ? result.data : { category: result.data, stage: null, summary: null }
-            const fileStage = 'stage' in data ? data.stage : null
-            if (fileStage) {
+            if (result.fileStage) {
               const prev: string | null = highestStage
-              highestStage = getHighestStage(fileStage, highestStage)
+              highestStage = getHighestStage(result.fileStage, highestStage)
               if (highestStage !== prev) {
-                highestDetectedType = fileStage
+                highestDetectedType = result.fileStage
               }
             }
           } else {
             failCount++
           }
-        } catch {
-          failCount++
-        }
+        })
+
+        // 更新进度
+        setClassifyProgress({ current: Math.min(i + batchSize, uncategorizedFiles.length), total: uncategorizedFiles.length })
       }
 
       if (highestStage && highestDetectedType) {

@@ -29,5 +29,6 @@ src/types/*.d.ts.map
 bug/
 *.bat
 *.ps1
+nul
 
 dist_electron/

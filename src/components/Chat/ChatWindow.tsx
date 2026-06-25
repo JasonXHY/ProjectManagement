@@ -21,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import MermaidChart from "../MermaidChart";
 import type { ChatConversationMessage, FileRecord } from "../../types";
 import { aiService } from "../../services/aiService";
 import { fileService } from "../../services/fileService";
@@ -500,7 +501,20 @@ export default function ChatWindow({
                       {msg.role === 'user' ? (
                         msg.content
                       ) : (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({ node, className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '')
+                              if (match && match[1] === 'mermaid') {
+                                return <MermaidChart code={String(children).replace(/\n$/, '')} />
+                              }
+                              return <code className={className} {...props}>{children}</code>
+                            }
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
                       )}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-placeholder)', padding: '0 var(--space-1)' }}>

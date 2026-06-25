@@ -153,6 +153,28 @@ export function registerAIHandlers() {
         return { success: false, error: '文件不存在' }
       }
 
+      // 文件名启发式预判
+      const filename = file.filename.toLowerCase()
+      const filenameHints: { category: string; subcategory: string } | null = () => {
+        // 蓝图文件识别
+        if (filename.includes('蓝图') || filename.includes('业务蓝图')) {
+          return { category: '方案', subcategory: '蓝图' }
+        }
+        // 开发规格说明书识别
+        if (filename.includes('开发规格') || filename.includes('技术规格') || filename.includes('接口文档')) {
+          return { category: '方案', subcategory: '开发规格说明书' }
+        }
+        // 操作手册识别
+        if (filename.includes('操作手册') || filename.includes('用户手册')) {
+          return { category: '上线', subcategory: '操作手册' }
+        }
+        // 测试报告识别
+        if (filename.includes('测试报告') || filename.includes('测试用例')) {
+          return { category: '测试', subcategory: '测试报告' }
+        }
+        return null
+      }()
+
       // 读取文件内容
       let content = file.content_extracted
       if (!content) {
@@ -180,7 +202,17 @@ export function registerAIHandlers() {
       const aiService = getAIService()
       const response = await aiService.chat(messages)
 
-      const { category, subcategory, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
+      let { category, subcategory, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
+
+      // 使用文件名启发式修正分类结果
+      if (filenameHints) {
+        // 如果AI分类结果与文件名启发式不一致，优先使用文件名启发式
+        if (category !== filenameHints.category || subcategory !== filenameHints.subcategory) {
+          console.log(`[AI分类] 文件名启发式修正: ${category}/${subcategory} -> ${filenameHints.category}/${filenameHints.subcategory}`)
+          category = filenameHints.category
+          subcategory = filenameHints.subcategory
+        }
+      }
 
       // 合并关键信息到项目 metadata
       if (keyInfo) {

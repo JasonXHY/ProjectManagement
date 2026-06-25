@@ -1,12 +1,14 @@
 # 设计文档
 
-> 更新时间：2026-06-11
+> 更新时间：2026-06-25
 
 ## 文档列表
 
 | 文档 | 说明 |
 |------|------|
 | [design-tokens.md](design-tokens.md) | 设计规范（颜色、字体、间距等） |
+| [ui-design-spec.md](ui-design-spec.md) | UI 设计规范（布局、组件、交互） |
+| [card-ui-rules.md](card-ui-rules.md) | 卡片系统 UI 规则备忘（tokens 使用、图标、弹窗、映射规则） |
 
 ## 设计原则
 

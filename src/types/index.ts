@@ -117,3 +117,52 @@ export const PROJECT_STATUS = [
   { value: '进行中', label: '进行中', color: '#553c9a', bg: '#e9d8fd' },
   { value: '关闭', label: '关闭', color: '#4a5568', bg: '#e2e8f0' }
 ]
+
+// 签字文件
+export interface SignatureDoc {
+  id: string
+  name: string
+  required: boolean
+  status: 'unsigned' | 'signed'
+  signer?: string
+  signedAt?: string
+  fileId?: string
+  source: 'auto' | 'manual'
+  category?: string
+}
+
+// 交付物版本
+export interface DeliverableVersion {
+  id: string
+  versionNo: string
+  status: 'draft' | 'merged' | 'final'
+  fileId?: string
+  createdAt: string
+  note?: string
+}
+
+// 交付物
+export interface Deliverable {
+  id: string
+  name: string
+  type: string
+  status: 'draft' | 'merged' | 'ready' | 'delivered'
+  currentVersion: string
+  versions: DeliverableVersion[]
+  createdAt: string
+  updatedAt: string
+}
+
+// 里程碑（扩展版）
+export interface MilestoneExtended {
+  id: string
+  title: string
+  date: string
+  type: 'milestone' | 'key_node' | 'payment'
+  category?: string
+  amount?: number
+  confirmed?: boolean
+  implemented?: number
+  development?: number
+  manuallyEdited?: boolean
+}
