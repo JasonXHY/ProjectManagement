@@ -54,7 +54,7 @@ async function moveFileToCategory(
 function inferCategoryFromFilename(filename: string): string {
   const name = filename.toLowerCase()
   if (/(^|[ _-])contract([ _-]|\.)/.test(name) || /^合同/.test(name)) return '售前'
-  if (/验收/.test(name)) return '验收'
+  if (/验收|签字|确认单|签批|审批/.test(name)) return '验收'
   if (/结算|付款|支付/.test(name)) return '关闭'
   if (/需求|方案|设计/.test(name)) return '需求'
   if (/测试/.test(name)) return '测试'

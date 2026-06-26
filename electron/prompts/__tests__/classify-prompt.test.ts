@@ -58,4 +58,17 @@ describe('CLASSIFY_PROMPT_STAGES', () => {
     expect(jsonSection).toContain('"contract_amount"')
     expect(jsonSection).toContain('"contract_items"')
   })
+
+  // T6 — 签字验收文件分类增强
+  it('包含文件用途vs内容判断规则', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toMatch(/用途|文件名|签字|验收/)
+  })
+
+  it('包含验收文件识别规则', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toMatch(/验收.*签字|签字.*验收/)
+  })
+
+  it('包含文件名启发式提示', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toMatch(/文件名.*验收|文件名.*签字/)
+  })
 })
