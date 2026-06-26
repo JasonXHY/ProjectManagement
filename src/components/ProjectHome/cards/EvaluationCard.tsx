@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { Project } from '../../../types'
+import { Project, FileRecord } from '../../../types'
 import ProfitCalculatorModal from '../ProfitCalculatorModal'
-
-import { FileRecord } from '../../../types'
 
 interface Props { project: Project; allFiles: FileRecord[] }
 
