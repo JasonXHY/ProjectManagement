@@ -11,6 +11,8 @@ import { checkStageProgression } from '../shared/stages'
 import { validateRequired, validateType, validateProjectExists, validateFileExists } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { parseClassifyResponse } from '../utils/ai-response'
+import { EXTRACT_STRUCTURED_PROMPT } from '../prompts/extract-structured'
+import { mergeStructuredData } from '../utils/structured-merge'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -215,6 +217,31 @@ export function registerFileHandlers() {
             }
           } catch (err) {
             console.error('[AI分类] 文件移动或更新失败:', err)
+          }
+
+          // 异步结构化提取（需求/问题/商机），不阻塞主流程
+          if (contentExtracted) {
+            const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
+              .replace('{category}', sanitizedCategory)
+              .replace('{content}', contentExtracted)
+            aiService.chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
+              try {
+                const structJson = structResult.content.match(/\{[\s\S]*\}/)
+                if (structJson) {
+                  const structuredData = JSON.parse(structJson[0])
+                  const projectData = getProject(projectId)
+                  if (projectData) {
+                    const existingMeta = projectData.metadata ? JSON.parse(projectData.metadata) : {}
+                    const mergedMeta = mergeStructuredData(existingMeta, structuredData)
+                    const { updateProject } = await import('../database/projects')
+                    updateProject(projectId, { metadata: JSON.stringify(mergedMeta) })
+                  }
+                }
+              } catch (e) {
+                console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
+              }
+            }).catch(() => {})
+          }
           }
         }).catch(err => {
           console.error('[AI分类] 分类失败:', err.message)

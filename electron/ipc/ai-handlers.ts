@@ -9,6 +9,8 @@ import { validateRequired, validateType, validateProjectExists, validateFileExis
 import { handleIpcError } from '../utils/errors'
 import { parseClassifyResponse } from '../utils/ai-response'
 import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT, EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
+import { EXTRACT_STRUCTURED_PROMPT } from '../prompts/extract-structured'
+import { mergeStructuredData } from '../utils/structured-merge'
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
 import { getAllSettings } from '../database/settings'
@@ -220,10 +222,14 @@ export function registerAIHandlers() {
           const project = projectDb.getProject(file.project_id)
           if (project) {
             const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-            const mergedMetadata: Record<string, string> = { ...existingMetadata }
+            const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
             for (const [key, value] of Object.entries(keyInfo)) {
               if (typeof value === 'string' && value.trim()) {
                 mergedMetadata[key] = value.trim()
+              } else if (typeof value === 'number' && value > 0) {
+                mergedMetadata[key] = value
+              } else if (Array.isArray(value) && value.length > 0) {
+                mergedMetadata[key] = value
               }
             }
             projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
@@ -245,6 +251,8 @@ export function registerAIHandlers() {
 | 联系电话 | ${mergedMetadata.contact_phone || '-'} |
 | 客户地址 | ${mergedMetadata.customer_address || '-'} |
 | 项目名称 | ${mergedMetadata.project_name || '-'} |
+| 客户名称 | ${mergedMetadata.customer_name || '-'} |
+| 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
 `
               await fs.mkdir(path.dirname(infoPath), { recursive: true })
               await fs.writeFile(infoPath, infoMd, 'utf-8')
@@ -253,6 +261,29 @@ export function registerAIHandlers() {
         } catch (err) {
           console.error('[AI] 关键信息保存失败:', err)
         }
+      }
+
+      // 异步结构化提取（需求/问题/商机）
+      if (content) {
+        const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
+          .replace('{category}', category)
+          .replace('{content}', content)
+        aiService.chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
+          try {
+            const structJson = structResult.content.match(/\{[\s\S]*\}/)
+            if (structJson) {
+              const structuredData = JSON.parse(structJson[0])
+              const projectData = projectDb.getProject(file.project_id)
+              if (projectData) {
+                const existingMeta = projectData.metadata ? JSON.parse(projectData.metadata) : {}
+                const mergedMeta = mergeStructuredData(existingMeta, structuredData)
+                projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMeta) })
+              }
+            }
+          } catch (e) {
+            console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
+          }
+        }).catch(() => {})
       }
 
       // 移动文件到对应分类文件夹（与file:upload保持一致）
@@ -367,9 +398,19 @@ export function registerAIHandlers() {
       const aiService = getAIService()
       const response = await aiService.chat(messages)
 
-      // 保存MD文件
+      // 保存MD文件 + 简略版写入metadata
+      const fullSummary = response.content.split('---BRIEF---')[0].trim()
+      const briefSummary = response.content.split('---BRIEF---')[1]?.trim() || ''
+
       await fs.mkdir(path.dirname(summaryPath), { recursive: true })
-      await fs.writeFile(summaryPath, response.content, 'utf-8')
+      await fs.writeFile(summaryPath, fullSummary, 'utf-8')
+
+      // 简略版写入metadata.project_overview
+      if (briefSummary) {
+        const existingMeta = project.metadata ? JSON.parse(project.metadata) : {}
+        existingMeta.project_overview = briefSummary
+        projectDb.updateProject(projectId, { metadata: JSON.stringify(existingMeta) })
+      }
 
       // 提取关键信息
       try {
@@ -385,10 +426,14 @@ export function registerAIHandlers() {
 
           // 合并：新信息覆盖旧信息，空字符串不覆盖
           const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-          const mergedMetadata: Record<string, string> = { ...existingMetadata }
+          const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
           for (const [key, value] of Object.entries(newInfo)) {
             if (typeof value === 'string' && value.trim()) {
               mergedMetadata[key] = value.trim()
+            } else if (typeof value === 'number' && value > 0) {
+              mergedMetadata[key] = value
+            } else if (Array.isArray(value) && value.length > 0) {
+              mergedMetadata[key] = value
             }
           }
 
@@ -407,6 +452,8 @@ export function registerAIHandlers() {
 | 联系电话 | ${mergedMetadata.contact_phone || '-'} |
 | 客户地址 | ${mergedMetadata.customer_address || '-'} |
 | 项目名称 | ${mergedMetadata.project_name || '-'} |
+| 客户名称 | ${mergedMetadata.customer_name || '-'} |
+| 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
 `
           await fs.writeFile(infoPath, infoMd, 'utf-8')
         }

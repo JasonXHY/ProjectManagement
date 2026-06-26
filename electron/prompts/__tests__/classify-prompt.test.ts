@@ -36,4 +36,26 @@ describe('CLASSIFY_PROMPT_STAGES', () => {
   it('保留 {content} 占位符', () => {
     expect(CLASSIFY_PROMPT_STAGES).toContain('{content}')
   })
+
+  // T1 — 扩展AI提取字段
+  it('要求返回 customer_name 字段', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toContain('customer_name')
+  })
+
+  it('要求返回 contract_amount 字段', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toContain('contract_amount')
+  })
+
+  it('要求返回 contract_items 字段', () => {
+    expect(CLASSIFY_PROMPT_STAGES).toContain('contract_items')
+  })
+
+  it('JSON返回格式包含新字段的占位', () => {
+    const jsonSection = CLASSIFY_PROMPT_STAGES.substring(
+      CLASSIFY_PROMPT_STAGES.indexOf('{', CLASSIFY_PROMPT_STAGES.indexOf('JSON'))
+    )
+    expect(jsonSection).toContain('"customer_name"')
+    expect(jsonSection).toContain('"contract_amount"')
+    expect(jsonSection).toContain('"contract_items"')
+  })
 })

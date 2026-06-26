@@ -18,10 +18,21 @@ function formatPercent(rate: number): string {
 export default function EvaluationCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const contractAmount = meta.contract_amount || 0
-  const costEstimate = meta.cost_estimate || 0
-  const profitRate = meta.profit_rate || 0
-  const personDays = meta.person_days || 0
+  const evalResult = meta.evaluation?.result
+  const hasEvaluation = !!evalResult
+
+  const contractAmount = hasEvaluation
+    ? (meta.evaluation.contractAmount || meta.contract_amount || 0)
+    : (meta.contract_amount || 0)
+  const costEstimate = hasEvaluation
+    ? (evalResult.totalCost || meta.cost_estimate || 0)
+    : (meta.cost_estimate || 0)
+  const profitRate = hasEvaluation
+    ? (evalResult.internalProfitRate ?? meta.profit_rate ?? 0)
+    : (meta.profit_rate || 0)
+  const personDays = hasEvaluation
+    ? ((meta.evaluation.internalDays || 0) + (meta.evaluation.externalDays || 0) || meta.person_days || 0)
+    : (meta.person_days || 0)
 
   const hasData = contractAmount > 0 || costEstimate > 0
 
@@ -64,6 +75,7 @@ export default function EvaluationCard({ project }: Props) {
       <ProfitCalculatorModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        projectId={project.id}
       />
     </>
   )

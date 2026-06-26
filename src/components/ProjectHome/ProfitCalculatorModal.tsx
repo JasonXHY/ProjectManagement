@@ -5,6 +5,7 @@ import { calculateProfit, INTERNAL_UNIT_PRICES, ProfitResult } from './ProfitCal
 interface ProfitCalculatorModalProps {
   open: boolean
   onClose: () => void
+  projectId?: number
 }
 
 const roleOptions = Object.keys(INTERNAL_UNIT_PRICES).map(role => ({
@@ -63,7 +64,7 @@ function formatPercent(rate: number): string {
   return `${(rate * 100).toFixed(2)}%`
 }
 
-export default function ProfitCalculatorModal({ open, onClose }: ProfitCalculatorModalProps) {
+export default function ProfitCalculatorModal({ open, onClose, projectId }: ProfitCalculatorModalProps) {
   const [contractAmount, setContractAmount] = useState<number>(0)
   const [internalDays, setInternalDays] = useState<number>(0)
   const [externalDays, setExternalDays] = useState<number>(0)
@@ -76,7 +77,7 @@ export default function ProfitCalculatorModal({ open, onClose }: ProfitCalculato
 
   const internalUnitPrice = INTERNAL_UNIT_PRICES[role]?.[level] || 1560
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     const calcResult = calculateProfit({
       contractAmount,
       internalDays,
@@ -87,6 +88,35 @@ export default function ProfitCalculatorModal({ open, onClose }: ProfitCalculato
       externalTravel,
     })
     setResult(calcResult)
+
+    if (projectId) {
+      try {
+        const evaluation = {
+          contractAmount,
+          internalDays,
+          externalDays,
+          internalUnitPrice,
+          externalUnitPrice,
+          internalTravel,
+          externalTravel,
+          result: calcResult,
+          calculatedAt: new Date().toISOString(),
+        }
+        const totalCost = calcResult.totalCost
+        const totalPersonDays = internalDays + externalDays
+        await window.api.project.update(projectId, {
+          metadata: JSON.stringify({
+            evaluation,
+            contract_amount: contractAmount,
+            cost_estimate: totalCost,
+            profit_rate: calcResult.internalProfitRate,
+            person_days: totalPersonDays,
+          }),
+        })
+      } catch (err) {
+        console.error('[利润测算] 保存失败:', err)
+      }
+    }
   }
 
   return (

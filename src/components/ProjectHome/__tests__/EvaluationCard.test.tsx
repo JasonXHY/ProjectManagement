@@ -65,4 +65,33 @@ describe('EvaluationCard', () => {
 
     expect(screen.getByText('利润测算')).toBeInTheDocument()
   })
+
+  // T2 — 优先读取 metadata.evaluation.result
+  it('reads from metadata.evaluation.result when available', () => {
+    const evalProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({
+        evaluation: {
+          contractAmount: 2000000,
+          result: {
+            totalCost: 800000,
+            internalProfitRate: 0.6,
+            externalProfitRate: 0.45,
+            isInternalRedLine: false,
+            isExternalRedLine: false,
+          },
+        },
+        contract_amount: 1000000,
+        cost_estimate: 600000,
+        profit_rate: 0.4,
+        person_days: 100,
+      }),
+    }
+
+    render(<EvaluationCard project={evalProject} allFiles={[]} />)
+
+    expect(screen.getByText('¥200.00万')).toBeInTheDocument()
+    expect(screen.getByText('¥80.00万')).toBeInTheDocument()
+    expect(screen.getByText('60.00%')).toBeInTheDocument()
+  })
 })
