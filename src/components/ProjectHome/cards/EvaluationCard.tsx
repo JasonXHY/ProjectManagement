@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Project } from '../../../types'
 import ProfitCalculatorModal from '../ProfitCalculatorModal'
 
-interface Props { project: Project; allFiles: any[] }
+import { FileRecord } from '../../../types'
+
+interface Props { project: Project; allFiles: FileRecord[] }
 
 function formatAmount(amount: number): string {
   if (amount >= 10000) {

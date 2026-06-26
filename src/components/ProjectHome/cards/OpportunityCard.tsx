@@ -1,4 +1,6 @@
-interface Props { project: any; allFiles: any[] }
+import { Project, FileRecord } from '../../../types'
+
+interface Props { project: Project; allFiles: FileRecord[] }
 
 export default function OpportunityCard({ project }: Props) {
   const meta = project.metadata ? JSON.parse(project.metadata) : {}

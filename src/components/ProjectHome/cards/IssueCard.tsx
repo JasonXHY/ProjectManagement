@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { Project, FileRecord } from '../../../types'
 import ListDetailModal from '../ListDetailModal'
 
-interface Props { project: any; allFiles: any[] }
+interface Props { project: Project; allFiles: FileRecord[] }
 
 const priorityConfig: Record<string, { color: string; label: string }> = {
   high: { color: '#EF4444', label: '高' },
