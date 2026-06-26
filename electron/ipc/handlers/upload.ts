@@ -163,6 +163,11 @@ function classifyAndMoveFile(
     const sanitizedCategory = sanitizeCategory(category)
     const sanitizedSub = subcategory ? sanitizeCategory(subcategory) : null
 
+    // 先发起结构化提取（fire-and-forget），再移动文件
+    if (contentExtracted) {
+      extractStructuredDataAsync(projectId, sanitizedCategory, contentExtracted, aiService)
+    }
+
     try {
       const targetDir = sanitizedSub
         ? path.join(projectPath, sanitizedCategory, sanitizedSub)
@@ -201,10 +206,6 @@ function classifyAndMoveFile(
       }
     } catch (err) {
       console.error('[AI分类] 文件移动或更新失败:', err)
-    }
-
-    if (contentExtracted) {
-      extractStructuredDataAsync(projectId, sanitizedCategory, contentExtracted, aiService)
     }
   }).catch(err => {
     console.error('[AI分类] 分类失败:', (err as Error).message)
