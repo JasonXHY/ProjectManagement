@@ -17,6 +17,14 @@ interface ProjectUpdateData {
   milestones?: string
 }
 
+function isPartialProject(data: unknown): data is Partial<projectDb.Project> {
+  if (typeof data !== 'object' || data === null) return false
+  const obj = data as Record<string, unknown>
+  if (obj.name !== undefined && typeof obj.name !== 'string') return false
+  if (obj.current_stage !== undefined && typeof obj.current_stage !== 'string') return false
+  return true
+}
+
 export function registerProjectHandlers() {
   ipcMain.handle('project:create', async (_, name: string, categoryType: string, customStages?: string[]) => {
     const nameValidation = validateRequired(name, 'name')
@@ -136,8 +144,10 @@ export function registerProjectHandlers() {
     }
 
     try {
-      // Cast custom_stages to string since the DB stores it as JSON-serialized string
-      projectDb.updateProject(id, data as unknown as Partial<projectDb.Project>)
+      if (!isPartialProject(data)) {
+        return { success: false, error: '无效的项目数据' }
+      }
+      projectDb.updateProject(id, data)
       return { success: true }
     } catch (error) {
       console.error('[项目更新] 失败:', error)
