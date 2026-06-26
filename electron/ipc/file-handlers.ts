@@ -2,7 +2,7 @@ import { ipcMain, shell } from 'electron'
 import { deleteFile, listFiles, getFilesByCategory, getFileById, updateFile } from '../database/files'
 import { getProject } from '../database/projects'
 import { resolveProjectPath, resolveProjectPathForProject, getProjectsRoot } from '../utils/project-path'
-import { validateRequired, validateType, validateProjectExists, validateFileExists } from '../utils/validators'
+import { validateRequired, validateType, validateProjectId, validateFileId } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { handleUpload } from './handlers/upload'
 import fs from 'fs/promises'
@@ -10,20 +10,11 @@ import path from 'path'
 
 export function registerFileHandlers() {
   ipcMain.handle('file:upload', async (_, projectId: number, fileData: { name: string, content: ArrayBuffer, type: string }) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     const fileDataValidation = validateType(fileData, 'object', 'fileData')
     if (!fileDataValidation.valid) {
@@ -49,41 +40,23 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:list', async (_, projectId: number) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     const files = listFiles(projectId)
     return { success: true, data: files }
   })
 
   ipcMain.handle('file:listByCategory', async (_, projectId: number, category: string) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
-    
+    const validProjectId = projectIdValidation.id!
+
     const categoryValidation = validateRequired(category, 'category')
     if (!categoryValidation.valid) {
       return { success: false, error: categoryValidation.error }
@@ -99,20 +72,11 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:delete', async (_, id: number) => {
-    const idValidation = validateRequired(id, 'id')
+    const idValidation = validateFileId(id)
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
     }
-    
-    const idTypeValidation = validateType(id, 'number', 'id')
-    if (!idTypeValidation.valid) {
-      return { success: false, error: idTypeValidation.error }
-    }
-    
-    const existsValidation = validateFileExists(id)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
+    const validFileId = idValidation.id!
 
     const file = getFileById(id)
     if (!file) {
@@ -141,21 +105,12 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:updateCategory', async (_, id: number, category: string, subcategory?: string | null) => {
-    const idValidation = validateRequired(id, 'id')
+    const idValidation = validateFileId(id)
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
     }
-    
-    const idTypeValidation = validateType(id, 'number', 'id')
-    if (!idTypeValidation.valid) {
-      return { success: false, error: idTypeValidation.error }
-    }
-    
-    const existsValidation = validateFileExists(id)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
-    
+    const validFileId = idValidation.id!
+
     const categoryValidation = validateRequired(category, 'category')
     if (!categoryValidation.valid) {
       return { success: false, error: categoryValidation.error }
@@ -211,20 +166,11 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:getSummary', async (_, projectId: number) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     const summaryProject = getProject(projectId)
     const projectPath = summaryProject
@@ -243,20 +189,11 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:open', async (_, fileId: number) => {
-    const fileIdValidation = validateRequired(fileId, 'fileId')
+    const fileIdValidation = validateFileId(fileId)
     if (!fileIdValidation.valid) {
       return { success: false, error: fileIdValidation.error }
     }
-    
-    const fileIdTypeValidation = validateType(fileId, 'number', 'fileId')
-    if (!fileIdTypeValidation.valid) {
-      return { success: false, error: fileIdTypeValidation.error }
-    }
-    
-    const existsValidation = validateFileExists(fileId)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
+    const validFileId = fileIdValidation.id!
 
     const file = getFileById(fileId)
     if (!file) {
@@ -279,20 +216,11 @@ export function registerFileHandlers() {
   })
 
   ipcMain.handle('file:openFolder', async (_, projectId: number) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     const openProject = getProject(projectId)
     const projectPath = openProject

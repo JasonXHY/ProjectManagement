@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import * as projectDb from '../database/projects'
 import { resolveProjectPath, resolveProjectPathForProject, createProjectDirectory, createStageFolders, generateProjectUuid } from '../utils/project-path'
-import { validateRequired, validateType, validateProjectExists, validateCategoryType, validateStringArray } from '../utils/validators'
+import { validateRequired, validateType, validateProjectId, validateCategoryType, validateStringArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { STAGE_DEFINITIONS, getSubcategories, type StageDef } from '../shared/stages'
 import { parseSubcategoryConfig } from '../shared/subcategory-config'
@@ -103,41 +103,23 @@ export function registerProjectHandlers() {
   })
 
   ipcMain.handle('project:get', async (_, id: number) => {
-    const idValidation = validateRequired(id, 'id')
+    const idValidation = validateProjectId(id)
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
     }
-    
-    const idTypeValidation = validateType(id, 'number', 'id')
-    if (!idTypeValidation.valid) {
-      return { success: false, error: idTypeValidation.error }
-    }
-    
-    const existsValidation = validateProjectExists(id)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
+    const validId = idValidation.id!
 
     const project = projectDb.getProject(id)
     return { success: true, data: project }
   })
 
   ipcMain.handle('project:update', async (_, id: number, data: ProjectUpdateData) => {
-    const idValidation = validateRequired(id, 'id')
+    const idValidation = validateProjectId(id)
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
     }
-    
-    const idTypeValidation = validateType(id, 'number', 'id')
-    if (!idTypeValidation.valid) {
-      return { success: false, error: idTypeValidation.error }
-    }
-    
-    const existsValidation = validateProjectExists(id)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
-    
+    const validId = idValidation.id!
+
     const dataValidation = validateType(data, 'object', 'data')
     if (!dataValidation.valid) {
       return { success: false, error: dataValidation.error }
@@ -156,20 +138,11 @@ export function registerProjectHandlers() {
   })
 
   ipcMain.handle('project:delete', async (_, id: number) => {
-    const idValidation = validateRequired(id, 'id')
+    const idValidation = validateProjectId(id)
     if (!idValidation.valid) {
       return { success: false, error: idValidation.error }
     }
-    
-    const idTypeValidation = validateType(id, 'number', 'id')
-    if (!idTypeValidation.valid) {
-      return { success: false, error: idTypeValidation.error }
-    }
-    
-    const existsValidation = validateProjectExists(id)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
+    const validId = idValidation.id!
 
     try {
       // 先获取项目信息（用于文件夹路径查找）

@@ -5,7 +5,7 @@ import * as projectDb from '../database/projects'
 import * as conversationDb from '../database/conversations'
 import { getDatabase, saveDatabase } from '../database'
 import { resolveProjectPath, resolveProjectPathForProject } from '../utils/project-path'
-import { validateRequired, validateType, validateProjectExists, validateFileExists, validateNumberArray } from '../utils/validators'
+import { validateRequired, validateType, validateProjectId, validateFileId, validateNumberArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
 import { EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
@@ -23,21 +23,12 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:chat', async (_, projectId: number, message: string, contextFileIds: number[], sessionId: string) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
-    
+    const validProjectId = projectIdValidation.id!
+
     const messageValidation = validateRequired(message, 'message')
     if (!messageValidation.valid) {
       return { success: false, error: messageValidation.error }
@@ -118,20 +109,11 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:classify', async (_, fileId: number, categoryType?: 'stage' | 'content') => {
-    const fileIdValidation = validateRequired(fileId, 'fileId')
+    const fileIdValidation = validateFileId(fileId)
     if (!fileIdValidation.valid) {
       return { success: false, error: fileIdValidation.error }
     }
-
-    const fileIdTypeValidation = validateType(fileId, 'number', 'fileId')
-    if (!fileIdTypeValidation.valid) {
-      return { success: false, error: fileIdTypeValidation.error }
-    }
-
-    const existsValidation = validateFileExists(fileId)
-    if (!existsValidation.valid) {
-      return { success: false, error: existsValidation.error }
-    }
+    const validFileId = fileIdValidation.id!
 
     if (categoryType) {
       if (categoryType !== 'stage' && categoryType !== 'content') {
@@ -148,20 +130,11 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:analyze', async (_, projectId: number) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     try {
       const project = projectDb.getProject(projectId)
@@ -310,20 +283,11 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:get-history', async (_, projectId: number, sessionId?: string) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
     
     if (sessionId) {
       const sessionIdTypeValidation = validateType(sessionId, 'string', 'sessionId')
@@ -342,20 +306,11 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:get-sessions', async (_, projectId: number) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     try {
       const sessions = conversationDb.getChatSessions(projectId)
@@ -367,20 +322,11 @@ export function registerAIHandlers() {
   })
 
   ipcMain.handle('ai:clear-history', async (_, projectId: number, sessionId?: string) => {
-    const projectIdValidation = validateRequired(projectId, 'projectId')
+    const projectIdValidation = validateProjectId(projectId)
     if (!projectIdValidation.valid) {
       return { success: false, error: projectIdValidation.error }
     }
-    
-    const projectIdTypeValidation = validateType(projectId, 'number', 'projectId')
-    if (!projectIdTypeValidation.valid) {
-      return { success: false, error: projectIdTypeValidation.error }
-    }
-    
-    const projectExistsValidation = validateProjectExists(projectId)
-    if (!projectExistsValidation.valid) {
-      return { success: false, error: projectExistsValidation.error }
-    }
+    const validProjectId = projectIdValidation.id!
 
     try {
       const db = getDatabase()

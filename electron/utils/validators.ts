@@ -81,6 +81,26 @@ export function validateNumberArray(value: unknown, fieldName: string): Validati
   return { valid: true }
 }
 
+export function validateProjectId(projectId: unknown): { valid: boolean; id?: number; error?: string } {
+  const req = validateRequired(projectId, 'projectId')
+  if (!req.valid) return req
+  const type = validateType(projectId, 'number', 'projectId')
+  if (!type.valid) return type
+  const exists = validateProjectExists(projectId as number)
+  if (!exists.valid) return exists
+  return { valid: true, id: projectId as number }
+}
+
+export function validateFileId(fileId: unknown): { valid: boolean; id?: number; error?: string } {
+  const req = validateRequired(fileId, 'fileId')
+  if (!req.valid) return req
+  const type = validateType(fileId, 'number', 'fileId')
+  if (!type.valid) return type
+  const exists = validateFileExists(fileId as number)
+  if (!exists.valid) return exists
+  return { valid: true, id: fileId as number }
+}
+
 export function validateCategoryType(value: unknown): ValidationResult {
   if (value !== 'stage' && value !== 'content') {
     return { valid: false, error: 'categoryType 必须是 "stage" 或 "content"' }
