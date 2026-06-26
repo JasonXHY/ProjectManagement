@@ -6,6 +6,7 @@ import {
   Checkbox,
   message,
 } from "antd";
+import { isApiError } from "../../utils/error";
 import {
   SendOutlined,
   ClearOutlined,
@@ -175,9 +176,11 @@ export default function ChatWindow({
         setMessages(finalMessages);
         setRetryCount(0);
       } else {
-        const errMsg = typeof result.error === 'object' && result.error !== null
-          ? (result.error as any).message || JSON.stringify(result.error)
-          : result.error || "发送消息失败，请重试";
+        const errMsg = isApiError(result.error)
+          ? result.error.message
+          : typeof result.error === 'string'
+          ? result.error
+          : "发送消息失败，请重试";
         message.error(errMsg);
         const reverted = messagesRef.current.filter(
           (m) => m.id !== userMessage.id

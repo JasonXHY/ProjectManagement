@@ -4,6 +4,7 @@ import { Project, FileRecord, checkStageProgression, STAGE_PROGRESSION_RULES, DE
 import { fileService } from '../../services/fileService'
 import { aiService } from '../../services/aiService'
 import { projectService } from '../../services/projectService'
+import { isApiError } from '../../utils/error'
 
 function getHighestStage(current: string | null, existing: string | null): string | null {
   if (!current) return existing
@@ -425,9 +426,11 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
         message.success('分析完成')
         handleViewSummary()
       } else {
-        const errMsg = typeof result.error === 'object' && result.error !== null
-          ? (result.error as any).message || JSON.stringify(result.error)
-          : result.error || '分析失败'
+        const errMsg = isApiError(result.error)
+          ? result.error.message
+          : typeof result.error === 'string'
+          ? result.error
+          : '分析失败'
         message.error(errMsg)
       }
     } catch {
