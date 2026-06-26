@@ -102,7 +102,7 @@ function detectSignatureAsync(fileId: number, filePath: string, safeName: string
         console.log(`[签字检测] 文件 "${safeName}" 检测到签字`)
       }
     }).catch(err => {
-      console.error('[签字检测] 检测失败:', err)
+      console.warn('[签字检测] 检测失败:', (err as Error).message)
     })
   }
 }
@@ -208,7 +208,7 @@ function classifyAndMoveFile(
       console.error('[AI分类] 文件移动或更新失败:', err)
     }
   }).catch(err => {
-    console.error('[AI分类] 分类失败:', (err as Error).message)
+    console.warn('[AI分类] 分类失败:', (err as Error).message)
     const fallbackCategory = inferCategoryFromFilename(safeName)
     moveFileToCategory(fileId, filePath, safeName, projectPath, fallbackCategory)
   })
