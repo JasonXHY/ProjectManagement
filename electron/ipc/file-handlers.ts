@@ -242,7 +242,6 @@ export function registerFileHandlers() {
               }
             }).catch(() => {})
           }
-          }
         }).catch(err => {
           console.error('[AI分类] 分类失败:', err.message)
           const fallbackCategory = inferCategoryFromFilename(safeName)

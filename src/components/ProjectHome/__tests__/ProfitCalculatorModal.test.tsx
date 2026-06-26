@@ -42,8 +42,14 @@ describe('ProfitCalculatorModal', () => {
     expect(screen.getByText('整体利润率')).toBeInTheDocument()
   })
 
-  // T2 — 测算后保存到metadata
+  // T2 — 测算后保存到metadata（合并现有数据，不覆盖）
   it('saves evaluation to project metadata after calculation', async () => {
+    const mockGet = vi.fn().mockResolvedValue({
+      success: true,
+      data: { id: 1, metadata: JSON.stringify({ customer_name: '测试客户', project_code: 'PRJ-001' }) }
+    })
+    vi.mocked(window.api.project.get).mockImplementation(mockGet)
+
     const mockUpdate = vi.fn().mockResolvedValue({ success: true })
     vi.mocked(window.api.project.update).mockImplementation(mockUpdate)
 
@@ -55,7 +61,11 @@ describe('ProfitCalculatorModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /测\s*算/ }))
 
-    expect(mockUpdate).toHaveBeenCalled()
+    // 等待异步操作完成
+    await vi.waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalled()
+    })
+
     const [id, data] = mockUpdate.mock.calls[0]
     expect(id).toBe(1)
     const metadata = JSON.parse(data.metadata)
@@ -64,5 +74,6 @@ describe('ProfitCalculatorModal', () => {
     expect(metadata.contract_amount).toBe(1000000)
     expect(metadata.cost_estimate).toBeGreaterThan(0)
     expect(metadata.person_days).toBe(80)
+    expect(metadata.customer_name).toBe('测试客户')
   })
 })

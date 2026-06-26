@@ -104,14 +104,20 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
         }
         const totalCost = calcResult.totalCost
         const totalPersonDays = internalDays + externalDays
+
+        // 读取现有metadata，合并新字段（避免覆盖其他数据）
+        const projectResult = await window.api.project.get(projectId)
+        const existingMeta = projectResult.data?.metadata ? JSON.parse(projectResult.data.metadata) : {}
+        const mergedMeta = {
+          ...existingMeta,
+          evaluation,
+          contract_amount: contractAmount,
+          cost_estimate: totalCost,
+          profit_rate: calcResult.internalProfitRate,
+          person_days: totalPersonDays,
+        }
         await window.api.project.update(projectId, {
-          metadata: JSON.stringify({
-            evaluation,
-            contract_amount: contractAmount,
-            cost_estimate: totalCost,
-            profit_rate: calcResult.internalProfitRate,
-            person_days: totalPersonDays,
-          }),
+          metadata: JSON.stringify(mergedMeta),
         })
       } catch (err) {
         console.error('[利润测算] 保存失败:', err)
