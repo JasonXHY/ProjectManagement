@@ -17,7 +17,7 @@ export interface HandoverExportParams {
   handoverNote?: string
 }
 
-export interface HandoverFileInfo {
+export interface HandoverFileEntry {
   filename: string
   relative_path: string
   category: string | null
@@ -28,8 +28,29 @@ export interface HandoverFileInfo {
   content_extracted: string | null
   signature_status: string
   ai_summary: string | null
-  ai_key_info: any
+  ai_key_info: Record<string, unknown> | null
 }
+
+export interface HandoverJSON {
+  format_version: string
+  type: string
+  project: {
+    name: string
+    category_type: string
+    current_stage: string
+    created_at: string
+    milestones: unknown[]
+    metadata: Record<string, unknown>
+  }
+  files: HandoverFileEntry[]
+  handover_note: string
+  exported_at: string
+  exported_by: string
+  milestones?: unknown[]
+  metadata?: Record<string, unknown>
+}
+
+export interface HandoverFileInfo extends HandoverFileEntry {}
 
 export class HandoverService {
   static async exportHandover(params: HandoverExportParams): Promise<Buffer> {
@@ -100,7 +121,7 @@ export class HandoverService {
     return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
   }
 
-  static async previewHandover(zipPath: string): Promise<any> {
+  static async previewHandover(zipPath: string): Promise<HandoverJSON> {
     const zipData = await fs.readFile(zipPath)
     const zip = await JSZip.loadAsync(zipData)
     const handoverJSONFile = zip.file('handover.json')
