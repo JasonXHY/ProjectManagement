@@ -283,7 +283,7 @@ export function registerAIHandlers() {
           } catch (e) {
             console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
           }
-        }).catch(() => {})
+        }).catch(err => console.warn('[结构化提取] 异步失败:', err.message))
       }
 
       // 移动文件到对应分类文件夹（与file:upload保持一致）

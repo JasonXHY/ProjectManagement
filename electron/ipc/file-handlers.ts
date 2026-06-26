@@ -240,7 +240,7 @@ export function registerFileHandlers() {
               } catch (e) {
                 console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
               }
-            }).catch(() => {})
+            }).catch(err => console.warn('[结构化提取] 异步失败:', err.message))
           }
         }).catch(err => {
           console.error('[AI分类] 分类失败:', err.message)
