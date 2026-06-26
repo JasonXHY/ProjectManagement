@@ -99,7 +99,7 @@ function detectSignatureAsync(fileId: number, filePath: string, safeName: string
     SignatureDetector.detectSignature(filePath).then(hasSignature => {
       if (hasSignature) {
         updateFile(fileId, { has_signature: true })
-        console.log(`[签字检测] 文件 "${safeName}" 检测到签字`)
+        console.warn(`[签字检测] 文件 "${safeName}" 检测到签字`)
       }
     }).catch(err => {
       console.warn('[签字检测] 检测失败:', (err as Error).message)
@@ -186,7 +186,7 @@ function classifyAndMoveFile(
         ai_summary: summary ?? null,
         ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
       })
-      console.log(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}${sanitizedSub ? '/' + sanitizedSub : ''}"`)
+      console.warn(`[AI分类] 文件 "${safeName}" 被分类到 "${sanitizedCategory}${sanitizedSub ? '/' + sanitizedSub : ''}"`)
 
       if (stage) {
         const latestProject = getProject(projectId)
@@ -230,7 +230,7 @@ function moveFileToCategory(
     }
     await fs.rename(filePath, targetPath)
     updateFile(fileId, { category, stored_path: targetPath })
-    console.log(`[分类] 文件 "${safeName}" 移入 "${category}"（文件名推断）`)
+    console.warn(`[分类] 文件 "${safeName}" 移入 "${category}"（文件名推断）`)
   }).catch(err => {
     console.error('[分类] 文件移动失败:', err)
     updateFile(fileId, { category })
