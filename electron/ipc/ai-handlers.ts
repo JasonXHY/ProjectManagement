@@ -12,15 +12,9 @@ import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
 import { getAllSettings } from '../database/settings'
 import { handleClassify } from './handlers/classify'
+import { ROLE_HINT } from '../constants/ai'
 import fs from 'fs/promises'
 import path from 'path'
-
-const ROLE_HINT: Record<string, string> = {
-  pm: '你面向项目经理，关注进度、风险、里程碑。',
-  developer: '你面向开发工程师，关注技术方案与接口文档。',
-  pre_sales: '你面向售前，关注报价、方案、客户需求。',
-  customer_success: '你面向客户成功，关注验收、交接、签字完整性。',
-}
 
 export function registerAIHandlers() {
   // 进度回传通道 - 用于批量分类时发送进度

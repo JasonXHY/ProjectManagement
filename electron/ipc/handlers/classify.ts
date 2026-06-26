@@ -7,15 +7,9 @@ import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT } from '../../prompts/c
 import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
 import { getAllSettings } from '../../database/settings'
+import { ROLE_HINT } from '../../constants/ai'
 import fs from 'fs/promises'
 import path from 'path'
-
-const ROLE_HINT: Record<string, string> = {
-  pm: '你面向项目经理，关注进度、风险、里程碑。',
-  developer: '你面向开发工程师，关注技术方案与接口文档。',
-  pre_sales: '你面向售前，关注报价、方案、客户需求。',
-  customer_success: '你面向客户成功，关注验收、交接、签字完整性。',
-}
 
 export interface ClassifyResult {
   category: string
@@ -160,7 +154,7 @@ async function moveFileToCategory(
     if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
       console.error('[AI分类] 路径安全校验失败，category/subcategory可能包含路径穿越:', category, subcategory)
       fileDb.updateFile(fileId, { category: '未分类', subcategory: null, content_extracted: content })
-      return { success: true }
+      return { success: true, data: { category: '未分类', subcategory: null, stage: null, summary } }
     }
 
     await fs.mkdir(targetDir, { recursive: true })
