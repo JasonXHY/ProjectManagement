@@ -7,17 +7,14 @@ import { getDatabase, saveDatabase } from '../database'
 import { resolveProjectPath, resolveProjectPathForProject } from '../utils/project-path'
 import { validateRequired, validateType, validateProjectExists, validateFileExists, validateNumberArray } from '../utils/validators'
 import { handleIpcError } from '../utils/errors'
-import { parseClassifyResponse } from '../utils/ai-response'
-import { CLASSIFY_PROMPT_STAGES, CLASSIFY_PROMPT_CONTENT, EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
-import { EXTRACT_STRUCTURED_PROMPT } from '../prompts/extract-structured'
-import { mergeStructuredData } from '../utils/structured-merge'
+import { EXTRACT_KEY_INFO_PROMPT, EXTRACT_MILESTONES_PROMPT } from '../prompts/classify'
 import { ANALYZE_SYSTEM_PROMPT } from '../prompts/analyze'
 import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
 import { getAllSettings } from '../database/settings'
+import { handleClassify } from './handlers/classify'
 import fs from 'fs/promises'
 import path from 'path'
 
-// 角色差异化Prompt
 const ROLE_HINT: Record<string, string> = {
   pm: '你面向项目经理，关注进度、风险、里程碑。',
   developer: '你面向开发工程师，关注技术方案与接口文档。',
@@ -131,17 +128,17 @@ export function registerAIHandlers() {
     if (!fileIdValidation.valid) {
       return { success: false, error: fileIdValidation.error }
     }
-    
+
     const fileIdTypeValidation = validateType(fileId, 'number', 'fileId')
     if (!fileIdTypeValidation.valid) {
       return { success: false, error: fileIdTypeValidation.error }
     }
-    
+
     const existsValidation = validateFileExists(fileId)
     if (!existsValidation.valid) {
       return { success: false, error: existsValidation.error }
     }
-    
+
     if (categoryType) {
       if (categoryType !== 'stage' && categoryType !== 'content') {
         return { success: false, error: 'categoryType 必须是 "stage" 或 "content"' }
@@ -149,196 +146,7 @@ export function registerAIHandlers() {
     }
 
     try {
-      const file = fileDb.getFileById(fileId)
-
-      if (!file) {
-        return { success: false, error: '文件不存在' }
-      }
-
-      // 文件名启发式预判
-      const filename = file.filename.toLowerCase()
-      const filenameHints: { category: string; subcategory: string } | null = () => {
-        // 蓝图文件识别
-        if (filename.includes('蓝图') || filename.includes('业务蓝图')) {
-          return { category: '方案', subcategory: '蓝图' }
-        }
-        // 开发规格说明书识别
-        if (filename.includes('开发规格') || filename.includes('技术规格') || filename.includes('接口文档')) {
-          return { category: '方案', subcategory: '开发规格说明书' }
-        }
-        // 操作手册识别
-        if (filename.includes('操作手册') || filename.includes('用户手册')) {
-          return { category: '上线', subcategory: '操作手册' }
-        }
-        // 测试报告识别
-        if (filename.includes('测试报告') || filename.includes('测试用例')) {
-          return { category: '测试', subcategory: '测试报告' }
-        }
-        return null
-      }()
-
-      // 读取文件内容
-      let content = file.content_extracted
-      if (!content) {
-        content = await fs.readFile(file.stored_path, 'utf-8').catch(() => '')
-      }
-
-      // 根据分类方式选择 prompt（优先使用用户自定义的）
-      const settings = getAllSettings()
-      const role = settings.user_role || 'pm'
-      const roleHint = ROLE_HINT[role] || ''
-      let promptTemplate: string
-      if (categoryType === 'content') {
-        promptTemplate = settings.classify_prompt_content || CLASSIFY_PROMPT_CONTENT
-      } else {
-        promptTemplate = settings.classify_prompt_stages || CLASSIFY_PROMPT_STAGES
-      }
-      const classifyPrompt = promptTemplate.replace(/\{content\}/g, content)
-
-      // 调用AI分类（注入角色差异化Prompt）
-      const messages = [
-        { role: 'system' as const, content: roleHint },
-        { role: 'user' as const, content: classifyPrompt }
-      ]
-
-      const aiService = getAIService()
-      const response = await aiService.chat(messages)
-
-      let { category, subcategory, stage: fileStage, summary, keyInfo } = parseClassifyResponse(response.content)
-
-      // 使用文件名启发式修正分类结果
-      if (filenameHints) {
-        // 如果AI分类结果与文件名启发式不一致，优先使用文件名启发式
-        if (category !== filenameHints.category || subcategory !== filenameHints.subcategory) {
-          console.log(`[AI分类] 文件名启发式修正: ${category}/${subcategory} -> ${filenameHints.category}/${filenameHints.subcategory}`)
-          category = filenameHints.category
-          subcategory = filenameHints.subcategory
-        }
-      }
-
-      // 合并关键信息到项目 metadata
-      if (keyInfo) {
-        try {
-          const project = projectDb.getProject(file.project_id)
-          if (project) {
-            const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-            const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
-            for (const [key, value] of Object.entries(keyInfo)) {
-              if (typeof value === 'string' && value.trim()) {
-                mergedMetadata[key] = value.trim()
-              } else if (typeof value === 'number' && value > 0) {
-                mergedMetadata[key] = value
-              } else if (Array.isArray(value) && value.length > 0) {
-                mergedMetadata[key] = value
-              }
-            }
-            projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMetadata) })
-
-            // 同步写入 MD 文件
-            const infoProject = projectDb.getProject(file.project_id)
-            const projectPath = infoProject
-              ? await resolveProjectPathForProject(infoProject)
-              : await resolveProjectPath(file.project_id)
-            if (projectPath) {
-              const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-              const infoMd = `# 项目关键信息
-
-| 字段 | 值 |
-|------|-----|
-| 项目编号 | ${mergedMetadata.project_code || '-'} |
-| 合同号 | ${mergedMetadata.contract_no || '-'} |
-| 客户联系人 | ${mergedMetadata.contact_person || '-'} |
-| 联系电话 | ${mergedMetadata.contact_phone || '-'} |
-| 客户地址 | ${mergedMetadata.customer_address || '-'} |
-| 项目名称 | ${mergedMetadata.project_name || '-'} |
-| 客户名称 | ${mergedMetadata.customer_name || '-'} |
-| 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
-`
-              await fs.mkdir(path.dirname(infoPath), { recursive: true })
-              await fs.writeFile(infoPath, infoMd, 'utf-8')
-            }
-          }
-        } catch (err) {
-          console.error('[AI] 关键信息保存失败:', err)
-        }
-      }
-
-      // 异步结构化提取（需求/问题/商机）
-      if (content) {
-        const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
-          .replace('{category}', category)
-          .replace('{content}', content)
-        aiService.chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
-          try {
-            const structJson = structResult.content.match(/\{[\s\S]*\}/)
-            if (structJson) {
-              const structuredData = JSON.parse(structJson[0])
-              const projectData = projectDb.getProject(file.project_id)
-              if (projectData) {
-                const existingMeta = projectData.metadata ? JSON.parse(projectData.metadata) : {}
-                const mergedMeta = mergeStructuredData(existingMeta, structuredData)
-                projectDb.updateProject(file.project_id, { metadata: JSON.stringify(mergedMeta) })
-              }
-            }
-          } catch (e) {
-            console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
-          }
-        }).catch(err => console.warn('[结构化提取] 异步失败:', err.message))
-      }
-
-      // 移动文件到对应分类文件夹（与file:upload保持一致）
-      const moveProject = projectDb.getProject(file.project_id)
-      if (moveProject) {
-        const projectPath = await resolveProjectPathForProject(moveProject)
-        if (projectPath) {
-          try {
-            // 目标目录为「阶段/子分类」两级结构（v3.1）；无子分类时退化为阶段级
-            const targetDir = subcategory
-              ? path.join(projectPath, category, subcategory)
-              : path.join(projectPath, category)
-            const resolvedTarget = path.resolve(targetDir)
-
-            // 路径安全校验：确保目标目录在项目目录内
-            if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
-              console.error('[AI分类] 路径安全校验失败，category/subcategory可能包含路径穿越:', category, subcategory)
-              fileDb.updateFile(fileId, { category: '未分类', subcategory: null, content_extracted: content })
-              return { success: true, data: { category: '未分类', subcategory: null, stage: null, summary } }
-            }
-
-            await fs.mkdir(targetDir, { recursive: true })
-            const targetPath = path.join(targetDir, path.basename(file.stored_path))
-            await fs.rename(file.stored_path, targetPath)
-
-            // 文件移动成功后，更新数据库（一次性更新 category、subcategory、stored_path、content_extracted 和 AI 分析结果）
-            fileDb.updateFile(fileId, {
-              category, subcategory, stored_path: targetPath, content_extracted: content,
-              stage: fileStage ?? null,
-              ai_summary: summary ?? null,
-              ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
-            })
-          } catch (err) {
-            // 文件移动失败，不更新分类信息，返回错误
-            console.error('[AI分类] 文件移动失败:', err)
-            return { success: false, error: '文件移动失败，分类未应用', code: 'MOVE_FAILED' }
-          }
-        } else {
-          fileDb.updateFile(fileId, {
-            category, subcategory, content_extracted: content,
-            stage: fileStage ?? null,
-            ai_summary: summary ?? null,
-            ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
-          })
-        }
-      } else {
-        fileDb.updateFile(fileId, {
-          category, subcategory, content_extracted: content,
-          stage: fileStage ?? null,
-          ai_summary: summary ?? null,
-          ai_key_info: keyInfo ? JSON.stringify(keyInfo) : null,
-        })
-      }
-
-      return { success: true, data: { category, subcategory, stage: fileStage, summary } }
+      return await handleClassify(fileId, categoryType)
     } catch (error) {
       console.error('[AI] 分类失败:', error)
       return handleIpcError(error)
