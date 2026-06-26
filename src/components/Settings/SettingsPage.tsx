@@ -43,11 +43,7 @@ import {
   getFullApiUrl,
   type AIModel,
 } from "@shared/model-registry";
-
-/** SettingsPage 组件属性 */
-interface SettingsPageProps {
-  onBack: () => void;
-}
+import { FILE_CLASSIFICATION_STAGES } from "../../../electron/shared/stages";
 
 const providerList = getProviderList()
 
@@ -55,7 +51,7 @@ const providerList = getProviderList()
  * 设置页面
  * 包含AI模型配置和文件提取配置
  */
-export default function SettingsPage({ onBack: _onBack }: SettingsPageProps) {
+export default function SettingsPage() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -64,7 +60,7 @@ export default function SettingsPage({ onBack: _onBack }: SettingsPageProps) {
   const [isBuiltinApiKey, setIsBuiltinApiKey] = useState(false);
   const [isCustomKeyMode, setIsCustomKeyMode] = useState(false);
   const [builtinKeySnapshot, setBuiltinKeySnapshot] = useState('');
-  const defaultStages = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'];
+  const defaultStages = FILE_CLASSIFICATION_STAGES;
   const [customStages, setCustomStages] = useState<string[]>(defaultStages);
   const [newStageName, setNewStageName] = useState('');
   const [subcategoryMap, setSubcategoryMap] = useState<SubcategoryMap>(getDefaultSubcategoryMap());

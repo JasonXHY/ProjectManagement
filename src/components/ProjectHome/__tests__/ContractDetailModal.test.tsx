@@ -54,14 +54,14 @@ describe('ContractDetailModal', () => {
   it('shows total contract amount', () => {
     render(<ContractDetailModal open={true} onClose={vi.fn()} project={mockProject} />)
 
-    expect(screen.getByText('¥100.00万')).toBeInTheDocument()
+    expect(screen.getByText('¥1,000,000.00')).toBeInTheDocument()
   })
 
   it('shows confirmed income', () => {
     render(<ContractDetailModal open={true} onClose={vi.fn()} project={mockProject} />)
 
     expect(screen.getByText('已确认收入')).toBeInTheDocument()
-    const amounts = screen.getAllByText('¥50.00万')
+    const amounts = screen.getAllByText('¥500,000.00')
     expect(amounts.length).toBeGreaterThanOrEqual(1)
   })
 

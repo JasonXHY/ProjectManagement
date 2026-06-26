@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal, Input, Select, Button, Divider } from 'antd'
 import { calculateProfit, INTERNAL_UNIT_PRICES, ProfitResult } from './ProfitCalculator'
+import { formatAmount, formatPercent } from '../../utils/format'
 
 interface ProfitCalculatorModalProps {
   open: boolean
@@ -54,14 +55,6 @@ const levelOptions: Record<string, { label: string; value: string }[]> = {
     { label: '服务1-1 (¥1060)', value: '服务1-1' },
     { label: '服务1-2 (¥1200)', value: '服务1-2' },
   ],
-}
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString()}`
-}
-
-function formatPercent(rate: number): string {
-  return `${(rate * 100).toFixed(2)}%`
 }
 
 export default function ProfitCalculatorModal({ open, onClose, projectId }: ProfitCalculatorModalProps) {

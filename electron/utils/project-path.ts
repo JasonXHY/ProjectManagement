@@ -69,7 +69,7 @@ export async function resolveProjectPath(projectId: number, folderUuid?: string 
 
   // 先检查projects目录是否存在
   try {
-    await fs.access(projectsRoot)
+    await fs.stat(projectsRoot)
   } catch {
     // 目录不存在，创建它
     await fs.mkdir(projectsRoot, { recursive: true })
@@ -120,7 +120,7 @@ export async function resolveProjectPathByName(projectName: string): Promise<str
   const projectsRoot = getProjectsRoot()
 
   try {
-    await fs.access(projectsRoot)
+    await fs.stat(projectsRoot)
   } catch {
     return null
   }

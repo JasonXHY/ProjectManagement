@@ -1,6 +1,6 @@
-import { Project } from '../../../types'
+import { Project, FileRecord } from '../../../types'
 
-interface Props { project: Project; allFiles: any[] }
+interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function ProjectInfoPlaceholderCard({ project }: Props) {
   const meta = project.metadata ? JSON.parse(project.metadata) : {}

@@ -2,6 +2,7 @@ import initSqlJs, { Database } from 'sql.js'
 import path from 'path'
 import fs from 'fs'
 import { app } from 'electron'
+import { logger } from '../utils/errors'
 
 let db: Database
 let dbPath: string
@@ -141,7 +142,7 @@ export async function initDatabase(): Promise<Database> {
 
     if (migrated) {
       saveDatabase()
-      console.log('阶段数据迁移完成')
+      logger.info('database', '阶段数据迁移完成')
     }
   } catch (error) {
     console.error('迁移阶段数据失败:', error)
@@ -218,7 +219,7 @@ export async function initDatabase(): Promise<Database> {
         const id = row[0] as number
         const uuid = uuidv4()
         db.run('UPDATE projects SET folder_uuid = ? WHERE id = ?', [uuid, id])
-        console.log(`[迁移] 项目#${id} 生成 UUID: ${uuid}`)
+        logger.info('database', `迁移 项目#${id} 生成 UUID: ${uuid}`)
       }
       saveDatabase()
     }
@@ -241,7 +242,7 @@ export async function initDatabase(): Promise<Database> {
         if (stage && !VALID_STAGES.includes(stage as string)) {
           const newStage = STAGE_MIGRATION[stage as string] || '售前'
           db.run('UPDATE projects SET current_stage = ? WHERE id = ?', [newStage, id])
-          console.log(`[迁移] 项目#${id} 阶段 "${stage}" → "${newStage}"`)
+          logger.info('database', `迁移 项目#${id} 阶段 "${stage}" → "${newStage}"`)
         }
       }
       saveDatabase()

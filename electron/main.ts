@@ -40,10 +40,10 @@ function createWindow() {
   })
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:1234')
+    const devPort = process.env.VITE_DEV_PORT || '1234'
+    mainWindow.loadURL(`http://localhost:${devPort}`)
   } else {
     const indexPath = path.join(__dirname, '../../dist/index.html')
-    console.log('Loading index from:', indexPath)
     mainWindow.loadFile(indexPath)
   }
 
@@ -67,9 +67,10 @@ function createWindow() {
 }
 
 function setupSecurityHeaders() {
+  const devPort = process.env.VITE_DEV_PORT || '1234'
   // 使用 isDev 判断，打包后的应用会启用CSP
   const csp = isDev
-    ? "default-src 'self' http://localhost:1234 'unsafe-inline'; connect-src 'self' ws://localhost:1234 https:"
+    ? `default-src 'self' http://localhost:${devPort} 'unsafe-inline'; connect-src 'self' ws://localhost:${devPort} https:`
     : [
         "default-src 'self'",
         "script-src 'self'",

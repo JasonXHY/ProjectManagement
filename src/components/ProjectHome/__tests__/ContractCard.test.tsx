@@ -54,7 +54,7 @@ describe('ContractCard', () => {
     render(<ContractCard project={mockProject} allFiles={mockFiles} />)
 
     expect(screen.getByText('合同概览')).toBeInTheDocument()
-    expect(screen.getByText('¥100.00万')).toBeInTheDocument()
+    expect(screen.getByText('¥1,000,000.00')).toBeInTheDocument()
   })
 
   it('renders contract items breakdown', () => {
@@ -70,7 +70,7 @@ describe('ContractCard', () => {
 
     const confirmed = screen.getAllByText(/已确认/)
     expect(confirmed.length).toBeGreaterThanOrEqual(1)
-    const amounts = screen.getAllByText(/50.00万/)
+    const amounts = screen.getAllByText(/500,000/)
     expect(amounts.length).toBeGreaterThanOrEqual(1)
   })
 

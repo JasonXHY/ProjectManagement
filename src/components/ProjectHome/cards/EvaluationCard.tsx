@@ -1,19 +1,9 @@
 import { useState } from 'react'
 import { Project, FileRecord } from '../../../types'
 import ProfitCalculatorModal from '../ProfitCalculatorModal'
+import { formatAmount, formatPercent } from '../../../utils/format'
 
-interface Props { project: Project; allFiles: FileRecord[] }
-
-function formatAmount(amount: number): string {
-  if (amount >= 10000) {
-    return `¥${(amount / 10000).toFixed(2)}万`
-  }
-  return `¥${amount.toLocaleString()}`
-}
-
-function formatPercent(rate: number): string {
-  return `${(rate * 100).toFixed(2)}%`
-}
+interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function EvaluationCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)

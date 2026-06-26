@@ -1,17 +1,11 @@
 import { useState } from 'react'
 import { Project, FileRecord, Milestone } from '../../../types'
 import ContractDetailModal from '../ContractDetailModal'
+import { formatAmount } from '../../../utils/format'
 
-interface Props { project: Project; allFiles: FileRecord[] }
+interface Props { project: Project; allFiles?: FileRecord[] }
 
-function formatAmount(amount: number): string {
-  if (amount >= 10000) {
-    return `¥${(amount / 10000).toFixed(2)}万`
-  }
-  return `¥${amount.toLocaleString()}`
-}
-
-export default function ContractCard({ project, allFiles }: Props) {
+export default function ContractCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const meta = project.metadata ? JSON.parse(project.metadata) : {}
   const contractAmount = meta.contract_amount || 0

@@ -26,8 +26,8 @@ describe('EvaluationCard', () => {
     render(<EvaluationCard project={mockProject} allFiles={[]} />)
 
     expect(screen.getByText('项目评估')).toBeInTheDocument()
-    expect(screen.getByText('¥100.00万')).toBeInTheDocument()
-    expect(screen.getByText('¥60.00万')).toBeInTheDocument()
+    expect(screen.getByText('¥1,000,000.00')).toBeInTheDocument()
+    expect(screen.getByText('¥600,000.00')).toBeInTheDocument()
     expect(screen.getByText('40.00%')).toBeInTheDocument()
     expect(screen.getByText('100天')).toBeInTheDocument()
   })
@@ -90,8 +90,8 @@ describe('EvaluationCard', () => {
 
     render(<EvaluationCard project={evalProject} allFiles={[]} />)
 
-    expect(screen.getByText('¥200.00万')).toBeInTheDocument()
-    expect(screen.getByText('¥80.00万')).toBeInTheDocument()
+    expect(screen.getByText('¥2,000,000.00')).toBeInTheDocument()
+    expect(screen.getByText('¥800,000.00')).toBeInTheDocument()
     expect(screen.getByText('60.00%')).toBeInTheDocument()
   })
 })

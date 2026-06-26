@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Project, FileRecord } from '../../../types'
 import RequirementDetailModal from '../RequirementDetailModal'
 
-interface Props { project: Project; allFiles: FileRecord[] }
+interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function RequirementCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)

@@ -174,10 +174,13 @@ function classifyAndMoveFile(
         : path.join(projectPath, sanitizedCategory)
       await fs.mkdir(targetDir, { recursive: true })
       let targetPath = path.join(targetDir, safeName)
-      if (await fs.access(targetPath).then(() => true).catch(() => false)) {
+      try {
+        await fs.stat(targetPath)
         const ext = path.extname(safeName)
         const base = path.basename(safeName, ext)
         targetPath = path.join(targetDir, `${base}_${Date.now()}${ext}`)
+      } catch {
+        // file doesn't exist, use original path
       }
       await fs.rename(filePath, targetPath)
 
@@ -219,9 +222,14 @@ function moveFileToCategory(
   projectPath: string, category: string
 ): void {
   const targetDir = path.join(projectPath, category)
-  fs.mkdir(targetDir, { recursive: true }).then(() => {
-    return fs.access(path.join(targetDir, safeName)).then(() => true).catch(() => false)
-  }).then(async (exists) => {
+  fs.mkdir(targetDir, { recursive: true }).then(async () => {
+    let exists = false
+    try {
+      await fs.stat(path.join(targetDir, safeName))
+      exists = true
+    } catch {
+      // file doesn't exist
+    }
     let targetPath = path.join(targetDir, safeName)
     if (exists) {
       const ext = path.extname(safeName)

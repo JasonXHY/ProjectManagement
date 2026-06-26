@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react'
 import { Modal, Tag } from 'antd'
 import { StarFilled } from '@ant-design/icons'
 import { Milestone } from '../../types'
+import { formatAmount } from '../../utils/format'
 
 interface MilestoneModalProps {
   open: boolean
@@ -16,13 +17,6 @@ function formatDate(dateStr: string): string {
   return `${m}-${day}`
 }
 
-function formatAmount(amount: number): string {
-  if (amount >= 10000) {
-    return `${(amount / 10000).toFixed(1)}万`
-  }
-  return `${amount.toLocaleString()}`
-}
-
 function isKeyMilestone(title: string): boolean {
   return title.includes('合同') || title.includes('上线') || title.includes('验收')
 }
@@ -35,8 +29,8 @@ function getStatus(dateStr: string, nextIndex: number, index: number): 'done' | 
   return 'pending'
 }
 
-// 阶段分组顺序
-const CATEGORY_ORDER = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭']
+// 阶段分组顺序（单一数据源：stages.ts）
+import { FILE_CLASSIFICATION_STAGES } from '../../../electron/shared/stages'
 
 const MilestoneModal = memo(function MilestoneModal({
   open,
@@ -67,14 +61,14 @@ const MilestoneModal = memo(function MilestoneModal({
     })
     // 按阶段顺序排序
     const orderedGroups: { category: string; items: Milestone[] }[] = []
-    CATEGORY_ORDER.forEach(cat => {
+    FILE_CLASSIFICATION_STAGES.forEach(cat => {
       if (groups[cat]) {
         orderedGroups.push({ category: cat, items: groups[cat] })
       }
     })
     // 添加未在预定义顺序中的阶段
     Object.keys(groups).forEach(cat => {
-      if (!CATEGORY_ORDER.includes(cat)) {
+      if (!FILE_CLASSIFICATION_STAGES.includes(cat)) {
         orderedGroups.push({ category: cat, items: groups[cat] })
       }
     })

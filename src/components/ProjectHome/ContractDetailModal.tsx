@@ -1,18 +1,12 @@
 import { memo } from 'react'
 import { Modal } from 'antd'
 import { Project, Milestone } from '../../types'
+import { formatAmount } from '../../utils/format'
 
 interface ContractDetailModalProps {
   open: boolean
   onClose: () => void
   project: Project
-}
-
-function formatAmount(amount: number): string {
-  if (amount >= 10000) {
-    return `¥${(amount / 10000).toFixed(2)}万`
-  }
-  return `¥${amount.toLocaleString()}`
 }
 
 const ContractDetailModal = memo(function ContractDetailModal({

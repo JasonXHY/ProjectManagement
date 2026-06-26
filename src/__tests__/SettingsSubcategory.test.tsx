@@ -12,7 +12,7 @@ describe('SettingsPage 子分类管理', () => {
   })
 
   async function openStagesTab() {
-    render(<SettingsPage onBack={() => {}} />)
+    render(<SettingsPage />)
     await waitFor(() => expect(window.api.settings.get).toHaveBeenCalled())
     await userEvent.click(screen.getByText('文件分类管理'))
   }

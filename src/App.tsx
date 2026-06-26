@@ -308,7 +308,7 @@ function App() {
         )}
 
         {currentPage === "settings" && (
-          <SettingsPage onBack={handleBackFromSettings} />
+          <SettingsPage />
         )}
 
         {currentPage === "style-test" && import.meta.env.DEV && (
