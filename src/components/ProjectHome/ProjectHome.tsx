@@ -6,6 +6,7 @@ import {
   TagsOutlined,
   RocketOutlined,
   ShareAltOutlined,
+  StopOutlined,
 } from '@ant-design/icons'
 import { Project } from '../../types'
 import { fileService } from '../../services/fileService'
@@ -85,7 +86,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
         })()}
       />
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '24px' }}>
         <SummaryRow
           project={project}
           files={allFiles}
@@ -127,12 +128,22 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
                 一键分类({files.filter(f => !f.category).length})
               </Button>
               {batchClassifying && classifyProgress && (
-                <Progress
-                  percent={Math.round((classifyProgress.current / classifyProgress.total) * 100)}
-                  size="small"
-                  style={{ width: 120 }}
-                  format={() => `${classifyProgress.current}/${classifyProgress.total}`}
-                />
+                <>
+                  <Progress
+                    percent={Math.round((classifyProgress.current / classifyProgress.total) * 100)}
+                    size="small"
+                    style={{ width: 120 }}
+                    format={() => `${classifyProgress.current}/${classifyProgress.total}`}
+                  />
+                  <Button
+                    danger
+                    size="small"
+                    icon={<StopOutlined />}
+                    onClick={handleCancelBatchClassify}
+                  >
+                    取消
+                  </Button>
+                </>
               )}
               <Button
                 size="small"

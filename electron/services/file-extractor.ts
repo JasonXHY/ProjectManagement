@@ -4,6 +4,7 @@ import mammoth from 'mammoth'
 import ExcelJS from 'exceljs'
 import { PDFParse } from 'pdf-parse'
 import * as pdfjsLib from 'pdfjs-dist'
+import JSZip from 'jszip'
 
 declare global {
   class OffscreenCanvas extends EventTarget {
@@ -78,6 +79,9 @@ export class FileExtractor {
         case '.xls':
         case '.xlsx':
           return await this.extractExcel(filePath)
+        case '.ppt':
+        case '.pptx':
+          return await this.extractPptx(filePath)
         default:
           // 其它不支持的类型，返回null
           return null
@@ -181,6 +185,36 @@ export class FileExtractor {
     })
 
     return allText.join('\n\n')
+  }
+
+  /**
+   * 提取PowerPoint内容
+   * 使用jszip解包pptx，遍历slide XML提取文本
+   */
+  private static async extractPptx(filePath: string): Promise<string> {
+    const buffer = await fsPromises.readFile(filePath)
+    const zip = await JSZip.loadAsync(buffer)
+    const slides: string[] = []
+
+    const slideFiles = Object.keys(zip.files)
+      .filter(name => name.match(/^ppt\/slides\/slide\d+\.xml$/))
+      .sort()
+
+    for (const slideFile of slideFiles) {
+      const xml = await zip.file(slideFile)!.async('text')
+      const texts: string[] = []
+      const regex = /<a:t>([^<]*)<\/a:t>/g
+      let match
+      while ((match = regex.exec(xml)) !== null) {
+        const text = match[1].trim()
+        if (text) texts.push(text)
+      }
+      if (texts.length > 0) {
+        slides.push(texts.join(' '))
+      }
+    }
+
+    return slides.join('\n\n')
   }
 
   /**

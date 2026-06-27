@@ -8,6 +8,7 @@ import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
 import { getAllSettings } from '../../database/settings'
 import { ROLE_HINT } from '../../constants/ai'
+import { matchFilenameHints } from '../../constants/classify'
 import { sanitizeCategory } from '../../utils/sanitize'
 import fs from 'fs/promises'
 import path from 'path'
@@ -18,23 +19,6 @@ export interface ClassifyResult {
   stage: string | null
   summary: string | null
   keyInfo: Record<string, unknown> | null
-}
-
-function getFilenameHints(filename: string): { category: string; subcategory: string } | null {
-  const name = filename.toLowerCase()
-  if (name.includes('蓝图') || name.includes('业务蓝图')) {
-    return { category: '方案', subcategory: '蓝图' }
-  }
-  if (name.includes('开发规格') || name.includes('技术规格') || name.includes('接口文档')) {
-    return { category: '方案', subcategory: '开发规格说明书' }
-  }
-  if (name.includes('操作手册') || name.includes('用户手册')) {
-    return { category: '上线', subcategory: '操作手册' }
-  }
-  if (name.includes('测试报告') || name.includes('测试用例')) {
-    return { category: '测试', subcategory: '测试报告' }
-  }
-  return null
 }
 
 async function classifyWithAI(
@@ -176,18 +160,26 @@ async function moveFileToCategory(
   }
 }
 
+const MAX_STRUCTURED_CONTENT = 4000
+let metadataQueue: Promise<void> = Promise.resolve()
+
 function extractStructuredDataAsync(
   projectId: number,
   category: string,
   content: string
 ): void {
+  const truncatedContent = content.length > MAX_STRUCTURED_CONTENT
+    ? content.substring(0, MAX_STRUCTURED_CONTENT) + '\n...(内容截断)'
+    : content
+
   const aiService = getAIService()
   const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
     .replace('{category}', category)
-    .replace('{content}', content)
+    .replace('{content}', truncatedContent)
 
-  aiService.chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
+  metadataQueue = metadataQueue.then(async () => {
     try {
+      const structResult = await aiService.chat([{ role: 'user', content: structuredPrompt }])
       const structJson = structResult.content.match(/\{[\s\S]*\}/)
       if (structJson) {
         const structuredData = JSON.parse(structJson[0])
@@ -199,9 +191,9 @@ function extractStructuredDataAsync(
         }
       }
     } catch (e) {
-      console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
+      console.warn('[结构化提取] 失败:', (e as Error).message)
     }
-  }).catch(err => console.warn('[结构化提取] 异步失败:', err.message))
+  })
 }
 
 export async function handleClassify(
@@ -213,7 +205,7 @@ export async function handleClassify(
     return { success: false, error: '文件不存在' }
   }
 
-  const filenameHints = getFilenameHints(file.filename)
+  const filenameHints = matchFilenameHints(file.filename)
 
   let content = file.content_extracted
   if (!content) {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Table, Button, Popconfirm, Tag, Tooltip, message, MenuProps, Dropdown } from 'antd'
 import {
   RobotOutlined,
@@ -37,6 +37,7 @@ export default function FileListTable({
   onUpload,
   selectedCategory,
 }: FileListTableProps) {
+  const [pageSize, setPageSize] = useState(10)
   const columns = useMemo(() => [
     {
       title: '文件名',
@@ -275,9 +276,10 @@ export default function FileListTable({
           onChange: (keys) => onSelectionChange(keys),
         }}
         pagination={{
-          pageSize: 10,
+          pageSize,
           showSizeChanger: true,
           showTotal: (total) => `共 ${total} 个文件`,
+          onChange: (_page, size) => setPageSize(size),
         }}
         locale={{
           emptyText: (
