@@ -15,6 +15,7 @@ import EmptyState from '../common/EmptyState'
 interface FileListTableProps {
   files: FileRecord[]
   classifying: number | null
+  loading?: boolean
   onClassify: (fileId: number) => void
   onDelete: (id: number) => void
   onStageChange: (fileId: number, newStage: string, subcategory?: string | null) => void
@@ -27,6 +28,7 @@ interface FileListTableProps {
 export default function FileListTable({
   files,
   classifying,
+  loading = false,
   onClassify,
   onDelete,
   onStageChange,
@@ -267,6 +269,7 @@ export default function FileListTable({
         columns={columns}
         dataSource={files}
         rowKey="id"
+        loading={loading}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => onSelectionChange(keys),

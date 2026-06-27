@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Modal, Button, Input, Space } from 'antd'
+import { Modal, Button, Input, Space, message } from 'antd'
 import {
   FolderOutlined,
   SettingOutlined,
@@ -30,7 +30,7 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
         }
       }
     } catch (error) {
-      console.error('检查首次启动状态失败:', error)
+      message.error('检查首次启动状态失败')
     }
   }
 
@@ -41,7 +41,7 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
         setStoragePath(result.data)
       }
     } catch (error) {
-      console.error('浏览文件夹失败:', error)
+      message.error('浏览文件夹失败')
     }
   }
 
@@ -53,7 +53,7 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
       }
       setStep(2)
     } catch (error) {
-      console.error('保存存储路径失败:', error)
+      message.error('保存存储路径失败')
       setStep(2)
     } finally {
       setLoading(false)
@@ -77,7 +77,7 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
       })
       setVisible(false)
     } catch (error) {
-      console.error('更新设置失败:', error)
+      message.error('更新设置失败')
       setVisible(false)
     } finally {
       setLoading(false)
@@ -94,7 +94,7 @@ export default function BetaNoticeModal({ onNavigate }: BetaNoticeModalProps) {
       setVisible(false)
       onNavigate?.('settings')
     } catch (error) {
-      console.error('更新设置失败:', error)
+      message.error('更新设置失败')
       setVisible(false)
       onNavigate?.('settings')
     } finally {

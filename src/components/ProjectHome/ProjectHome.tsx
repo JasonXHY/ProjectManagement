@@ -30,6 +30,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
   const {
     files,
     allFiles,
+    filesLoading,
     selectedCategory,
     setSelectedCategory,
     classifying,
@@ -37,6 +38,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
     summaryVisible,
     setSummaryVisible,
     summaryContent,
+    analyzing,
     selectedRowKeys,
     setSelectedRowKeys,
     classifyProgress,
@@ -72,12 +74,22 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
         onSelectCategory={setSelectedCategory}
         onUpload={handleUpload}
         onOpenFolder={handleOpenFolder}
+        customStages={(() => {
+          if (!project.custom_stages) return undefined
+          try {
+            const parsed = JSON.parse(project.custom_stages)
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed : undefined
+          } catch {
+            return undefined
+          }
+        })()}
       />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
         <SummaryRow
           project={project}
           files={allFiles}
+          analyzing={analyzing}
           onViewSummary={handleViewSummary}
           onGenerateSummary={handleGenerateSummary}
         />
@@ -149,6 +161,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
           <FileListTable
             files={files}
             classifying={classifying}
+            loading={filesLoading}
             onClassify={handleClassify}
             onDelete={handleDelete}
             onStageChange={handleStageChange}

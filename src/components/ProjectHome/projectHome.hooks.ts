@@ -15,6 +15,7 @@ function getHighestStage(current: string | null, existing: string | null): strin
 
 export function useProjectHome(project: Project, onProjectUpdated?: (project: Project) => void) {
   const [allFiles, setAllFiles] = useState<FileRecord[]>([])
+  const [filesLoading, setFilesLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string | null>('所有文件')
   const [classifying, setClassifying] = useState<number | null>(null)
   const [batchClassifying, setBatchClassifying] = useState(false)
@@ -53,9 +54,14 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
   }, [project.id])
 
   const loadFiles = useCallback(async () => {
-    const allResult = await fileService.list(project.id)
-    if (allResult.success && allResult.data) {
-      setAllFiles(allResult.data)
+    setFilesLoading(true)
+    try {
+      const allResult = await fileService.list(project.id)
+      if (allResult.success && allResult.data) {
+        setAllFiles(allResult.data)
+      }
+    } finally {
+      setFilesLoading(false)
     }
   }, [project.id])
 
@@ -443,6 +449,7 @@ export function useProjectHome(project: Project, onProjectUpdated?: (project: Pr
   return {
     files,
     allFiles,
+    filesLoading,
     selectedCategory,
     setSelectedCategory,
     classifying,

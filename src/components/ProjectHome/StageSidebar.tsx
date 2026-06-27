@@ -42,6 +42,7 @@ interface StageSidebarProps {
   onSelectCategory: (category: string) => void
   onUpload: (file: File) => void
   onOpenFolder?: () => void
+  customStages?: string[]
 }
 
 /**
@@ -52,13 +53,17 @@ interface StageSidebarProps {
  * - 折叠时只显示图标，悬停显示Tooltip提示阶段名称
  * - 默认展开，点击按钮切换
  */
-export default function StageSidebar({ files, selectedCategory, onSelectCategory, onUpload, onOpenFolder }: StageSidebarProps) {
+export default function StageSidebar({ files, selectedCategory, onSelectCategory, onUpload, onOpenFolder, customStages }: StageSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const uncategorizedCount = files.filter(f => !f.category || f.category === '未分类').length
 
+  const stagesToShow = customStages && customStages.length > 0
+    ? customStages.map(name => ({ name, subcategories: [] }))
+    : STAGE_DEFINITIONS
+
   const stageItems = [
     { key: '所有文件', icon: <AppstoreOutlined />, label: '所有文件', count: files.length },
-    ...STAGE_DEFINITIONS.map(s => ({
+    ...stagesToShow.map(s => ({
       key: s.name,
       icon: STAGE_ICONS[s.name] || <FolderOutlined />,
       label: s.name,

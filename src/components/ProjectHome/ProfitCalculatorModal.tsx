@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal, Input, Select, Button, Divider } from 'antd'
+import { Modal, Input, Select, Button, Divider, message } from 'antd'
 import { calculateProfit, INTERNAL_UNIT_PRICES, ProfitResult } from './ProfitCalculator'
 import { formatAmount, formatPercent } from '../../utils/format'
 import { parseMetadata } from '../../utils/metadata'
@@ -114,7 +114,7 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
           metadata: JSON.stringify(mergedMeta),
         })
       } catch (err) {
-        console.error('[利润测算] 保存失败:', err)
+        message.error('保存利润测算失败')
       }
     }
   }

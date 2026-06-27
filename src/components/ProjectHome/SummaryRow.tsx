@@ -5,6 +5,7 @@ import MilestoneModal from './MilestoneModal'
 interface SummaryRowProps {
   project: Project
   files: FileRecord[]
+  analyzing?: boolean
   onViewSummary?: () => void
   onGenerateSummary?: () => void
 }
@@ -23,7 +24,7 @@ function formatDate(dateStr: string): string {
   return `${m}-${day}`
 }
 
-export default function SummaryRow({ project, files, onViewSummary, onGenerateSummary }: SummaryRowProps) {
+export default function SummaryRow({ project, files, analyzing = false, onViewSummary, onGenerateSummary }: SummaryRowProps) {
   const [milestoneOpen, setMilestoneOpen] = useState(false)
   const fileCount = files.length
   const pendingCount = files.filter(f => !f.is_analyzed).length
@@ -109,8 +110,14 @@ export default function SummaryRow({ project, files, onViewSummary, onGenerateSu
             <span className="summary-card-label">AI 摘要</span>
           </div>
           <div className="summary-card-action">
-            {onViewSummary && <button className="btn btn-secondary btn-sm" type="button" onClick={onViewSummary}>查看摘要</button>}
-            {onGenerateSummary && <button className="btn btn-primary btn-sm" type="button" onClick={onGenerateSummary}>生成/更新</button>}
+            {analyzing ? (
+              <span style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>分析中...</span>
+            ) : (
+              <>
+                {onViewSummary && <button className="btn btn-secondary btn-sm" type="button" onClick={onViewSummary}>查看摘要</button>}
+                {onGenerateSummary && <button className="btn btn-primary btn-sm" type="button" onClick={onGenerateSummary}>生成/更新</button>}
+              </>
+            )}
           </div>
         </div>
       </div>

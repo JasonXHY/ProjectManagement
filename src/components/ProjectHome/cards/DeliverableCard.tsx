@@ -14,33 +14,41 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 
 // 交付物识别规则：基于文件分类阶段和子分类
 const DELIVERABLE_RULES = {
-  // 阶段 + 子分类组合
-  stages: ['上线', '验收', '关闭'],
-  subcategories: ['操作手册', '测试报告', '方案文档', '蓝图', '部署文档', '交接文档', '培训资料'],
-  // 文件名关键词
-  filenameKeywords: ['操作手册', '用户手册', '测试报告', '蓝图', '部署文档', '交接文档', '培训资料', '方案'],
+  stages: ['方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'],
+  subcategories: [
+    '蓝图', '开发规格说明书',
+    '开发文档', '接口文档', '配置文档',
+    '测试用例', '测试报告',
+    '部署文档', '操作手册',
+    '验收报告', '项目总结',
+    '交接文档', '培训资料', 'FAQ',
+  ],
+  filenameKeywords: [
+    '蓝图', '需求规格', '技术设计', '接口文档',
+    '测试计划', '测试报告', '测试用例', 'UAT',
+    '操作手册', '用户手册', '部署文档',
+    '验收报告', '项目总结', '交接文档', '培训资料',
+    '方案', '确认单', '项目章程',
+  ],
 }
 
 function isDeliverable(file: FileRecord): boolean {
-  // 检查阶段
-  if (!DELIVERABLE_RULES.stages.includes(file.stage || '')) {
+  if (!DELIVERABLE_RULES.stages.includes(file.category || '')) {
     return false
   }
 
-  // 检查子分类
   if (file.subcategory && DELIVERABLE_RULES.subcategories.includes(file.subcategory)) {
     return true
   }
 
-  // 检查文件名关键词
   const filename = file.filename.toLowerCase()
   return DELIVERABLE_RULES.filenameKeywords.some(keyword => filename.includes(keyword))
 }
 
 function getDeliverableStatus(file: FileRecord): 'draft' | 'merged' | 'ready' | 'delivered' {
   if (file.signature_status === 'signed') return 'delivered'
-  if (file.stage === '验收' || file.stage === '关闭') return 'ready'
-  if (file.stage === '上线') return 'merged'
+  if (file.category === '验收' || file.category === '关闭') return 'ready'
+  if (file.category === '上线') return 'merged'
   return 'draft'
 }
 

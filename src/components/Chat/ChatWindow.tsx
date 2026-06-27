@@ -80,7 +80,7 @@ export default function ChatWindow({
         setFiles(result.data);
       }
     } catch (err) {
-      console.error("[ChatWindow] 加载文件列表失败:", err);
+      message.error("加载文件列表失败");
     }
   }, [projectId]);
 
@@ -92,7 +92,7 @@ export default function ChatWindow({
         setSessions(result.data);
       }
     } catch (err) {
-      console.error("[ChatWindow] 加载会话列表失败:", err);
+      message.error("加载会话列表失败");
     }
   }, [projectId]);
 
@@ -122,8 +122,8 @@ export default function ChatWindow({
         messagesRef.current = historyMessages;
         setMessages(historyMessages);
       }
-    }).catch((err) => {
-      if (!cancelled) console.error("[ChatWindow] 加载对话历史失败:", err);
+    }).catch(() => {
+      if (!cancelled) message.error("加载对话历史失败");
     });
     return () => { cancelled = true }
   }, [projectId, currentSessionId]);
