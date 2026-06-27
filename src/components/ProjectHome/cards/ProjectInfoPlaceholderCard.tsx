@@ -1,9 +1,10 @@
 import { Project, FileRecord } from '../../../types'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function ProjectInfoPlaceholderCard({ project }: Props) {
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
+  const meta = parseMetadata(project.metadata)
   const fields = [
     { label: '项目编号', value: meta.project_code || '-' },
     { label: '客户名称', value: meta.customer_name || '-' },

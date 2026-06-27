@@ -45,6 +45,8 @@ vi.mock('../../../prompts/classify', () => ({
 
 vi.mock('../../../shared/stages', () => ({
   checkStageProgression: vi.fn(),
+  FILE_CLASSIFICATION_STAGES: ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭'],
+  DEFAULT_STAGES: ['售前', '进行中', '关闭'],
 }))
 
 vi.mock('../../../utils/ai-response', () => ({

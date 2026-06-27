@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal, Input, Select, Button, Divider } from 'antd'
 import { calculateProfit, INTERNAL_UNIT_PRICES, ProfitResult } from './ProfitCalculator'
 import { formatAmount, formatPercent } from '../../utils/format'
+import { parseMetadata } from '../../utils/metadata'
 
 interface ProfitCalculatorModalProps {
   open: boolean
@@ -100,7 +101,7 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
 
         // 读取现有metadata，合并新字段（避免覆盖其他数据）
         const projectResult = await window.api.project.get(projectId)
-        const existingMeta = projectResult.data?.metadata ? JSON.parse(projectResult.data.metadata) : {}
+        const existingMeta = parseMetadata(projectResult.data?.metadata ?? null)
         const mergedMeta = {
           ...existingMeta,
           evaluation,

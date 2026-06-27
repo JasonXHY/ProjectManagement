@@ -19,22 +19,22 @@ import {
 } from '@ant-design/icons'
 import { FileRecord } from '../../types'
 import { getStageStyle } from './projectHome.styles'
+import { STAGE_DEFINITIONS } from '../../../electron/shared/stages'
 
 const { Dragger } = Upload
 
-/** 11个分类阶段定义 */
-const CLASSIFICATION_STAGES = [
-  { key: '售前', icon: <FundOutlined />, label: '售前' },
-  { key: '启动', icon: <RocketOutlined />, label: '启动' },
-  { key: '需求', icon: <FileSearchOutlined />, label: '需求' },
-  { key: '方案', icon: <SolutionOutlined />, label: '方案' },
-  { key: '构建', icon: <ToolOutlined />, label: '构建' },
-  { key: '测试', icon: <ExperimentOutlined />, label: '测试' },
-  { key: '上线', icon: <CloudUploadOutlined />, label: '上线' },
-  { key: '验收', icon: <CheckCircleOutlined />, label: '验收' },
-  { key: '转客户成功', icon: <TeamOutlined />, label: '转客户成功' },
-  { key: '关闭', icon: <FolderOutlined />, label: '关闭' },
-]
+const STAGE_ICONS: Record<string, React.ReactNode> = {
+  '售前': <FundOutlined />,
+  '启动': <RocketOutlined />,
+  '需求': <FileSearchOutlined />,
+  '方案': <SolutionOutlined />,
+  '构建': <ToolOutlined />,
+  '测试': <ExperimentOutlined />,
+  '上线': <CloudUploadOutlined />,
+  '验收': <CheckCircleOutlined />,
+  '转客户成功': <TeamOutlined />,
+  '关闭': <FolderOutlined />,
+}
 
 interface StageSidebarProps {
   files: FileRecord[]
@@ -58,9 +58,11 @@ export default function StageSidebar({ files, selectedCategory, onSelectCategory
 
   const stageItems = [
     { key: '所有文件', icon: <AppstoreOutlined />, label: '所有文件', count: files.length },
-    ...CLASSIFICATION_STAGES.map(s => ({
-      ...s,
-      count: files.filter(f => f.category === s.key).length,
+    ...STAGE_DEFINITIONS.map(s => ({
+      key: s.name,
+      icon: STAGE_ICONS[s.name] || <FolderOutlined />,
+      label: s.name,
+      count: files.filter(f => f.category === s.name).length,
     })),
     { key: '未分类', icon: <QuestionCircleOutlined />, label: '未分类', count: uncategorizedCount },
   ]

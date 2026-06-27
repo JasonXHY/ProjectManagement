@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Project, FileRecord } from '../../../types'
+import { Project, FileRecord, Issue } from '../../../types'
 import ListDetailModal from '../ListDetailModal'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
@@ -12,8 +13,8 @@ const priorityConfig: Record<string, { color: string; label: string }> = {
 
 export default function IssueCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const issues = meta.key_issues || []
+  const meta = parseMetadata(project.metadata)
+  const issues = (meta.key_issues as Issue[]) || []
 
   return (
     <>
@@ -31,10 +32,10 @@ export default function IssueCard({ project }: Props) {
         <div className="fc-body">
           {issues.length === 0 ? (
             <div style={{fontSize:12,color:'var(--text-placeholder)',padding:'8px 0'}}>暂无关键问题</div>
-          ) : issues.slice(0, 3).map((issue: any, i: number) => (
+          ) : issues.slice(0, 3).map((issue, i) => (
             <div key={i} className="issue-row">
               <div className={`issue-dot ${issue.priority || 'medium'}`} />
-              <span className="issue-text">{issue.text || issue}</span>
+              <span className="issue-text">{issue.text || ''}</span>
               <span className={`issue-tag ${issue.status === 'resolved' ? 'resolved' : 'open'}`}>
                 {issue.status === 'resolved' ? '已解决' : '未解决'}
               </span>
@@ -49,13 +50,13 @@ export default function IssueCard({ project }: Props) {
         title="问题管理"
         items={issues}
         emptyText="暂无关键问题"
-        renderItem={(issue: any) => {
+        renderItem={(issue) => {
           const priorityInfo = priorityConfig[issue.priority || 'medium']
           return (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '4px' }}>
-                  {issue.text || issue}
+                  {issue.text || ''}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>
                   优先级: {priorityInfo.label}

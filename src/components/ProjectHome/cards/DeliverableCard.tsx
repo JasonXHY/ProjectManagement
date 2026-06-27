@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Project, FileRecord, Deliverable } from '../../../types'
 import DeliverableDetailModal from '../DeliverableDetailModal'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles: FileRecord[] }
 
@@ -48,13 +49,8 @@ export default function DeliverableCard({ project, allFiles }: Props) {
 
   // 从metadata中获取手动添加的交付物
   const manualDeliverables = useMemo(() => {
-    if (!project.metadata) return []
-    try {
-      const meta = JSON.parse(project.metadata)
-      return meta.deliverables || []
-    } catch {
-      return []
-    }
+    const meta = parseMetadata(project.metadata)
+    return (meta.deliverables as Deliverable[]) || []
   }, [project.metadata])
 
   // 从文件中自动识别交付物

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Project, FileRecord, SignatureDoc } from '../../../types'
 import { generateSignatureDocs, matchSignatureDocs } from '../../../utils/signature-generator'
 import SignatureDetailModal from '../SignatureDetailModal'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles: FileRecord[] }
 
@@ -10,26 +11,16 @@ export default function SignatureCard({ project, allFiles }: Props) {
 
   // 从metadata中获取已保存的签字文件列表
   const savedDocs = useMemo(() => {
-    if (!project.metadata) return []
-    try {
-      const meta = JSON.parse(project.metadata)
-      return meta.signature_docs || []
-    } catch {
-      return []
-    }
+    const meta = parseMetadata(project.metadata)
+    return (meta.signature_docs as SignatureDoc[]) || []
   }, [project.metadata])
 
   // 获取合同信息用于生成签字文件清单
   const contractInfo = useMemo(() => {
-    if (!project.metadata) return { amount: 0, items: [] }
-    try {
-      const meta = JSON.parse(project.metadata)
-      return {
-        amount: meta.contract_amount || 0,
-        items: meta.contract_items || [],
-      }
-    } catch {
-      return { amount: 0, items: [] }
+    const meta = parseMetadata(project.metadata)
+    return {
+      amount: (meta.contract_amount as number) || 0,
+      items: (meta.contract_items as Array<{ name: string; amount: number }>) || [],
     }
   }, [project.metadata])
 

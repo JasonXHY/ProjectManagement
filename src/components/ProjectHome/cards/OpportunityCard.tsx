@@ -1,10 +1,11 @@
-import { Project, FileRecord } from '../../../types'
+import { Project, FileRecord, Opportunity } from '../../../types'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function OpportunityCard({ project }: Props) {
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const opportunities = meta.opportunities || []
+  const meta = parseMetadata(project.metadata)
+  const opportunities = (meta.opportunities as Opportunity[]) || []
 
   return (
     <div className="feature-card">
@@ -19,7 +20,7 @@ export default function OpportunityCard({ project }: Props) {
       <div className="fc-body">
         {opportunities.length === 0 ? (
           <div style={{fontSize:12,color:'var(--text-placeholder)',padding:'8px 0'}}>暂无拓展商机</div>
-        ) : opportunities.slice(0, 3).map((opp: any, i: number) => (
+        ) : opportunities.slice(0, 3).map((opp, i) => (
           <div key={i} className="opp-row">
             <div className="opp-icon" style={{background:'#FEF3C7',color:'#F59E0B',borderRadius:'50%',width:'24px',height:'24px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>

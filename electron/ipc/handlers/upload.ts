@@ -11,20 +11,11 @@ import { checkStageProgression } from '../../shared/stages'
 import { parseClassifyResponse } from '../../utils/ai-response'
 import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
+import { sanitizeCategory } from '../../utils/sanitize'
 import fs from 'fs/promises'
 import path from 'path'
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
-
-const VALID_CATEGORIES = ['售前', '启动', '需求', '方案', '构建', '测试', '上线', '验收', '转客户成功', '关闭', '未分类', '首页']
-
-function sanitizeCategory(category: string): string {
-  if (!category) return '未分类'
-  const trimmed = category.trim()
-  if (VALID_CATEGORIES.includes(trimmed)) return trimmed
-  const sanitized = trimmed.replace(/[<>:"/\\|?*]/g, '').substring(0, 50)
-  return sanitized || '未分类'
-}
 
 function inferCategoryFromFilename(filename: string): string {
   const name = filename.toLowerCase()

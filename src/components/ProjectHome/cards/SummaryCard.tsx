@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Project, FileRecord } from '../../../types'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function SummaryCard({ project }: Props) {
   const [expanded, setExpanded] = useState(false)
-  const summary = project.metadata ? (() => {
-    try { return JSON.parse(project.metadata).project_overview || '' } catch { return '' }
-  })() : ''
+  const summary = (parseMetadata(project.metadata) as Record<string, unknown>).project_overview as string || ''
 
   return (
     <div className="feature-card">

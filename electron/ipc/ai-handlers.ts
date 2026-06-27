@@ -200,7 +200,8 @@ export function registerAIHandlers() {
           const newInfo = JSON.parse(jsonMatch[0])
 
           // 合并：新信息覆盖旧信息，空字符串不覆盖
-          const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+          const freshProject = projectDb.getProject(projectId)
+          const existingMetadata = freshProject?.metadata ? JSON.parse(freshProject.metadata) : {}
           const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
           for (const [key, value] of Object.entries(newInfo)) {
             if (typeof value === 'string' && value.trim()) {

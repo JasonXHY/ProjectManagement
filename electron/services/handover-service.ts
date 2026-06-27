@@ -110,9 +110,8 @@ export class HandoverService {
     }
 
     for (const file of filesToExport) {
-      const filePath = path.join(projectPath, file.filename)
       try {
-        const content = await fs.readFile(filePath)
+        const content = await fs.readFile(file.stored_path)
         const category = file.category || '未分类'
         zip.file(`files/${category}/${file.filename}`, content)
       } catch { /* skip */ }

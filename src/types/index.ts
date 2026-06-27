@@ -166,3 +166,26 @@ export interface MilestoneExtended {
   development?: number
   manuallyEdited?: boolean
 }
+
+export interface Requirement {
+  name: string
+  detail?: string
+  status?: string
+  statusText?: string
+  source?: string
+}
+
+export interface Issue {
+  text: string
+  priority?: string
+  status?: string
+  source?: string
+}
+
+export interface Opportunity {
+  name: string
+  description?: string
+  status?: string
+  statusText?: string
+  source?: string
+}

@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Project, FileRecord } from '../../../types'
+import { Project, FileRecord, Requirement } from '../../../types'
 import RequirementDetailModal from '../RequirementDetailModal'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function RequirementCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const requirements = meta.requirements || []
+  const meta = parseMetadata(project.metadata)
+  const requirements = (meta.requirements as Requirement[]) || []
 
   return (
     <>
@@ -24,7 +25,7 @@ export default function RequirementCard({ project }: Props) {
         <div className="fc-body">
           {requirements.length === 0 ? (
             <div style={{fontSize:12,color:'var(--text-placeholder)',padding:'8px 0'}}>暂无需求记录</div>
-          ) : requirements.slice(0, 3).map((r: any, i: number) => (
+          ) : requirements.slice(0, 3).map((r, i) => (
             <div key={i} className="req-row">
               <div className={`req-status-dot ${r.status || 'pending'}`} />
               <div className="req-main">

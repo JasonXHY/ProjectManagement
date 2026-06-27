@@ -1,17 +1,18 @@
 import { useState } from 'react'
-import { Project, FileRecord, Milestone } from '../../../types'
+import { Project, FileRecord, MilestoneExtended } from '../../../types'
 import ContractDetailModal from '../ContractDetailModal'
 import { formatAmount } from '../../../utils/format'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function ContractCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const contractAmount = meta.contract_amount || 0
-  const contractItems = meta.contract_items || []
+  const meta = parseMetadata(project.metadata) as Record<string, unknown>
+  const contractAmount = (meta.contract_amount as number) || 0
+  const contractItems = (meta.contract_items as Array<{ name: string; amount: number; description?: string }>) || []
 
-  let milestones: Milestone[] = []
+  let milestones: MilestoneExtended[] = []
   if (project.milestones) {
     try {
       milestones = JSON.parse(project.milestones)

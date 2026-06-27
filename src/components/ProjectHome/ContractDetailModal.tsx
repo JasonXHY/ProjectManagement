@@ -1,7 +1,8 @@
 import { memo } from 'react'
 import { Modal } from 'antd'
-import { Project, Milestone } from '../../types'
+import { Project, MilestoneExtended } from '../../types'
 import { formatAmount } from '../../utils/format'
+import { parseMetadata } from '../../utils/metadata'
 
 interface ContractDetailModalProps {
   open: boolean
@@ -14,11 +15,11 @@ const ContractDetailModal = memo(function ContractDetailModal({
   onClose,
   project,
 }: ContractDetailModalProps) {
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const contractAmount = meta.contract_amount || 0
-  const contractItems = meta.contract_items || []
+  const meta = parseMetadata(project.metadata) as Record<string, unknown>
+  const contractAmount = (meta.contract_amount as number) || 0
+  const contractItems = (meta.contract_items as Array<{ name: string; amount: number; description?: string }>) || []
 
-  let milestones: Milestone[] = []
+  let milestones: MilestoneExtended[] = []
   if (project.milestones) {
     try {
       milestones = JSON.parse(project.milestones)

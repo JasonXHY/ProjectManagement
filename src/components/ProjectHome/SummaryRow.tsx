@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { Project, FileRecord, Milestone } from '../../types'
+import type { Project, FileRecord, MilestoneExtended } from '../../types'
 import MilestoneModal from './MilestoneModal'
 
 interface SummaryRowProps {
@@ -9,7 +9,7 @@ interface SummaryRowProps {
   onGenerateSummary?: () => void
 }
 
-function getNextMilestone(milestones: Milestone[]): Milestone | null {
+function getNextMilestone(milestones: MilestoneExtended[]): MilestoneExtended | null {
   const now = new Date()
   const upcoming = milestones.filter(m => new Date(m.date) > now)
   upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -31,7 +31,7 @@ export default function SummaryRow({ project, files, onViewSummary, onGenerateSu
   const milestones = useMemo(() => {
     if (!project.milestones) return []
     try {
-      return JSON.parse(project.milestones) as Milestone[]
+      return JSON.parse(project.milestones) as MilestoneExtended[]
     } catch {
       return []
     }

@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import MilestoneModal from '../MilestoneModal'
-import { Milestone } from '../../../types'
+import { MilestoneExtended } from '../../../types'
 
-const mockMilestones: Milestone[] = [
-  { title: '合同签署', date: '2026-01-15', type: 'milestone', category: '售前' },
-  { title: '首付款', date: '2026-01-20', type: 'payment', amount: 500000, confirmed: true },
-  { title: '需求确认', date: '2026-02-01', type: 'milestone', category: '需求' },
-  { title: '方案评审', date: '2026-03-10', type: 'milestone', category: '方案' },
-  { title: '上线确认', date: '2026-06-01', type: 'payment', amount: 300000, confirmed: false },
-  { title: '项目验收', date: '2026-07-15', type: 'key_node', category: '验收' },
+const mockMilestones: MilestoneExtended[] = [
+  { id: '1', title: '合同签署', date: '2026-01-15', type: 'milestone', category: '售前' },
+  { id: '2', title: '首付款', date: '2026-01-20', type: 'payment', amount: 500000, confirmed: true },
+  { id: '3', title: '需求确认', date: '2026-02-01', type: 'milestone', category: '需求' },
+  { id: '4', title: '方案评审', date: '2026-03-10', type: 'milestone', category: '方案' },
+  { id: '5', title: '上线确认', date: '2026-06-01', type: 'payment', amount: 300000, confirmed: false },
+  { id: '6', title: '项目验收', date: '2026-07-15', type: 'key_node', category: '验收' },
 ]
 
 describe('MilestoneModal', () => {

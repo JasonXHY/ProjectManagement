@@ -2,27 +2,29 @@ import { useState } from 'react'
 import { Project, FileRecord } from '../../../types'
 import ProfitCalculatorModal from '../ProfitCalculatorModal'
 import { formatAmount, formatPercent } from '../../../utils/format'
+import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
 
 export default function EvaluationCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
-  const meta = project.metadata ? JSON.parse(project.metadata) : {}
-  const evalResult = meta.evaluation?.result
+  const meta = parseMetadata(project.metadata) as Record<string, unknown>
+  const evaluation = meta.evaluation as Record<string, unknown> | undefined
+  const evalResult = evaluation?.result as Record<string, unknown> | undefined
   const hasEvaluation = !!evalResult
 
   const contractAmount = hasEvaluation
-    ? (meta.evaluation.contractAmount || meta.contract_amount || 0)
-    : (meta.contract_amount || 0)
+    ? ((evaluation?.contractAmount as number) || (meta.contract_amount as number) || 0)
+    : ((meta.contract_amount as number) || 0)
   const costEstimate = hasEvaluation
-    ? (evalResult.totalCost || meta.cost_estimate || 0)
-    : (meta.cost_estimate || 0)
+    ? ((evalResult?.totalCost as number) || (meta.cost_estimate as number) || 0)
+    : ((meta.cost_estimate as number) || 0)
   const profitRate = hasEvaluation
-    ? (evalResult.internalProfitRate ?? meta.profit_rate ?? 0)
-    : (meta.profit_rate || 0)
+    ? ((evalResult?.internalProfitRate as number) ?? (meta.profit_rate as number) ?? 0)
+    : ((meta.profit_rate as number) || 0)
   const personDays = hasEvaluation
-    ? ((meta.evaluation.internalDays || 0) + (meta.evaluation.externalDays || 0) || meta.person_days || 0)
-    : (meta.person_days || 0)
+    ? (((evaluation?.internalDays as number) || 0) + ((evaluation?.externalDays as number) || 0) || (meta.person_days as number) || 0)
+    : ((meta.person_days as number) || 0)
 
   const hasData = contractAmount > 0 || costEstimate > 0
 

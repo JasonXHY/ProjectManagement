@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Descriptions } from 'antd'
 import { FileTextOutlined } from '@ant-design/icons'
+import { parseMetadata } from '../../utils/metadata'
 
 interface ProjectInfoCardProps {
   metadata: string | null
@@ -27,12 +28,9 @@ const FIELD_LABELS: Record<keyof KeyInfo, string> = {
 const ProjectInfoCard = memo(function ProjectInfoCard({ metadata }: ProjectInfoCardProps) {
   if (!metadata) return null
 
-  let info: KeyInfo
-  try {
-    info = JSON.parse(metadata)
-  } catch {
-    return null
-  }
+  const parsed = parseMetadata(metadata) as KeyInfo
+  if (!parsed || Object.keys(parsed).length === 0) return null
+  const info = parsed
 
   const items = Object.entries(FIELD_LABELS)
     .map(([key, label]) => ({

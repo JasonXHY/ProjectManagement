@@ -8,6 +8,7 @@ import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
 import { getAllSettings } from '../../database/settings'
 import { ROLE_HINT } from '../../constants/ai'
+import { sanitizeCategory } from '../../utils/sanitize'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -216,11 +217,16 @@ export async function handleClassify(
 
   let content = file.content_extracted
   if (!content) {
-    content = await fs.readFile(file.stored_path, 'utf-8').catch(() => '')
+    content = await fs.readFile(file.stored_path, 'utf-8').catch(() => null)
+  }
+
+  if (!content) {
+    return { success: false, error: '文件内容为空，无法分类' }
   }
 
   const classifyResult = await classifyWithAI(content, categoryType)
   let { category, subcategory } = classifyResult
+  category = sanitizeCategory(category)
   const { stage: fileStage, summary, keyInfo } = classifyResult
 
   if (filenameHints) {

@@ -1,13 +1,13 @@
 import { memo, useMemo } from 'react'
 import { Modal, Tag } from 'antd'
 import { StarFilled } from '@ant-design/icons'
-import { Milestone } from '../../types'
+import { MilestoneExtended } from '../../types'
 import { formatAmount } from '../../utils/format'
 
 interface MilestoneModalProps {
   open: boolean
   onClose: () => void
-  milestones: Milestone[]
+  milestones: MilestoneExtended[]
 }
 
 function formatDate(dateStr: string): string {
@@ -53,14 +53,14 @@ const MilestoneModal = memo(function MilestoneModal({
 
   // 按阶段分组
   const grouped = useMemo(() => {
-    const groups: Record<string, Milestone[]> = {}
+    const groups: Record<string, MilestoneExtended[]> = {}
     sorted.forEach(m => {
       const category = m.category || '其他'
       if (!groups[category]) groups[category] = []
       groups[category].push(m)
     })
     // 按阶段顺序排序
-    const orderedGroups: { category: string; items: Milestone[] }[] = []
+    const orderedGroups: { category: string; items: MilestoneExtended[] }[] = []
     FILE_CLASSIFICATION_STAGES.forEach(cat => {
       if (groups[cat]) {
         orderedGroups.push({ category: cat, items: groups[cat] })
