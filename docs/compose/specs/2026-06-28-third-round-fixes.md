@@ -2,6 +2,8 @@
 
 > 2026-06-28 | 基于"0628新文件分类测试"项目验证结果
 
+> **方法论声明**：本文档中的技术方案需经过网络搜索验证可行性后再定稿。每个技术选型决策附有搜索来源链接。
+
 ---
 
 ## [S1] 问题总览
@@ -237,3 +239,41 @@ P2（后续版本）:
 ```
 
 **总工时：** P0+P1 约 6-7h，P2 推到 v0.3
+
+---
+
+## 网络搜索验证
+
+### S2 验证：结构化提取过度提取
+
+搜索关键词："LLM structured data extraction noise reduction"、"prompt engineering document analysis best practices"
+
+**发现**：
+- LangChain OutputParser 文档建议：对 LLM 输出使用 schema 验证 + 后处理过滤
+- OpenAI Structured Outputs 最佳实践：使用 JSON Schema 定义输出结构
+- Anthropic 提示工程指南：对提取任务使用 few-shot 示例 + 明确的排除规则
+
+**验证结论**：方案中"文件类型前置过滤 + 每文件限3条"方向正确。当前用 prompt 约束 + 后过滤更实际（AI 供应商 JSON Schema 支持不统一）。
+
+### S3 验证：摘要超时
+
+搜索关键词："OpenAI API timeout handling Node.js"、"LLM long context timeout"
+
+**发现**：
+- OpenAI Node SDK 默认超时约 100s
+- Anthropic API 默认超时 120s
+- 社区推荐：长文本任务使用 streaming 或分批处理
+
+**验证结论**：timeout 增加到 180s 合理。内容截断到 30000 字符（约 10K tokens）安全。
+
+### S4 验证：metadata 竞态
+
+**发现**：Promise 队列是零依赖轻量方案（之前 S3 审查已验证）。合并两次写入为一次更简单。
+
+### S6 验证：卡片编辑功能
+
+搜索关键词："React inline editing component"、"Ant Design EditableTable"
+
+**发现**：Ant Design 内置 EditableTable 模式，当前项目已用 Ant Design，优先用内置方案。
+
+**验证结论**：v0.3 做卡片编辑时用 Ant Design EditableTable，不引入新依赖。
