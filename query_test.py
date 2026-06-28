@@ -11,7 +11,7 @@ proj_id = p[0]
 meta = json.loads(p[2]) if p[2] else {}
 print(f'Project {proj_id}: {p[1]} | stage={p[3]}')
 
-# Get all files with full details
+# Get all files
 cur.execute('SELECT id, filename, category, subcategory, stage, ai_summary, ai_key_info FROM files WHERE project_id=? ORDER BY id', (proj_id,))
 files = cur.fetchall()
 
@@ -21,41 +21,33 @@ for f in files:
     cat = f[2] or 'None'
     sub = f[3] or 'None'
     stage = f[4] or 'None'
-    summary = f[5][:80] if f[5] else 'None'
-    keyinfo = f[6][:80] if f[6] else 'None'
-    print(f'ID={f[0]:3d} | {fname:<45s} | cat={cat:<8s} | sub={sub:<10s} | stage={stage}')
-    if f[5]:
-        print(f'       summary: {summary}')
-    if f[6]:
-        ki = json.loads(f[6])
-        non_empty = {k: v for k, v in ki.items() if v and v != '' and v != 0}
-        if non_empty:
-            print(f'       key_info: {json.dumps(non_empty, ensure_ascii=False)[:120]}')
+    print(f'ID={f[0]:3d} | {fname:<45s} | cat={cat:<10s} | sub={sub:<12s} | stage={stage}')
 
-# Check metadata
+# Stage distribution
+cur.execute('SELECT stage, COUNT(*) FROM files WHERE project_id=? GROUP BY stage', (proj_id,))
+print(f'\n=== Stage Distribution ===')
+for s in cur.fetchall():
+    print(f'  {s[0] or "None"}: {s[1]}')
+
+# Metadata fields
 print(f'\n=== Metadata ===')
 for key in sorted(meta.keys()):
     val = meta[key]
     if isinstance(val, list):
         print(f'  {key}: LIST[{len(val)}]')
+        # Show first 3 items
         for i, item in enumerate(val[:3]):
             print(f'    [{i}] {json.dumps(item, ensure_ascii=False)[:120]}')
+        if len(val) > 3:
+            print(f'    ... ({len(val)-3} more)')
     elif isinstance(val, str):
-        print(f'  {key}: "{val[:100]}"')
+        print(f'  {key}: "{val[:80]}"')
     elif isinstance(val, (int, float)):
         print(f'  {key}: {val}')
     else:
         print(f'  {key}: {val}')
 
-# Check requirements, key_issues, opportunities in detail
-for field in ['requirements', 'key_issues', 'opportunities']:
-    if field in meta and isinstance(meta[field], list):
-        items = meta[field]
-        print(f'\n=== {field} ({len(items)} items) ===')
-        for i, item in enumerate(items[:5]):
-            print(f'  [{i}] {json.dumps(item, ensure_ascii=False)[:150]}')
-
-# Check project_summary.md
+# Check project-summary.md
 import os
 proj_dirs = [d for d in os.listdir(r'C:\work\testproject') if d.endswith(f'_{proj_id}')]
 if proj_dirs:
