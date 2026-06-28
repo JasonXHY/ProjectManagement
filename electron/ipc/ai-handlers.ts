@@ -175,7 +175,12 @@ export function registerAIHandlers() {
 
       // 保存MD文件 + 简略版写入metadata
       const fullSummary = response.content.split('---BRIEF---')[0].trim()
-      const briefSummary = response.content.split('---BRIEF---')[1]?.trim() || ''
+      let briefSummary = response.content.split('---BRIEF---')[1]?.trim() || ''
+
+      // 如果AI没有输出BRIEF标记，取摘要前200字作为简略版
+      if (!briefSummary && fullSummary) {
+        briefSummary = fullSummary.substring(0, 200).replace(/\n+/g, ' ').trim()
+      }
 
       await fs.mkdir(path.dirname(summaryPath), { recursive: true })
       await fs.writeFile(summaryPath, fullSummary, 'utf-8')

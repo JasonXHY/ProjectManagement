@@ -12,6 +12,7 @@ import { parseClassifyResponse } from '../../utils/ai-response'
 import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
 import { sanitizeCategory } from '../../utils/sanitize'
+import { matchFilenameHints } from '../../constants/classify'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -151,8 +152,18 @@ function classifyAndMoveFile(
     { role: 'user', content: classifyPrompt }
   ]).then(async (result) => {
     const { category, subcategory, stage, summary, keyInfo } = parseClassifyResponse(result.content)
-    const sanitizedCategory = sanitizeCategory(category)
-    const sanitizedSub = subcategory ? sanitizeCategory(subcategory) : null
+    let sanitizedCategory = sanitizeCategory(category)
+    let sanitizedSub = subcategory ? sanitizeCategory(subcategory) : null
+
+    // 应用文件名启发式修正
+    const filenameHints = matchFilenameHints(safeName)
+    if (filenameHints) {
+      if (sanitizedCategory !== filenameHints.category || sanitizedSub !== filenameHints.subcategory) {
+        console.warn(`[上传分类] 文件名启发式修正: ${sanitizedCategory}/${sanitizedSub} -> ${filenameHints.category}/${filenameHints.subcategory}`)
+        sanitizedCategory = filenameHints.category
+        sanitizedSub = filenameHints.subcategory
+      }
+    }
 
     // 先发起结构化提取（fire-and-forget），再移动文件
     if (contentExtracted) {
