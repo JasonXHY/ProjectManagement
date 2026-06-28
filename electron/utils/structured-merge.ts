@@ -5,11 +5,21 @@ interface StructuredData {
   [key: string]: unknown
 }
 
-/** 模糊匹配：名称包含关系 */
+/** 模糊匹配：名称包含关系或高度相似 */
 function fuzzyNameMatch(a: string, b: string): boolean {
-  const la = a.toLowerCase()
-  const lb = b.toLowerCase()
-  return la.includes(lb) || lb.includes(la)
+  const la = a.toLowerCase().trim()
+  const lb = b.toLowerCase().trim()
+  if (la === lb) return true
+  if (la.includes(lb) || lb.includes(la)) return true
+  // 只对较短名称（>=4字符）做相似度检查，避免"需求A"和"需求B"被误匹配
+  const shorter = la.length < lb.length ? la : lb
+  const longer = la.length < lb.length ? lb : la
+  if (shorter.length < 4) return false
+  let matches = 0
+  for (const char of shorter) {
+    if (longer.includes(char)) matches++
+  }
+  return matches / longer.length > 0.7
 }
 
 /** 合并结构化数据（需求/问题/商机），按规则去重 */
