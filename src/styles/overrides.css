@@ -629,17 +629,6 @@ textarea.ant-input:focus {
   margin-left: 6px;
 }
 
-@media (max-width: 900px) {
-  .feature-row {
-    grid-template-columns: 1fr !important;
-  }
-}
-@media (min-width: 901px) and (max-width: 1200px) {
-  .feature-row {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-}
-
 /* Milestone compact */
 .ms-compact {
   display: flex;
