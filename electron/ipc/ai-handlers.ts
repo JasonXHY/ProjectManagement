@@ -173,11 +173,10 @@ export function registerAIHandlers() {
       const aiService = getAIService()
       const response = await aiService.chat(messages)
 
-      // 保存MD文件 + 简略版写入metadata
+      // 保存MD文件 + 简略版
       const fullSummary = response.content.split('---BRIEF---')[0].trim()
       let briefSummary = response.content.split('---BRIEF---')[1]?.trim() || ''
 
-      // 如果AI没有输出BRIEF标记，取摘要前200字作为简略版
       if (!briefSummary && fullSummary) {
         briefSummary = fullSummary.substring(0, 200).replace(/\n+/g, ' ').trim()
       }
@@ -185,45 +184,47 @@ export function registerAIHandlers() {
       await fs.mkdir(path.dirname(summaryPath), { recursive: true })
       await fs.writeFile(summaryPath, fullSummary, 'utf-8')
 
-      // 简略版写入metadata.project_overview
-      if (briefSummary) {
-        const existingMeta = project.metadata ? JSON.parse(project.metadata) : {}
-        existingMeta.project_overview = briefSummary
-        projectDb.updateProject(projectId, { metadata: JSON.stringify(existingMeta) })
-      }
-
       // 提取关键信息
+      let newKeyInfo: Record<string, unknown> | null = null
       try {
         const extractPrompt = EXTRACT_KEY_INFO_PROMPT.replace(/\{content\}/g, fileContents)
         const extractMessages = [
           { role: 'user' as const, content: extractPrompt }
         ]
         const extractResponse = await aiService.chat(extractMessages)
-
         const jsonMatch = extractResponse.content.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
-          const newInfo = JSON.parse(jsonMatch[0])
+          newKeyInfo = JSON.parse(jsonMatch[0])
+        }
+      } catch (e) {
+        console.warn('[AI] 关键信息提取失败:', (e as Error).message)
+      }
 
-          // 合并：新信息覆盖旧信息，空字符串不覆盖
-          const freshProject = projectDb.getProject(projectId)
-          const existingMetadata = freshProject?.metadata ? JSON.parse(freshProject.metadata) : {}
-          const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
-          for (const [key, value] of Object.entries(newInfo)) {
-            if (typeof value === 'string' && value.trim()) {
-              mergedMetadata[key] = value.trim()
-            } else if (typeof value === 'number' && value > 0) {
-              mergedMetadata[key] = value
-            } else if (Array.isArray(value) && value.length > 0) {
-              mergedMetadata[key] = value
-            }
+      // 一次性写入 metadata（project_overview + key_info 合并）
+      const freshProject = projectDb.getProject(projectId)
+      const mergedMetadata: Record<string, unknown> = freshProject?.metadata ? JSON.parse(freshProject.metadata) : {}
+
+      if (briefSummary) {
+        mergedMetadata.project_overview = briefSummary
+      }
+
+      if (newKeyInfo) {
+        for (const [key, value] of Object.entries(newKeyInfo)) {
+          if (typeof value === 'string' && value.trim()) {
+            mergedMetadata[key] = value.trim()
+          } else if (typeof value === 'number' && value > 0) {
+            mergedMetadata[key] = value
+          } else if (Array.isArray(value) && value.length > 0) {
+            mergedMetadata[key] = value
           }
+        }
+      }
 
-          // 保存到数据库
-          projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
+      projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
 
-          // 保存MD文件
-          const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-          const infoMd = `# 项目关键信息
+      // 保存MD文件（关键信息）
+      const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+      const infoMd = `# 项目关键信息
 
 | 字段 | 值 |
 |------|-----|
@@ -236,11 +237,7 @@ export function registerAIHandlers() {
 | 客户名称 | ${mergedMetadata.customer_name || '-'} |
 | 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
 `
-          await fs.writeFile(infoPath, infoMd, 'utf-8')
-        }
-      } catch (err) {
-        console.error('[AI] 关键信息提取失败:', err)
-      }
+      await fs.writeFile(infoPath, infoMd, 'utf-8')
 
       // 提取里程碑
       try {

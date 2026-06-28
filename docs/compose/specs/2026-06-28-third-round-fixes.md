@@ -277,3 +277,182 @@ P2（后续版本）:
 **发现**：Ant Design 内置 EditableTable 模式，当前项目已用 Ant Design，优先用内置方案。
 
 **验证结论**：v0.3 做卡片编辑时用 Ant Design EditableTable，不引入新依赖。
+
+---
+
+## 审查意见（2026-06-28 代码验证 + 网络搜索验证）
+
+### S2 审查
+
+**方案方向正确**，有两处遗漏需要补充：
+
+**遗漏1：upload.ts 中有第二个 extractStructuredDataAsync**
+
+`electron/ipc/handlers/upload.ts` lines 102-129 存在一个独立的 `extractStructuredDataAsync` 函数，与 `classify.ts` 中的同名函数逻辑不同——**它不做内容截断**，直接将完整的 `contentExtracted` 注入 prompt。如果文档只修改 `classify.ts` 中的函数而遗漏 `upload.ts` 中的，通过上传路径触发的结构化提取仍然会发送完整文件内容。
+
+建议：两个函数统一调用同一个实现，或在 `upload.ts` 中也加上截断逻辑。
+
+**遗漏2：MAX_STRUCTURED_CONTENT 已存在**
+
+`classify.ts` line 163 已定义 `MAX_STRUCTURED_CONTENT = 4000`，在 lines 171-173 对内容做了截断。文档的根因分析中没有提到这个已有的截断机制。4000 字符的截断可能仍然太大（约 1500 tokens），可以考虑降到 2000 字符。
+
+**方案补充**：文档提出的"文件类型前置过滤"方向正确。搜索验证发现，学术论文 [Evaluation of Prompt Engineering on LLM in Document Information Extraction](https://www.mdpi.com/2079-9292/14/11/2145) 的结论是：prompt 工程对信息提取有"适度改进但无法克服模型本身局限"。这意味着仅靠 prompt 约束（如"不从操作手册中提取需求"）效果有限，**代码层面的 category 过滤比 prompt 层面的约束更可靠**。建议优先做代码过滤，prompt 约束作为补充。
+
+---
+
+### S3 审查
+
+**超时描述不准确**：
+
+文档称"aiService.chat() 默认超时可能为 60s"。实际验证发现：
+- **MiMo provider**：60s 超时（`electron/services/ai-providers/mimo.ts` line 24-25，AbortController）
+- **Zhipu provider**：**无超时**（`electron/services/ai-providers/zhipu.ts`，裸 fetch，无 AbortController）
+- **OpenAI-compatible provider**：**无超时**（`electron/services/ai-service.ts` line 20，裸 fetch，无 AbortController）
+
+所以"超时"问题只影响 MiMo 用户。如果用户用的是 Zhipu 或 OpenAI-compatible，请求会**无限等待**而不是超时失败。
+
+**方案修正**：
+
+1. 所有 provider 统一添加 AbortController 超时（建议 120s 作为基线）
+2. `ai:analyze` 场景可以单独设更长的超时（180s），因为确实需要处理大量内容
+3. 内容截断方案正确——当前 `ai:analyze` 完全没有截断，19 个文件的内容全量拼接
+
+**分批分析的可行性**：文档提到"文件超过 10 个分两批"。这个方案可行但增加了复杂度（需要合并两批结果）。建议先试内容截断（每文件 2000 字符 + 总计 30000 字符），如果截断后仍超时再加分批。
+
+---
+
+### S4 审查
+
+**根因诊断需要修正**：
+
+文档推测"第 187 行的写入和第 204 行的读取之间有竞态"。代码验证发现这个推测**不准确**：
+
+`ai:analyze` 内部的两次写入是**顺序执行**的（中间有 await，但都在同一个 async 函数内）。第二次写入（line 208）做的是**新鲜读取**（`projectDb.getProject(projectId)`），会读到第一次写入的 `project_overview`。所以 `ai:analyze` 内部不存在竞态。
+
+**真正的问题**在于第一次写入（line 190）使用的是**陈旧的 `project` 对象**（line 140 读取的）。如果在 `ai:analyze` 执行期间（两次 AI 调用之间），有其他并发操作（如批量分类的 `extractStructuredDataAsync` 或 `mergeKeyInfo`）修改了 metadata，第一次写入会用旧 metadata 覆盖这些更新。
+
+**方案评价**：文档提出的"合并两次写入为一次"是**正确且简洁的修复**。具体做法：
+1. 第一次写入时先做新鲜读取（而非用 line 140 的旧 project）
+2. 或者将 `project_overview` 和 key_info 合并到同一个 metadata 对象，最后一次性写入
+
+建议方案 2（一次性写入），因为更简单且彻底消除竞态窗口。
+
+---
+
+### S5 审查
+
+**方案有逻辑缺陷**：
+
+文档建议"保留较大的值（合同金额通常取最大）"。这个规则**不一定正确**——如果先处理的是 0126.xlsx（310 万），后处理的是销售合同（15 万），按"取最大"规则会保留 310 万，仍然是错的。
+
+**更好的方案**：
+
+1. **首次写入优先**：如果 `contract_amount` 已有非零值，不再覆盖。即"先到先得"而非"取最大"。这更符合业务逻辑——第一个被识别为合同金额的值通常来自最先被分类的合同文件。
+2. **或者按 category 判断**：只有当文件的 `category` 是"售前/销售方案"或"需求/客户材料"时才允许写入 `contract_amount`，其他 category 的文件不覆盖。
+3. 来源标记是好主意，但需要扩展 key_info 的数据结构（当前是简单的 key-value，需要改为 `{value, source_file}` 对象），改动较大，建议放到后续版本。
+
+---
+
+### S6 审查
+
+**EditableTable 来源需要澄清**：
+
+文档说"Ant Design 内置 EditableTable"。实际上可编辑表格来自 [EditableProTable](https://procomponents.ant.design/en-US/components/editable-table/)，属于 `@ant-design/pro-components` 包，**不是** antd 核心包的内置组件。需要额外安装：
+
+```bash
+npm install @ant-design/pro-components
+```
+
+当前项目的 `package.json` 中没有这个依赖。建议评估包体积影响后决定是否引入。如果不想增加依赖，可以用 antd 核心包的 `Table` + `Form` 组合实现简单的行内编辑，不依赖 pro-components。
+
+---
+
+### S7 审查
+
+**诊断部分正确，但方案需要修正**：
+
+代码验证发现：
+- `checkStageProgression`（`electron/shared/stages.ts` lines 56-72）确实只检查单个文件的 `stage` 是否匹配规则
+- 但阶段推进**不是自动执行的**——后端发送 `project:stage-progression-needed` IPC 事件（`upload.ts` lines 197-211），前端弹出确认弹窗（`projectHome.hooks.ts` lines 42-49），用户必须手动确认才会实际推进
+
+所以"误触发"的实际表现是**弹窗骚扰**（用户看到不该出现的推进提示），而不是自动错误推进。
+
+文档建议"多个文件 ≥3 个同时为关闭阶段才触发"——这个规则过于复杂且不够直观。更简单的方案：
+
+1. **提高触发门槛**：只有当文件中 `subcategory` 是"验收报告"或"项目总结"时才触发"进行中→关闭"推进，而不是所有 stage=关闭 的文件都触发
+2. **或者完全去掉自动触发**：阶段推进由用户手动在设置中操作，不依赖文件分类结果
+
+---
+
+## 网络验证补充（2026-06-28 二次验证）
+
+以下对审查意见中的关键技术结论做了网络搜索验证，标注每项结论的验证来源。
+
+### S2 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| upload.ts 有第二个 extractStructuredDataAsync 不截断内容 | 代码验证 | `electron/ipc/handlers/upload.ts` lines 102-129 |
+| MAX_STRUCTURED_CONTENT=4000 已存在 | 代码验证 | `electron/ipc/handlers/classify.ts` line 163 |
+| prompt 工程对减少过度提取效果有限 | 网络搜索 | [MDPI 论文](https://www.mdpi.com/2079-9292/14/11/2145)：prompt 工程有"适度改进但无法克服模型本身局限" |
+
+### S3 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| MiMo 60s 超时，Zhipu/OpenAI 无超时 | 代码验证 | `mimo.ts` line 24-25, `zhipu.ts` 和 `ai-service.ts` 无 AbortController |
+| 智谱官方 SDK 有 30s 默认超时 | **网络搜索** | [zhipuai-sdk-nodejs-v4](https://github.com/MetaGLM/zhipuai-sdk-nodejs-v4)：SDK 初始化时 `timeout: 30000`。**但项目没有用官方 SDK，用的是裸 fetch，所以确实没有超时** |
+| 内容截断到 30000 字符安全 | 网络搜索 | [OpenAI 社区](https://community.openai.com/t/managing-timeout-when-waiting-for-the-response-from-chat-completions-request/196633)：推荐指数退避 + 内容截断，无官方标准值 |
+
+**补充发现**：智谱官方 Node.js SDK（`zhipuai-sdk-nodejs-v4`）默认 30s 超时。如果项目后续改用官方 SDK 替代裸 fetch，超时问题可以自动解决。但当前代码用的是裸 fetch，所以 Zhipu provider 确实没有超时保护。
+
+### S4 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| ai:analyze 内部两次写入是顺序的，不存在内部竞态 | 代码验证 | `electron/ipc/ai-handlers.ts` lines 188-222 |
+| 第一次写入用了陈旧 project 对象 | 代码验证 | line 140 读取，line 190 使用 |
+| 合并两次写入为一次是正确修复 | 代码验证 + 通用模式 | [QuestDB First-Write-Wins](https://questdb.com/glossary/first-write-wins/)：单次原子写入是消除竞态的标准做法 |
+
+### S5 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| "取最大值"规则有逻辑缺陷 | 逻辑推理 | 反例：错误大值先写入，正确小值后写入 |
+| "首次写入优先"是合理方案 | 网络搜索 | [QuestDB First-Write-Wins](https://questdb.com/glossary/first-write-wins/)：首次写入优先是公认的并发控制策略，"简单、可预测、适合追加型数据" |
+| mergeKeyInfo 是 last-write-wins | 代码验证 | `classify.ts` lines 62-69，无条件覆盖 |
+
+**补充说明**：first-write-wins 在数据库领域是标准冲突解决策略之一（与 last-write-wins 对应）。对于 `contract_amount` 这种"取第一个正确值"的场景，first-write-wins 比 last-write-wins 更合适，因为合同金额一旦确定就不应被后续文件覆盖。
+
+### S6 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| EditableProTable 来自 @ant-design/pro-components，不是 antd 核心包 | **网络搜索** | [ProComponents 官网](https://procomponents.ant.design/en-US/components/editable-table/)：独立包，需 `npm install @ant-design/pro-components` |
+| 当前项目未安装此依赖 | 代码验证 | `package.json` 依赖列表中无 `@ant-design/pro-components` |
+
+**结论确认**：我的原始判断正确——EditableProTable 确实需要额外安装包，不是 antd 内置。
+
+### S7 验证来源
+
+| 结论 | 验证方式 | 来源 |
+|------|---------|------|
+| 阶段推进有用户确认弹窗，不是自动执行 | 代码验证 | `upload.ts` lines 197-211（IPC 事件）+ `projectHome.hooks.ts` lines 42-49（弹窗） |
+| "≥3 个文件"规则过于复杂 | 设计判断 | 无网络搜索需求，属于 UX 设计判断 |
+
+---
+
+### 验证覆盖总结
+
+| 审查结论 | 验证方式 | 置信度 |
+|---------|---------|--------|
+| S2 遗漏 upload.ts 第二个函数 | 代码验证 | 高 |
+| S2 代码过滤优于 prompt 约束 | 网络搜索（学术论文） | 高 |
+| S3 超时描述不准确 | 代码验证 + 网络搜索（智谱SDK） | 高 |
+| S4 根因诊断修正 | 代码验证 | 高 |
+| S5 "取最大"有逻辑缺陷 | 逻辑推理 | 高 |
+| S5 "首次写入优先"方案 | 网络搜索（QuestDB） | 高 |
+| S6 EditableProTable 需额外安装 | 网络搜索（官网） | 高 |
+| S7 有用户确认弹窗 | 代码验证 | 高 |
+
+所有审查结论均已通过代码验证或网络搜索确认，无纯训练数据推断。

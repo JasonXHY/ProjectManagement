@@ -63,6 +63,10 @@ async function mergeKeyInfo(
       if (typeof value === 'string' && value.trim()) {
         mergedMetadata[key] = value.trim()
       } else if (typeof value === 'number' && value > 0) {
+        // contract_amount 使用 first-write-wins：已有非零值时不覆盖
+        if (key === 'contract_amount' && mergedMetadata[key] && (mergedMetadata[key] as number) > 0) {
+          continue
+        }
         mergedMetadata[key] = value
       } else if (Array.isArray(value) && value.length > 0) {
         mergedMetadata[key] = value
@@ -160,7 +164,16 @@ async function moveFileToCategory(
   }
 }
 
-const MAX_STRUCTURED_CONTENT = 4000
+const MAX_STRUCTURED_CONTENT = 2000
+
+// 这些分类的文件不提取 requirements/key_issues/opportunities
+// 因为它们是标准模板内容，不是真实项目数据
+const SKIP_STRUCTURED_CATEGORIES = new Set([
+  '上线',     // 操作手册、部署文档
+  '测试',     // 测试计划、测试报告
+  '验收',     // 验收材料、确认单
+])
+
 let metadataQueue: Promise<void> = Promise.resolve()
 
 function extractStructuredDataAsync(
@@ -168,6 +181,11 @@ function extractStructuredDataAsync(
   category: string,
   content: string
 ): void {
+  // 跳过不适合提取的文件类型
+  if (SKIP_STRUCTURED_CATEGORIES.has(category)) {
+    return
+  }
+
   const truncatedContent = content.length > MAX_STRUCTURED_CONTENT
     ? content.substring(0, MAX_STRUCTURED_CONTENT) + '\n...(内容截断)'
     : content

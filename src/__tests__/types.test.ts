@@ -16,13 +16,17 @@ describe('checkStageProgression', () => {
     })
   })
 
-  it('进行中项目检测到"关闭"文件应触发推进', () => {
-    const result = checkStageProgression('进行中', '关闭')
+  it('进行中项目检测到"关闭"文件应触发推进（需匹配子分类）', () => {
+    const result = checkStageProgression('进行中', '关闭', '验收报告')
     expect(result).toEqual({
       shouldProgress: true,
       targetStage: '关闭',
       detectedType: '关闭',
     })
+  })
+
+  it('进行中项目检测到"关闭"文件但子分类不匹配不触发推进', () => {
+    expect(checkStageProgression('进行中', '关闭', '操作手册')).toBeNull()
   })
 
   it('售前项目检测到"关闭"文件不应触发推进（跳级）', () => {

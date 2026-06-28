@@ -99,6 +99,12 @@ function detectSignatureAsync(fileId: number, filePath: string, safeName: string
   }
 }
 
+const MAX_STRUCTURED_CONTENT = 2000
+
+const SKIP_STRUCTURED_CATEGORIES = new Set([
+  '上线', '测试', '验收',
+])
+
 function extractStructuredDataAsync(
   projectId: number,
   category: string,
@@ -106,9 +112,17 @@ function extractStructuredDataAsync(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   aiService: any
 ): void {
+  if (SKIP_STRUCTURED_CATEGORIES.has(category)) {
+    return
+  }
+
+  const truncatedContent = contentExtracted.length > MAX_STRUCTURED_CONTENT
+    ? contentExtracted.substring(0, MAX_STRUCTURED_CONTENT) + '\n...(内容截断)'
+    : contentExtracted
+
   const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
     .replace('{category}', category)
-    .replace('{content}', contentExtracted)
+    .replace('{content}', truncatedContent)
   ;(aiService as { chat: (messages: { role: string; content: string }[]) => Promise<{ content: string }> }).chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
     try {
       const structJson = structResult.content.match(/\{[\s\S]*\}/)
@@ -197,7 +211,7 @@ function classifyAndMoveFile(
       if (stage) {
         const latestProject = getProject(projectId)
         if (latestProject) {
-          const progression = checkStageProgression(latestProject.current_stage, stage)
+          const progression = checkStageProgression(latestProject.current_stage, stage, sanitizedSub)
           if (progression) {
             const windows = BrowserWindow.getAllWindows()
             if (windows.length > 0) {

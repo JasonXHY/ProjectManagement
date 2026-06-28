@@ -11,27 +11,34 @@ export class ZhipuProvider implements AIProviderInterface {
   }
 
   async chat(messages: AIMessage[], model: string = 'glm-4.7-flash'): Promise<AIResponse> {
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 120000)
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages
+        }),
+        signal: controller.signal
       })
-    })
 
-    if (!response.ok) {
-      throw new Error(`智谱AI请求失败: ${response.statusText}`)
-    }
+      if (!response.ok) {
+        throw new Error(`智谱AI请求失败: ${response.statusText}`)
+      }
 
-    const data = await response.json() as OpenAIResponse
+      const data = await response.json() as OpenAIResponse
 
-    return {
-      content: data.choices[0].message.content,
-      usage: data.usage
+      return {
+        content: data.choices[0].message.content,
+        usage: data.usage
+      }
+    } finally {
+      clearTimeout(timeout)
     }
   }
 

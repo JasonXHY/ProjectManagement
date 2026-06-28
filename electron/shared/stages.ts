@@ -49,18 +49,27 @@ export const STAGE_PROGRESSION_RULES = {
     from: '进行中',
     to: '关闭',
     stages: ['关闭'],
+    // 只有这些子分类的文件才触发关闭阶段推进
+    triggerSubcategories: ['验收报告', '项目总结', '项目归档', '复盘总结'],
   },
 }
 
 /** 检查文件是否触发阶段推进（基于AI识别的文件阶段） */
 export function checkStageProgression(
   projectStage: string,
-  fileStage: string
+  fileStage: string,
+  fileSubcategory?: string | null
 ): { shouldProgress: boolean; targetStage: string; detectedType: string } | null {
   if (!fileStage) return null
 
   for (const [, rule] of Object.entries(STAGE_PROGRESSION_RULES)) {
     if (projectStage === rule.from && rule.stages.includes(fileStage)) {
+      // 如果规则定义了触发子分类，检查文件子分类是否匹配
+      if ('triggerSubcategories' in rule && rule.triggerSubcategories) {
+        if (!fileSubcategory || !rule.triggerSubcategories.includes(fileSubcategory)) {
+          continue
+        }
+      }
       return {
         shouldProgress: true,
         targetStage: rule.to,
