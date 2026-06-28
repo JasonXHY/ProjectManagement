@@ -139,7 +139,7 @@ async function moveFileToCategory(
     if (!resolvedTarget.startsWith(path.resolve(projectPath))) {
       console.error('[AI分类] 路径安全校验失败，category/subcategory可能包含路径穿越:', category, subcategory)
       fileDb.updateFile(fileId, { category: '未分类', subcategory: null, content_extracted: content })
-      return { success: true, data: { category: '未分类', subcategory: null, stage: null, summary } }
+      return { success: true }
     }
 
     await fs.mkdir(targetDir, { recursive: true })
@@ -240,7 +240,7 @@ export async function handleClassify(
   )
 
   if (!moveResult.success) {
-    return { success: false, error: moveResult.error, code: moveResult.code }
+    return { success: false, error: moveResult.error }
   }
 
   return {

@@ -103,12 +103,13 @@ function extractStructuredDataAsync(
   projectId: number,
   category: string,
   contentExtracted: string,
-  aiService: { chat: (messages: { role: string; content: string }[]) => Promise<{ content: string }> }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  aiService: any
 ): void {
   const structuredPrompt = EXTRACT_STRUCTURED_PROMPT
     .replace('{category}', category)
     .replace('{content}', contentExtracted)
-  aiService.chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
+  ;(aiService as { chat: (messages: { role: string; content: string }[]) => Promise<{ content: string }> }).chat([{ role: 'user', content: structuredPrompt }]).then(async (structResult) => {
     try {
       const structJson = structResult.content.match(/\{[\s\S]*\}/)
       if (structJson) {

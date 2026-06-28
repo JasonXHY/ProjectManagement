@@ -132,8 +132,8 @@ export class HandoverService {
     const data = await HandoverService.previewHandover(zipPath)
 
     const name = projectName || data.project?.name || '导入项目'
-    const categoryType = data.project?.category_type || 'stage'
-    const customStages = data.project?.custom_stages || undefined
+    const categoryType = (data.project?.category_type || 'stage') as 'stage' | 'content'
+    const customStages = (data.project as Record<string, unknown>)?.custom_stages as string[] | undefined || undefined
     const currentStage = data.project?.current_stage || STAGE_DEFINITIONS[0]?.name || '售前'
 
     const folderUuid = generateProjectUuid()
@@ -190,7 +190,7 @@ export class HandoverService {
         content_extracted: fileEntry.content_extracted,
         is_analyzed: false,
         has_signature: false,
-        signature_status: fileEntry.signature_status || 'unsigned',
+        signature_status: (fileEntry.signature_status || 'unsigned') as 'unsigned' | 'pending' | 'signed' | 'rejected',
         ai_summary: fileEntry.ai_summary,
         ai_key_info: fileEntry.ai_key_info ? JSON.stringify(fileEntry.ai_key_info) : null,
       })
