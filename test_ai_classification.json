@@ -1,0 +1,211 @@
+[
+  {
+    "id": 101,
+    "filename": "CON202512090686-上海朋熙半导体有限公司-验收-SS.pdf",
+    "category": null,
+    "subcategory": null,
+    "stage": null,
+    "has_content": true,
+    "content_len": 16,
+    "has_summary": false,
+    "has_key_info": false
+  },
+  {
+    "id": 102,
+    "filename": "CON202509240883-上海前锦众程人力资源有限公司-项目经理任命书.pdf",
+    "category": null,
+    "subcategory": null,
+    "stage": null,
+    "has_content": true,
+    "content_len": 16,
+    "has_summary": false,
+    "has_key_info": false
+  },
+  {
+    "id": 103,
+    "filename": "5JXZY人力资源管理系统-项目启动会汇报 V1.2.pptx",
+    "category": "启动",
+    "subcategory": null,
+    "stage": null,
+    "has_content": false,
+    "content_len": 0,
+    "has_summary": false,
+    "has_key_info": false
+  },
+  {
+    "id": 104,
+    "filename": "1010会议.docx",
+    "category": "需求",
+    "subcategory": "会议纪要",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 369,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 105,
+    "filename": "瓶气充装生产-物料生产信息.docx",
+    "category": "上线",
+    "subcategory": "操作手册",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 1103,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 106,
+    "filename": "销售合同-CON202509240883_绩效FV1.docx",
+    "category": "售前",
+    "subcategory": "合同原件",
+    "stage": "售前",
+    "has_content": true,
+    "content_len": 11313,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 107,
+    "filename": "STEC_人力资源数字化项目_薪资操作手册V2.0.pptx",
+    "category": "未分类",
+    "subcategory": null,
+    "stage": null,
+    "has_content": false,
+    "content_len": 0,
+    "has_summary": false,
+    "has_key_info": false
+  },
+  {
+    "id": 108,
+    "filename": "实施工作说明书(SOW)_前锦众程v1.3-待定.docx",
+    "category": "需求",
+    "subcategory": "项目计划",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 21254,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 109,
+    "filename": "1017讨论会议.docx",
+    "category": "需求",
+    "subcategory": "需求文档",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 2170,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 110,
+    "filename": "02.01.01 产品BOM数据管理.docx",
+    "category": "需求",
+    "subcategory": "需求文档",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 1132,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 111,
+    "filename": "管道及现场制气客户结算差异处理.docx",
+    "category": "方案",
+    "subcategory": "开发规格说明书",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 32376,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 112,
+    "filename": "05实施完成确认单_真诺.docx",
+    "category": "验收",
+    "subcategory": "验收材料待签",
+    "stage": "关闭",
+    "has_content": true,
+    "content_len": 416,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 113,
+    "filename": "上海中烟hr项目各环境访问信息20240520.xlsx",
+    "category": "构建",
+    "subcategory": "配置文档",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 751,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 114,
+    "filename": "金蝶s-HR人才管理报价及实施人天评估V2.0.xlsx",
+    "category": "售前",
+    "subcategory": "报价单",
+    "stage": "售前",
+    "has_content": true,
+    "content_len": 3745,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 115,
+    "filename": "蓝图&开发规格说明书.docx",
+    "category": "方案",
+    "subcategory": "蓝图",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 4139,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 116,
+    "filename": "绩效考核蓝图&手册（含项目计划）V1.3.docx",
+    "category": "方案",
+    "subcategory": "蓝图",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 4139,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 117,
+    "filename": "0126.xlsx",
+    "category": null,
+    "subcategory": null,
+    "stage": null,
+    "has_content": true,
+    "content_len": 9,
+    "has_summary": false,
+    "has_key_info": false
+  },
+  {
+    "id": 118,
+    "filename": "低利润率测算表标准模板.xlsx",
+    "category": "售前",
+    "subcategory": "成本评估",
+    "stage": "售前",
+    "has_content": true,
+    "content_len": 40705,
+    "has_summary": true,
+    "has_key_info": true
+  },
+  {
+    "id": 119,
+    "filename": "副本STEC_人力资源数字化项目_数据初始化数据收集模板_上海路桥_薪酬_20250507_V2.0(上报)(1)93.xlsx",
+    "category": "构建",
+    "subcategory": "配置文档",
+    "stage": "进行中",
+    "has_content": true,
+    "content_len": 712328,
+    "has_summary": true,
+    "has_key_info": true
+  }
+]
