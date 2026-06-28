@@ -204,4 +204,44 @@ describe('useProjectHome', () => {
 
     expect(result.current.allFiles).toHaveLength(3)
   })
+
+  it('handleGenerateSummary调用aiService.analyze', async () => {
+    const { aiService } = await import('../services/aiService')
+    vi.mocked(aiService.analyze).mockResolvedValue({ success: true })
+
+    const { result } = renderHook(() => useProjectHome(mockProject))
+
+    await act(async () => {
+      await result.current.handleGenerateSummary()
+    })
+
+    expect(aiService.analyze).toHaveBeenCalledWith(mockProject.id)
+  })
+
+  it('handleBatchClassify对未分类文件执行分类', async () => {
+    const { aiService } = await import('../services/aiService')
+    const { fileService } = await import('../services/fileService')
+
+    // Mock files with no category - must be set BEFORE renderHook
+    vi.mocked(fileService.list).mockResolvedValue({
+      success: true,
+      data: [
+        { id: 1, filename: 'a.pdf', category: null, project_id: 1, subcategory: null, stage: null, stored_path: '/a.pdf', original_path: null, file_type: null, file_size: null, content_extracted: null, ai_summary: null, ai_key_info: null, is_analyzed: false, has_signature: false, signature_status: 'unsigned', created_at: '' },
+        { id: 2, filename: 'b.pdf', category: null, project_id: 1, subcategory: null, stage: null, stored_path: '/b.pdf', original_path: null, file_type: null, file_size: null, content_extracted: null, ai_summary: null, ai_key_info: null, is_analyzed: false, has_signature: false, signature_status: 'unsigned', created_at: '' },
+      ],
+    })
+    vi.mocked(aiService.classify).mockResolvedValue({ success: true, data: { category: '需求', stage: null } })
+
+    const { result } = renderHook(() => useProjectHome(mockProject))
+
+    await waitFor(() => {
+      expect(result.current.allFiles).toHaveLength(2)
+    })
+
+    await act(async () => {
+      await result.current.handleBatchClassify()
+    })
+
+    expect(aiService.classify).toHaveBeenCalled()
+  })
 })

@@ -6,7 +6,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    // 排除构建产物，避免拾取编译后的 .js 测试副本
     exclude: ['**/node_modules/**', '**/dist/**', 'electron/dist/**'],
   },
   resolve: {

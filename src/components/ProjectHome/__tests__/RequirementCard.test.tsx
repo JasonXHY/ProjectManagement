@@ -69,4 +69,29 @@ describe('RequirementCard', () => {
 
     expect(screen.getByText('管理 →')).toBeInTheDocument()
   })
+
+  it('handles malformed JSON metadata', () => {
+    const badProject: Project = { ...mockProject, metadata: 'bad json' }
+    render(<RequirementCard project={badProject} allFiles={[]} />)
+    expect(screen.getByText('暂无需求记录')).toBeInTheDocument()
+  })
+
+  it('handles empty requirements array', () => {
+    const emptyProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ requirements: [] }),
+    }
+    render(<RequirementCard project={emptyProject} allFiles={[]} />)
+    expect(screen.getByText('暂无需求记录')).toBeInTheDocument()
+  })
+
+  it('handles requirements with missing name field', () => {
+    const partialProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ requirements: [{ status: 'pending' }] }),
+    }
+    render(<RequirementCard project={partialProject} allFiles={[]} />)
+    // Component renders the row even with missing name (shows empty req-name div)
+    expect(screen.getByText('待定')).toBeInTheDocument()
+  })
 })

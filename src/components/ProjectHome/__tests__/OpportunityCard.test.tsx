@@ -67,4 +67,19 @@ describe('OpportunityCard', () => {
 
     expect(screen.queryByText('💡')).not.toBeInTheDocument()
   })
+
+  it('handles malformed JSON metadata', () => {
+    const badProject: Project = { ...mockProject, metadata: 'bad json' }
+    render(<OpportunityCard project={badProject} allFiles={[]} />)
+    expect(screen.getByText('暂无拓展商机')).toBeInTheDocument()
+  })
+
+  it('handles empty opportunities array', () => {
+    const emptyProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ opportunities: [] }),
+    }
+    render(<OpportunityCard project={emptyProject} allFiles={[]} />)
+    expect(screen.getByText('暂无拓展商机')).toBeInTheDocument()
+  })
 })

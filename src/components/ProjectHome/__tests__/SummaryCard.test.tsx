@@ -69,4 +69,19 @@ describe('SummaryCard', () => {
     const summaryEl = screen.getByText(/这是一个很长的项目总结/)
     expect(summaryEl).toBeInTheDocument()
   })
+
+  it('handles malformed JSON metadata', () => {
+    const badProject: Project = { ...mockProject, metadata: 'bad json' }
+    render(<SummaryCard project={badProject} allFiles={[]} />)
+    expect(screen.getByText('暂无项目总结')).toBeInTheDocument()
+  })
+
+  it('handles empty project_overview', () => {
+    const emptyProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ project_overview: '' }),
+    }
+    render(<SummaryCard project={emptyProject} allFiles={[]} />)
+    expect(screen.getByText('暂无项目总结')).toBeInTheDocument()
+  })
 })

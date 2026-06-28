@@ -55,3 +55,40 @@ describe('FileExtractor 不支持类型', () => {
     expect(await FileExtractor.extract(p)).toBeNull()
   })
 })
+
+describe('FileExtractor pptx 提取', () => {
+  it('提取 pptx slide 文本内容', async () => {
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+    const slideXml = `<?xml version="1.0" encoding="UTF-8"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+       xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:sp>
+        <p:txBody>
+          <a:p><a:r><a:t>Hello World</a:t></a:r></a:p>
+          <a:p><a:r><a:t>Test Content</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`
+    zip.file('ppt/slides/slide1.xml', slideXml)
+    const buffer = await zip.generateAsync({ type: 'nodebuffer' })
+    const p = await writeTmp('test.pptx', buffer)
+    const result = await FileExtractor.extract(p)
+    expect(result).toContain('Hello World')
+    expect(result).toContain('Test Content')
+  })
+
+  it('空 pptx 返回空字符串', async () => {
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+    zip.file('ppt/slides/slide1.xml', '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree/></p:cSld></p:sld>')
+    const buffer = await zip.generateAsync({ type: 'nodebuffer' })
+    const p = await writeTmp('empty.pptx', buffer)
+    const result = await FileExtractor.extract(p)
+    expect(result).toBe('')
+  })
+})

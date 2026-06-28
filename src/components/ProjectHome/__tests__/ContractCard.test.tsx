@@ -91,4 +91,52 @@ describe('ContractCard', () => {
 
     expect(screen.getByText('查看明细 →')).toBeInTheDocument()
   })
+
+  it('handles malformed JSON metadata gracefully', () => {
+    const badProject: Project = {
+      ...mockProject,
+      metadata: 'not valid json{{{',
+    }
+
+    render(<ContractCard project={badProject} allFiles={[]} />)
+
+    expect(screen.getByText('暂无合同数据')).toBeInTheDocument()
+  })
+
+  it('handles empty object metadata', () => {
+    const emptyMetaProject: Project = {
+      ...mockProject,
+      metadata: '{}',
+    }
+
+    render(<ContractCard project={emptyMetaProject} allFiles={[]} />)
+
+    expect(screen.getByText('暂无合同数据')).toBeInTheDocument()
+  })
+
+  it('handles contract_amount = 0', () => {
+    const zeroAmountProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ contract_amount: 0, contract_items: [] }),
+    }
+
+    render(<ContractCard project={zeroAmountProject} allFiles={[]} />)
+
+    expect(screen.getByText('暂无合同数据')).toBeInTheDocument()
+  })
+
+  it('handles contract_items with missing fields', () => {
+    const partialProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({
+        contract_amount: 50000,
+        contract_items: [{ name: 'Item1' }],
+      }),
+    }
+
+    render(<ContractCard project={partialProject} allFiles={[]} />)
+
+    expect(screen.getByText('¥50,000.00')).toBeInTheDocument()
+    expect(screen.getByText('Item1')).toBeInTheDocument()
+  })
 })

@@ -78,4 +78,19 @@ describe('IssueCard', () => {
 
     expect(screen.getByText('管理 →')).toBeInTheDocument()
   })
+
+  it('handles malformed JSON metadata', () => {
+    const badProject: Project = { ...mockProject, metadata: 'bad json' }
+    render(<IssueCard project={badProject} allFiles={[]} />)
+    expect(screen.getByText('暂无关键问题')).toBeInTheDocument()
+  })
+
+  it('handles empty key_issues array', () => {
+    const emptyProject: Project = {
+      ...mockProject,
+      metadata: JSON.stringify({ key_issues: [] }),
+    }
+    render(<IssueCard project={emptyProject} allFiles={[]} />)
+    expect(screen.getByText('暂无关键问题')).toBeInTheDocument()
+  })
 })
