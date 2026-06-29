@@ -220,6 +220,15 @@ export function registerAIHandlers() {
         }
       }
 
+      const contractItems = (mergedMetadata.contract_items as any[]) || []
+      const itemsTotal = contractItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
+      if (contractItems.length >= 2 && itemsTotal > 0 && mergedMetadata.contract_amount) {
+        const amount = mergedMetadata.contract_amount as number
+        if (Math.abs(itemsTotal - amount) / amount > 0.05) {
+          mergedMetadata.contract_amount = itemsTotal
+        }
+      }
+
       projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
 
       // 保存MD文件（关键信息）
