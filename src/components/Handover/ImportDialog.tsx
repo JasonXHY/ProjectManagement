@@ -1,7 +1,8 @@
 import { memo, useState, useCallback, useEffect } from 'react'
-import { Modal, Input, Typography, Button, Space, message, Spin } from 'antd'
+import { Modal, Upload, Input, Typography, Button, Space, message, Spin } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 
+const { Dragger } = Upload
 const { Text } = Typography
 
 interface HandoverPreview {
@@ -40,27 +41,26 @@ const ImportDialog = memo(function ImportDialog({
     setProjectName('')
   }
 
-  const handleSelectFile = useCallback(async () => {
-    const result = await window.api.handover.selectFile()
-    if (!result.success || !result.data) {
-      if (result.error !== '用户取消选择') {
-        message.error(result.error || '选择文件失败')
-      }
-      return
+  const handleBeforeUpload = useCallback(async (file: File) => {
+    const name = file.name
+    if (!name.endsWith('.pmaer.zip')) {
+      message.error('请选择 .pmaer.zip 文件')
+      return false
     }
 
-    const fullPath = result.data.filePath
-    if (!fullPath.endsWith('.pmaer.zip')) {
-      message.error('请选择 .pmaer.zip 文件')
-      return
+    // Electron中File对象有path属性，包含完整路径
+    const fullPath = (file as any).path
+    if (!fullPath) {
+      message.error('无法获取文件路径，请通过文件选择器选择')
+      return false
     }
 
     resetState()
     setLoadingPreview(true)
     try {
-      const previewResult = await window.api.handover.preview(fullPath)
-      if (previewResult.success && previewResult.data) {
-        const data = previewResult.data
+      const result = await window.api.handover.preview(fullPath)
+      if (result.success && result.data) {
+        const data = result.data
         setFilePath(fullPath)
         setPreview({
           projectName: data.projectName || data.project_name || '未命名项目',
@@ -70,13 +70,14 @@ const ImportDialog = memo(function ImportDialog({
         })
         setProjectName(data.projectName || data.project_name || '')
       } else {
-        message.error(previewResult.error || '预览失败')
+        message.error(result.error || '预览失败')
       }
     } catch {
       message.error('预览请求失败')
     } finally {
       setLoadingPreview(false)
     }
+    return false
   }, [])
 
   const handleImport = useCallback(async () => {
@@ -113,17 +114,24 @@ const ImportDialog = memo(function ImportDialog({
 
     if (!preview) {
       return (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <div style={{ marginBottom: 16, color: 'var(--text-placeholder)', fontSize: 48 }}>
+        <Dragger
+          accept=".zip"
+          showUploadList={false}
+          beforeUpload={handleBeforeUpload}
+          style={{
+            padding: '24px 0',
+            height: '200px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <p className="ant-upload-drag-icon">
             <InboxOutlined />
-          </div>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            选择 .pmaer.zip 转交包文件进行导入
           </p>
-          <Button type="primary" icon={<InboxOutlined />} onClick={handleSelectFile}>
-            选择文件
-          </Button>
-        </div>
+          <p className="ant-upload-text">点击或拖拽 .pmaer.zip 文件到此处</p>
+        </Dragger>
       )
     }
 
