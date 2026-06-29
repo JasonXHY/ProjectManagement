@@ -178,7 +178,7 @@ const ImportDialog = memo(function ImportDialog({
       onCancel={onClose}
       width={500}
       styles={{
-        body: { maxHeight: '800px', overflow: 'auto' }
+        body: { maxHeight: '680px', overflow: 'auto' }
       }}
       footer={
         preview ? (
