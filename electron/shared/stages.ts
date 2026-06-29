@@ -50,7 +50,7 @@ export const STAGE_PROGRESSION_RULES = {
     to: '关闭',
     stages: ['关闭'],
     // 只有这些子分类的文件才触发关闭阶段推进
-    triggerSubcategories: ['验收报告', '项目总结', '项目归档', '复盘总结'],
+    triggerSubcategories: ['项目归档', '复盘总结'],
   },
 }
 
