@@ -111,7 +111,14 @@ const ImportDialog = memo(function ImportDialog({
           accept=".zip"
           showUploadList={false}
           beforeUpload={handleBeforeUpload}
-          style={{ padding: '40px 0' }}
+          style={{
+            padding: '24px 0',
+            height: '200px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
         >
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
@@ -163,6 +170,9 @@ const ImportDialog = memo(function ImportDialog({
       open={open}
       onCancel={onClose}
       width={500}
+      styles={{
+        body: { maxHeight: '400px', overflow: 'auto' }
+      }}
       footer={
         preview ? (
           <Space>
