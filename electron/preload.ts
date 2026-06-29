@@ -64,5 +64,7 @@ contextBridge.exposeInMainWorld('api', {
     aiSelect: (projectId: number, description: string) =>
       ipcRenderer.invoke('handover:ai-select', { projectId, description }),
   },
-  clipboardWriteText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
+  clipboard: {
+    writeText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
+  },
 })

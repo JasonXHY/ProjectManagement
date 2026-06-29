@@ -109,7 +109,15 @@ app.whenReady().then(async () => {
   registerHandoverHandlers()
 
   ipcMain.handle('clipboard:writeText', (_event, text: string) => {
-    clipboard.writeText(text)
+    if (typeof text !== 'string') {
+      return { success: false, error: 'text must be a string' }
+    }
+    try {
+      clipboard.writeText(text)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
   })
 
   SignatureDetector.init()
