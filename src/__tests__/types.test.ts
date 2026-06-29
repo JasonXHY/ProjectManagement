@@ -17,7 +17,7 @@ describe('checkStageProgression', () => {
   })
 
   it('进行中项目检测到"关闭"文件应触发推进（需匹配子分类）', () => {
-    const result = checkStageProgression('进行中', '关闭', '验收报告')
+    const result = checkStageProgression('进行中', '关闭', '项目归档')
     expect(result).toEqual({
       shouldProgress: true,
       targetStage: '关闭',
