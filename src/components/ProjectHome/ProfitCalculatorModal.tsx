@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Modal, Input, Select, Button, Divider, message } from 'antd'
-import { calculateProfit, INTERNAL_UNIT_PRICES, ProfitResult } from './ProfitCalculator'
+import { useState, useMemo } from 'react'
+import { Modal, InputNumber, Select, Button, Divider, Progress, message } from 'antd'
+import { PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
+import { calculateProfit, INTERNAL_UNIT_PRICES } from './ProfitCalculator'
 import { formatAmount, formatPercent } from '../../utils/format'
 import { parseMetadata } from '../../utils/metadata'
 
@@ -10,112 +11,138 @@ interface ProfitCalculatorModalProps {
   projectId?: number
 }
 
+interface Member {
+  id: number
+  role: string
+  level: string
+  days: number
+}
+
+let nextId = 1
+
+const defaultMember: Member = { id: nextId++, role: '实施顾问', level: 'C2-1', days: 1 }
+
 const roleOptions = Object.keys(INTERNAL_UNIT_PRICES).map(role => ({
   label: role,
   value: role,
 }))
 
-const levelOptions: Record<string, { label: string; value: string }[]> = {
-  '实施顾问': [
-    { label: 'C1-1 (¥1270)', value: 'C1-1' },
-    { label: 'C1-2 (¥1440)', value: 'C1-2' },
-    { label: 'C2-1 (¥1560)', value: 'C2-1' },
-    { label: 'C2-2 (¥1970)', value: 'C2-2' },
-    { label: 'C3-1 (¥2550)', value: 'C3-1' },
-    { label: 'C3-2 (¥3030)', value: 'C3-2' },
-    { label: 'C4-1 (¥3940)', value: 'C4-1' },
-  ],
-  '开发工程师': [
-    { label: 'C1-1 (¥1270)', value: 'C1-1' },
-    { label: 'C1-2 (¥1440)', value: 'C1-2' },
-    { label: 'C2-1 (¥1560)', value: 'C2-1' },
-    { label: 'C2-2 (¥1970)', value: 'C2-2' },
-    { label: 'C3-1 (¥2550)', value: 'C3-1' },
-    { label: 'C3-2 (¥3030)', value: 'C3-2' },
-    { label: 'C4-1 (¥3940)', value: 'C4-1' },
-  ],
-  '项目经理': [
-    { label: 'C1-1 (¥1270)', value: 'C1-1' },
-    { label: 'C1-2 (¥1440)', value: 'C1-2' },
-    { label: 'C2-1 (¥1560)', value: 'C2-1' },
-    { label: 'C2-2 (¥1970)', value: 'C2-2' },
-    { label: 'C3-1 (¥2550)', value: 'C3-1' },
-    { label: 'C3-2 (¥3030)', value: 'C3-2' },
-    { label: 'C4-1 (¥3940)', value: 'C4-1' },
-  ],
-  '测试工程师': [
-    { label: 'C1-1 (¥1270)', value: 'C1-1' },
-    { label: 'C1-2 (¥1440)', value: 'C1-2' },
-    { label: 'C2-1 (¥1560)', value: 'C2-1' },
-    { label: 'C2-2 (¥1970)', value: 'C2-2' },
-    { label: 'C3-1 (¥2550)', value: 'C3-1' },
-    { label: 'C3-2 (¥3030)', value: 'C3-2' },
-    { label: 'C4-1 (¥3940)', value: 'C4-1' },
-  ],
-  '运维工程师': [
-    { label: '服务1-1 (¥1060)', value: '服务1-1' },
-    { label: '服务1-2 (¥1200)', value: '服务1-2' },
-  ],
+function getLevelOptions(role: string) {
+  const levels = INTERNAL_UNIT_PRICES[role] || {}
+  return Object.entries(levels).map(([lv, price]) => ({
+    label: `${lv} (¥${price})`,
+    value: lv,
+  }))
 }
 
 export default function ProfitCalculatorModal({ open, onClose, projectId }: ProfitCalculatorModalProps) {
   const [contractAmount, setContractAmount] = useState<number>(0)
-  const [internalDays, setInternalDays] = useState<number>(0)
-  const [externalDays, setExternalDays] = useState<number>(0)
-  const [role, setRole] = useState<string>('实施顾问')
-  const [level, setLevel] = useState<string>('C2-1')
+  const [members, setMembers] = useState<Member[]>([{ ...defaultMember }])
   const [externalUnitPrice, setExternalUnitPrice] = useState<number>(1200)
   const [internalTravel, setInternalTravel] = useState<number>(0)
-  const [externalTravel, setExternalTravel] = useState<number>(0)
-  const [result, setResult] = useState<ProfitResult | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [externalTravel, _setExternalTravel] = useState<number>(0)
 
-  const internalUnitPrice = INTERNAL_UNIT_PRICES[role]?.[level] || 1560
-
-  const handleCalculate = async () => {
-    const calcResult = calculateProfit({
+  const result = useMemo(() => {
+    let internalDays = 0
+    let weightedInternalUnitPrice = 0
+    for (const m of members) {
+      const price = INTERNAL_UNIT_PRICES[m.role]?.[m.level] || 0
+      internalDays += m.days
+      weightedInternalUnitPrice += m.days * price
+    }
+    if (internalDays > 0) {
+      weightedInternalUnitPrice = weightedInternalUnitPrice / internalDays
+    }
+    return calculateProfit({
       contractAmount,
       internalDays,
-      externalDays,
-      internalUnitPrice,
+      externalDays: 0,
+      internalUnitPrice: weightedInternalUnitPrice,
       externalUnitPrice,
       internalTravel,
       externalTravel,
     })
-    setResult(calcResult)
+  }, [contractAmount, members, externalUnitPrice, internalTravel, externalTravel])
 
-    if (projectId) {
-      try {
-        const evaluation = {
-          contractAmount,
-          internalDays,
-          externalDays,
-          internalUnitPrice,
-          externalUnitPrice,
-          internalTravel,
-          externalTravel,
-          result: calcResult,
-          calculatedAt: new Date().toISOString(),
-        }
-        const totalCost = calcResult.totalCost
-        const totalPersonDays = internalDays + externalDays
+  const totalInternalDays = members.reduce((s, m) => s + m.days, 0)
+  const totalInternalCost = members.reduce((s, m) => s + m.days * (INTERNAL_UNIT_PRICES[m.role]?.[m.level] || 0), 0) + internalTravel
 
-        // 读取现有metadata，合并新字段（避免覆盖其他数据）
-        const projectResult = await window.api.project.get(projectId)
-        const existingMeta = parseMetadata(projectResult.data?.metadata ?? null)
-        const mergedMeta = {
-          ...existingMeta,
-          evaluation,
-          contract_amount: contractAmount,
-          cost_estimate: totalCost,
-          profit_rate: calcResult.internalProfitRate,
-          person_days: totalPersonDays,
-        }
-        await window.api.project.update(projectId, {
-          metadata: JSON.stringify(mergedMeta),
-        })
-      } catch (err) {
-        message.error('保存利润测算失败')
+  const updateMember = (id: number, patch: Partial<Member>) => {
+    setMembers(prev => prev.map(m => m.id === id ? { ...m, ...patch } : m))
+  }
+
+  const addMember = () => {
+    if (members.length >= 10) {
+      message.warning('最多添加10名成员')
+      return
+    }
+    setMembers(prev => [...prev, { id: nextId++, role: '实施顾问', level: 'C2-1', days: 1 }])
+  }
+
+  const removeMember = (id: number) => {
+    if (members.length <= 1) return
+    setMembers(prev => prev.filter(m => m.id !== id))
+  }
+
+  const handleCopy = () => {
+    const lines: string[] = [
+      '=== 利润测算结果 ===',
+      `合同总额: ${formatAmount(contractAmount)}`,
+      '',
+      '--- 成本明细 ---',
+      `内部人工: ${formatAmount(totalInternalCost - internalTravel)}`,
+      `内部差旅: ${formatAmount(internalTravel)}`,
+      `内部合计: ${formatAmount(result.internalTotalCost)}`,
+      `外部人工: ${formatAmount(result.externalPersonDayCost)}`,
+      `外部差旅: ${formatAmount(externalTravel)}`,
+      `外部合计: ${formatAmount(result.externalTotalCost)}`,
+      `总成本: ${formatAmount(result.totalCost)}`,
+      '',
+      '--- 利润率 ---',
+      `内部利润率: ${formatPercent(result.internalProfitRate)}`,
+      `外包利润率: ${formatPercent(result.externalProfitRate)}`,
+      `整体利润率: ${formatPercent(result.overallProfitRate)}`,
+    ]
+    if (result.isInternalRedLine || result.isExternalRedLine) {
+      lines.push('')
+      lines.push('⚠️ 触发低利润红线')
+    }
+    window.api.clipboard.writeText(lines.join('\n'))
+    message.success('已复制到剪贴板')
+  }
+
+  const redLineStatus = (rate: number, isRedLine: boolean, threshold: number): 'ok' | 'warning' | 'error' => {
+    if (isRedLine) return 'error'
+    if (rate < threshold + 0.05) return 'warning'
+    return 'ok'
+  }
+
+  const saveToProject = async () => {
+    if (!projectId) return
+    try {
+      const evaluation = {
+        members: members.map(({ id, ...rest }) => rest),
+        contractAmount,
+        externalUnitPrice,
+        internalTravel,
+        externalTravel,
+        result,
+        calculatedAt: new Date().toISOString(),
       }
+      const projectResult = await window.api.project.get(projectId)
+      const existingMeta = parseMetadata(projectResult.data?.metadata ?? null)
+      const mergedMeta = {
+        ...existingMeta,
+        evaluation,
+        contract_amount: contractAmount,
+        cost_estimate: result.totalCost,
+        profit_rate: result.overallProfitRate,
+        person_days: totalInternalDays,
+      }
+      await window.api.project.update(projectId, { metadata: JSON.stringify(mergedMeta) })
+    } catch {
+      message.error('保存利润测算失败')
     }
   }
 
@@ -124,158 +151,151 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
       title="利润测算"
       open={open}
       onCancel={onClose}
-      footer={null}
-      width={640}
+      width={720}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <Button icon={<CopyOutlined />} onClick={handleCopy}>复制结果</Button>
+          {projectId && <Button type="primary" onClick={saveToProject}>保存</Button>}
+          <Button onClick={onClose}>关闭</Button>
+        </div>
+      }
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+      {/* Contract amount */}
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
+          合同总额（元）
+        </label>
+        <InputNumber
+          style={{ width: '100%' }}
+          value={contractAmount || undefined}
+          onChange={v => setContractAmount(v || 0)}
+          placeholder="输入合同总额"
+          min={0}
+          step={1000}
+        />
+      </div>
+
+      <Divider style={{ margin: '12px 0' }}>成员配置</Divider>
+
+      {/* Member table */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {members.map(m => {
+          const unitPrice = INTERNAL_UNIT_PRICES[m.role]?.[m.level] || 0
+          const cost = m.days * unitPrice
+          return (
+            <div key={m.id} style={{ display: 'grid', gridTemplateColumns: '140px 120px 80px 80px 80px 32px', gap: 8, alignItems: 'center' }}>
+              <Select
+                value={m.role}
+                onChange={role => updateMember(m.id, { role, level: Object.keys(INTERNAL_UNIT_PRICES[role] || {})[0] || '' })}
+                options={roleOptions}
+                size="small"
+              />
+              <Select
+                value={m.level}
+                onChange={level => updateMember(m.id, { level })}
+                options={getLevelOptions(m.role)}
+                size="small"
+              />
+              <InputNumber
+                value={m.days}
+                onChange={v => updateMember(m.id, { days: v || 0 })}
+                min={0}
+                size="small"
+                style={{ width: '100%' }}
+              />
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)', textAlign: 'right' }}>¥{unitPrice}</span>
+              <span style={{ fontSize: 12, fontWeight: 500, textAlign: 'right' }}>{formatAmount(cost)}</span>
+              <Button
+                type="text"
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => removeMember(m.id)}
+                disabled={members.length <= 1}
+                style={{ color: members.length <= 1 ? undefined : 'var(--color-error)' }}
+              />
+            </div>
+          )
+        })}
+      </div>
+      <Button type="dashed" block icon={<PlusOutlined />} onClick={addMember} disabled={members.length >= 10} style={{ marginBottom: 16 }}>
+        添加成员
+      </Button>
+
+      {/* Travel costs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            合同总额（元）
-          </label>
-          <Input
-            type="number"
-            value={contractAmount || ''}
-            onChange={e => setContractAmount(Number(e.target.value) || 0)}
-            placeholder="输入合同总额"
-          />
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>内部差旅（元）</label>
+          <InputNumber style={{ width: '100%' }} value={internalTravel || undefined} onChange={v => setInternalTravel(v || 0)} min={0} placeholder="0" />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            内部人天
-          </label>
-          <Input
-            type="number"
-            value={internalDays || ''}
-            onChange={e => setInternalDays(Number(e.target.value) || 0)}
-            placeholder="输入内部人天"
-          />
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>外部差旅（元）</label>
+          <InputNumber style={{ width: '100%' }} value={externalTravel || undefined} onChange={v => _setExternalTravel(v || 0)} min={0} placeholder="0" />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            外包人天
-          </label>
-          <Input
-            type="number"
-            value={externalDays || ''}
-            onChange={e => setExternalDays(Number(e.target.value) || 0)}
-            placeholder="输入外包人天"
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            外包单价（元/天）
-          </label>
-          <Input
-            type="number"
-            value={externalUnitPrice}
-            onChange={e => setExternalUnitPrice(Number(e.target.value) || 1200)}
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            内部角色
-          </label>
-          <Select
-            value={role}
-            onChange={setRole}
-            options={roleOptions}
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            职级
-          </label>
-          <Select
-            value={level}
-            onChange={setLevel}
-            options={levelOptions[role] || []}
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            内部差旅（元）
-          </label>
-          <Input
-            type="number"
-            value={internalTravel || ''}
-            onChange={e => setInternalTravel(Number(e.target.value) || 0)}
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-            外部差旅（元）
-          </label>
-          <Input
-            type="number"
-            value={externalTravel || ''}
-            onChange={e => setExternalTravel(Number(e.target.value) || 0)}
-            placeholder="0"
-          />
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>外包单价（元/天）</label>
+          <InputNumber style={{ width: '100%' }} value={externalUnitPrice} onChange={v => setExternalUnitPrice(v || 1200)} min={0} />
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <Button type="primary" onClick={handleCalculate}>
-          测算
-        </Button>
+      <Divider style={{ margin: '12px 0' }}>测算结果</Divider>
+
+      {/* Cost breakdown */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <CostItem label="内部人工" value={totalInternalCost - internalTravel} />
+        <CostItem label="内部差旅" value={internalTravel} />
+        <CostItem label="内部合计" value={result.internalTotalCost} bold />
+        <CostItem label="外部人工" value={result.externalPersonDayCost} />
+        <CostItem label="外部差旅" value={externalTravel} />
+        <CostItem label="外部合计" value={result.externalTotalCost} bold />
+        <CostItem label="总成本" value={result.totalCost} bold highlight />
       </div>
 
-      {result && (
-        <>
-          <Divider>测算结果</Divider>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-placeholder)', marginBottom: '4px' }}>总成本</div>
-              <div style={{ fontSize: '16px', fontWeight: 600 }}>{formatAmount(result.totalCost)}</div>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-placeholder)', marginBottom: '4px' }}>整体利润率</div>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: result.overallProfitRate >= 0.4 ? 'var(--color-success)' : 'var(--color-error)',
-              }}>
-                {formatPercent(result.overallProfitRate)}
-              </div>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-placeholder)', marginBottom: '4px' }}>内部利润率</div>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: result.isInternalRedLine ? 'var(--color-error)' : 'var(--color-success)',
-              }}>
-                {formatPercent(result.internalProfitRate)}
-              </div>
-            </div>
-            <div style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-placeholder)', marginBottom: '4px' }}>外包利润率</div>
-              <div style={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: result.isExternalRedLine ? 'var(--color-error)' : 'var(--color-success)',
-              }}>
-                {formatPercent(result.externalProfitRate)}
-              </div>
-            </div>
-          </div>
+      {/* Profit rates */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <ProfitRateCard label="内部利润率" rate={result.internalProfitRate} status={redLineStatus(result.internalProfitRate, result.isInternalRedLine, 0)} />
+        <ProfitRateCard label="外包利润率" rate={result.externalProfitRate} status={redLineStatus(result.externalProfitRate, result.isExternalRedLine, 0.4)} />
+        <ProfitRateCard label="整体利润率" rate={result.overallProfitRate} status={result.overallProfitRate >= 0.4 ? 'ok' : result.overallProfitRate >= 0.3 ? 'warning' : 'error'} />
+      </div>
 
-          {(result.isInternalRedLine || result.isExternalRedLine) && (
-            <div style={{
-              marginTop: '16px',
-              padding: '12px',
-              background: '#FEE2E2',
-              borderRadius: '8px',
-              color: '#991B1B',
-            }}>
-              ⚠️ 触发低利润红线：{result.isInternalRedLine && '内部利润率 < 0%'}{result.isInternalRedLine && result.isExternalRedLine && '，'}{result.isExternalRedLine && '外包利润率 < 40%'}
-            </div>
-          )}
-        </>
+      {/* Red-line warning */}
+      {(result.isInternalRedLine || result.isExternalRedLine) && (
+        <div style={{ padding: '10px 12px', background: '#FEE2E2', borderRadius: 6, color: '#991B1B', fontSize: 13 }}>
+          ⚠️ 触发低利润红线：{result.isInternalRedLine && '内部利润率 < 0%'}{result.isInternalRedLine && result.isExternalRedLine && '，'}{result.isExternalRedLine && '外包利润率 < 40%'}
+        </div>
       )}
     </Modal>
+  )
+}
+
+function CostItem({ label, value, bold, highlight }: { label: string; value: number; bold?: boolean; highlight?: boolean }) {
+  return (
+    <div style={{
+      padding: '8px 12px',
+      background: highlight ? '#FFF1F0' : 'var(--bg-secondary, #f5f5f5)',
+      borderRadius: 6,
+    }}>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary, #999)', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: highlight ? 16 : 14, fontWeight: bold ? 600 : 400, color: highlight ? '#cf1322' : undefined }}>
+        {formatAmount(value)}
+      </div>
+    </div>
+  )
+}
+
+function ProfitRateCard({ label, rate, status }: { label: string; rate: number; status: 'ok' | 'warning' | 'error' }) {
+  const colorMap = { ok: '#52c41a', warning: '#faad14', error: '#ff4d4f' }
+  const color = colorMap[status]
+  return (
+    <div style={{ padding: '8px 12px', background: 'var(--bg-secondary, #f5f5f5)', borderRadius: 6 }}>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary, #999)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color, marginBottom: 4 }}>{formatPercent(rate)}</div>
+      <Progress
+        percent={Math.min(Math.max(rate * 100, 0), 100)}
+        showInfo={false}
+        strokeColor={color}
+        railColor="#e8e8e8"
+        size="small"
+      />
+    </div>
   )
 }

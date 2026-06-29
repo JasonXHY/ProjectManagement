@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import ProfitCalculatorModal from '../ProfitCalculatorModal'
 
 describe('ProfitCalculatorModal', () => {
@@ -8,14 +8,15 @@ describe('ProfitCalculatorModal', () => {
 
     expect(screen.getByText('利润测算')).toBeInTheDocument()
     expect(screen.getByText(/合同总额/)).toBeInTheDocument()
-    expect(screen.getByText(/内部人天/)).toBeInTheDocument()
-    expect(screen.getByText(/外包人天/)).toBeInTheDocument()
+    expect(screen.getByText('成员配置')).toBeInTheDocument()
   })
 
-  it('has calculate button', () => {
+  it('renders member table with default row', () => {
     render(<ProfitCalculatorModal open={true} onClose={vi.fn()} />)
 
-    expect(screen.getByRole('button', { name: /测\s*算/ })).toBeInTheDocument()
+    expect(screen.getByText('添加成员')).toBeInTheDocument()
+    expect(screen.getByText('内部差旅（元）')).toBeInTheDocument()
+    expect(screen.getByText('外部差旅（元）')).toBeInTheDocument()
   })
 
   it('calls onClose when close button clicked', () => {
@@ -32,18 +33,24 @@ describe('ProfitCalculatorModal', () => {
     expect(screen.queryByText('利润测算')).not.toBeInTheDocument()
   })
 
-  it('shows result after calculation', () => {
+  it('shows result section immediately (real-time calculation)', () => {
     render(<ProfitCalculatorModal open={true} onClose={vi.fn()} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /测\s*算/ }))
 
     expect(screen.getByText('测算结果')).toBeInTheDocument()
     expect(screen.getByText('总成本')).toBeInTheDocument()
+    expect(screen.getByText('内部利润率')).toBeInTheDocument()
+    expect(screen.getByText('外包利润率')).toBeInTheDocument()
     expect(screen.getByText('整体利润率')).toBeInTheDocument()
   })
 
+  it('shows copy button in footer', () => {
+    render(<ProfitCalculatorModal open={true} onClose={vi.fn()} />)
+
+    expect(screen.getByText('复制结果')).toBeInTheDocument()
+  })
+
   // T2 — 测算后保存到metadata（合并现有数据，不覆盖）
-  it('saves evaluation to project metadata after calculation', async () => {
+  it('saves evaluation to project metadata when save clicked', async () => {
     const mockGet = vi.fn().mockResolvedValue({
       success: true,
       data: { id: 1, metadata: JSON.stringify({ customer_name: '测试客户', project_code: 'PRJ-001' }) }
@@ -55,13 +62,8 @@ describe('ProfitCalculatorModal', () => {
 
     render(<ProfitCalculatorModal open={true} onClose={vi.fn()} projectId={1} />)
 
-    fireEvent.change(screen.getByPlaceholderText('输入合同总额'), { target: { value: '1000000' } })
-    fireEvent.change(screen.getByPlaceholderText('输入内部人天'), { target: { value: '50' } })
-    fireEvent.change(screen.getByPlaceholderText('输入外包人天'), { target: { value: '30' } })
+    screen.getByRole('button', { name: /保.*存/ }).click()
 
-    fireEvent.click(screen.getByRole('button', { name: /测\s*算/ }))
-
-    // 等待异步操作完成
     await vi.waitFor(() => {
       expect(mockUpdate).toHaveBeenCalled()
     })
@@ -71,9 +73,8 @@ describe('ProfitCalculatorModal', () => {
     const metadata = JSON.parse(data.metadata)
     expect(metadata.evaluation).toBeDefined()
     expect(metadata.evaluation.result).toBeDefined()
-    expect(metadata.contract_amount).toBe(1000000)
-    expect(metadata.cost_estimate).toBeGreaterThan(0)
-    expect(metadata.person_days).toBe(80)
+    expect(metadata.evaluation.members).toBeDefined()
+    expect(metadata.contract_amount).toBe(0)
     expect(metadata.customer_name).toBe('测试客户')
   })
 })
