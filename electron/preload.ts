@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 interface FileUploadData {
   name: string
@@ -67,4 +67,5 @@ contextBridge.exposeInMainWorld('api', {
   clipboard: {
     writeText: (text: string) => ipcRenderer.invoke('clipboard:writeText', text),
   },
+  getFilePath: (file: File) => webUtils.getPathForFile(file),
 })

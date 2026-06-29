@@ -48,10 +48,10 @@ const ImportDialog = memo(function ImportDialog({
       return false
     }
 
-    // Electron中File对象有path属性，包含完整路径
-    const fullPath = (file as any).path
+    // 使用Electron webUtils获取文件完整路径
+    const fullPath = window.api.getFilePath(file)
     if (!fullPath) {
-      message.error('无法获取文件路径，请通过文件选择器选择')
+      message.error('无法获取文件路径')
       return false
     }
 

@@ -72,6 +72,7 @@ declare global {
       clipboard: {
         writeText: (text: string) => Promise<{ success: boolean; error?: string }>
       }
+      getFilePath: (file: File) => string
     }
   }
 }
