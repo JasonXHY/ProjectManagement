@@ -185,6 +185,7 @@ export interface Issue {
 export interface Opportunity {
   name: string
   description?: string
+  solution?: string
   status?: string
   statusText?: string
   source?: string

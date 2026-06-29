@@ -6,7 +6,7 @@ interface Opportunity {
   name: string
   description?: string
   solution?: string
-  status?: 'planned' | 'confirmed' | 'in-progress'
+  status?: string
   statusText?: string
 }
 
