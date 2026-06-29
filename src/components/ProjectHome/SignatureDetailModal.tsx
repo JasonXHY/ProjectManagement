@@ -1,5 +1,5 @@
-import { memo } from 'react'
-import { Modal, Button } from 'antd'
+import { memo, useRef } from 'react'
+import { Modal, Button, message } from 'antd'
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons'
 import { SignatureDoc } from '../../types'
 
@@ -7,17 +7,34 @@ interface SignatureDetailModalProps {
   open: boolean
   onClose: () => void
   docs: SignatureDoc[]
+  onDocStatusChange?: (docId: string, status: 'signed' | 'unsigned') => void
 }
 
 const SignatureDetailModal = memo(function SignatureDetailModal({
   open,
   onClose,
   docs,
+  onDocStatusChange,
 }: SignatureDetailModalProps) {
+  const activeDocIdRef = useRef<string>('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const signedCount = docs.filter(d => d.status === 'signed').length
   const unsignedCount = docs.filter(d => d.status === 'unsigned').length
   const totalCount = docs.length || 1
   const percent = Math.round((signedCount / totalCount) * 100)
+
+  const handleUploadClick = (docId: string) => {
+    activeDocIdRef.current = docId
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    onDocStatusChange?.(activeDocIdRef.current, 'signed')
+    message.success(`已上传: ${file.name}`)
+    e.target.value = ''
+  }
 
   return (
     <Modal
@@ -26,10 +43,19 @@ const SignatureDetailModal = memo(function SignatureDetailModal({
       onCancel={onClose}
       width={640}
       footer={
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <Button icon={<PlusOutlined />}>手动添加</Button>
-          <Button onClick={onClose}>关闭</Button>
-        </div>
+        <>
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf,.jpg,.png"
+            style={{ display: 'none' }}
+            onChange={handleFileSelected}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <Button icon={<PlusOutlined />}>手动添加</Button>
+            <Button onClick={onClose}>关闭</Button>
+          </div>
+        </>
       }
     >
       {docs.length === 0 ? (
@@ -98,6 +124,7 @@ const SignatureDetailModal = memo(function SignatureDetailModal({
                     color: 'var(--text-secondary)',
                     cursor: 'pointer',
                   }}
+                  onClick={() => handleUploadClick(doc.id)}
                 >
                   上传
                 </button>
