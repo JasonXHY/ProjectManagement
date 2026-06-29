@@ -22,7 +22,7 @@ export class MiMoProvider implements AIProviderInterface {
     const url = `${baseUrl}/v1/chat/completions`
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 60000)
+    const timeout = setTimeout(() => controller.abort(), 120000)
 
     try {
       const response = await fetch(url, {
@@ -55,7 +55,7 @@ export class MiMoProvider implements AIProviderInterface {
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        throw new Error('小米MiMo请求超时（60秒），请检查网络连接或稍后重试')
+        throw new Error('小米MiMo请求超时（120秒），请检查网络连接或稍后重试')
       }
       throw err
     } finally {
