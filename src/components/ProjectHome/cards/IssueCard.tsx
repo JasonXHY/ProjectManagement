@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { Project, FileRecord, Issue } from '../../../types'
-import ListDetailModal from '../ListDetailModal'
+import IssueDetailModal from '../IssueDetailModal'
 import { parseMetadata } from '../../../utils/metadata'
 
 interface Props { project: Project; allFiles?: FileRecord[] }
-
-const priorityConfig: Record<string, { color: string; label: string }> = {
-  high: { color: '#EF4444', label: '高' },
-  medium: { color: '#F59E0B', label: '中' },
-  low: { color: '#3B82F6', label: '低' },
-}
 
 export default function IssueCard({ project }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const meta = parseMetadata(project.metadata)
   const issues = (meta.key_issues as Issue[]) || []
+
+  const handleIssuesChange = (updatedIssues: Issue[]) => {
+    const updatedMeta = parseMetadata(project.metadata)
+    updatedMeta.key_issues = updatedIssues
+    window.api.project.update(project.id, { metadata: JSON.stringify(updatedMeta) })
+  }
 
   return (
     <>
@@ -44,38 +44,11 @@ export default function IssueCard({ project }: Props) {
         </div>
       </div>
 
-      <ListDetailModal
+      <IssueDetailModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="问题管理"
-        items={issues}
-        emptyText="暂无关键问题"
-        renderItem={(issue) => {
-          const priorityInfo = priorityConfig[issue.priority || 'medium']
-          return (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: '4px' }}>
-                  {issue.text || ''}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-placeholder)' }}>
-                  优先级: {priorityInfo.label}
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: '12px',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  backgroundColor: issue.status === 'resolved' ? '#D1FAE5' : '#FEE2E2',
-                  color: issue.status === 'resolved' ? '#065F46' : '#991B1B',
-                }}
-              >
-                {issue.status === 'resolved' ? '已解决' : '未解决'}
-              </span>
-            </div>
-          )
-        }}
+        issues={issues}
+        onIssuesChange={handleIssuesChange}
       />
     </>
   )
