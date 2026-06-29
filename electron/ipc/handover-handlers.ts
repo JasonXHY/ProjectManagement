@@ -43,6 +43,21 @@ export function registerHandoverHandlers() {
     }
   })
 
+  ipcMain.handle('handover:selectFile', async () => {
+    try {
+      const result = await dialog.showOpenDialog(BrowserWindow.getAllWindows()[0], {
+        filters: [{ name: 'PMAer转交包', extensions: ['zip'] }],
+        properties: ['openFile'],
+      })
+      if (!result.canceled && result.filePaths.length > 0) {
+        return { success: true, data: { filePath: result.filePaths[0] } }
+      }
+      return { success: false, error: '用户取消选择' }
+    } catch (error) {
+      return handleIpcError(error)
+    }
+  })
+
   ipcMain.handle('handover:ai-select', async (_, params: { projectId: number, description: string }) => {
     try {
       const { projectId, description } = params

@@ -61,6 +61,7 @@ contextBridge.exposeInMainWorld('api', {
     import: (params: { zipPath: string, projectName?: string }) =>
       ipcRenderer.invoke('handover:import', params),
     preview: (zipPath: string) => ipcRenderer.invoke('handover:preview', { zipPath }),
+    selectFile: () => ipcRenderer.invoke('handover:selectFile'),
     aiSelect: (projectId: number, description: string) =>
       ipcRenderer.invoke('handover:ai-select', { projectId, description }),
   },
