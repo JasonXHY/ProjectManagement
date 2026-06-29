@@ -10,6 +10,7 @@ import { getAllSettings } from '../../database/settings'
 import { ROLE_HINT } from '../../constants/ai'
 import { matchFilenameHints } from '../../constants/classify'
 import { sanitizeCategory } from '../../utils/sanitize'
+import { enqueueMetadataWrite } from '../../utils/metadata-queue'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -54,34 +55,34 @@ async function mergeKeyInfo(
   if (!keyInfo) return
 
   try {
-    const project = projectDb.getProject(projectId)
-    if (!project) return
+    await enqueueMetadataWrite(async () => {
+      const project = projectDb.getProject(projectId)
+      if (!project) return
 
-    const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
-    const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
-    for (const [key, value] of Object.entries(keyInfo)) {
-      if (typeof value === 'string' && value.trim()) {
-        mergedMetadata[key] = value.trim()
-      } else if (typeof value === 'number' && value > 0) {
-        // contract_amount 使用 first-write-wins：已有非零值时不覆盖
-        if (key === 'contract_amount' && mergedMetadata[key] && (mergedMetadata[key] as number) > 0) {
-          continue
+      const existingMetadata = project.metadata ? JSON.parse(project.metadata) : {}
+      const mergedMetadata: Record<string, unknown> = { ...existingMetadata }
+      for (const [key, value] of Object.entries(keyInfo)) {
+        if (typeof value === 'string' && value.trim()) {
+          mergedMetadata[key] = value.trim()
+        } else if (typeof value === 'number' && value > 0) {
+          if (key === 'contract_amount' && mergedMetadata[key] && (mergedMetadata[key] as number) > 0) {
+            continue
+          }
+          mergedMetadata[key] = value
+        } else if (Array.isArray(value) && value.length > 0) {
+          mergedMetadata[key] = value
         }
-        mergedMetadata[key] = value
-      } else if (Array.isArray(value) && value.length > 0) {
-        mergedMetadata[key] = value
       }
-    }
-    projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
+      projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
 
-    const infoProject = projectDb.getProject(projectId)
-    const projectPath = infoProject
-      ? await resolveProjectPathForProject(infoProject)
-      : await resolveProjectPath(projectId)
+      const infoProject = projectDb.getProject(projectId)
+      const projectPath = infoProject
+        ? await resolveProjectPathForProject(infoProject)
+        : await resolveProjectPath(projectId)
 
-    if (projectPath) {
-      const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-      const infoMd = `# 项目关键信息
+      if (projectPath) {
+        const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+        const infoMd = `# 项目关键信息
 
 | 字段 | 值 |
 |------|-----|
@@ -94,9 +95,10 @@ async function mergeKeyInfo(
 | 客户名称 | ${mergedMetadata.customer_name || '-'} |
 | 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
 `
-      await fs.mkdir(path.dirname(infoPath), { recursive: true })
-      await fs.writeFile(infoPath, infoMd, 'utf-8')
-    }
+        await fs.mkdir(path.dirname(infoPath), { recursive: true })
+        await fs.writeFile(infoPath, infoMd, 'utf-8')
+      }
+    })
   } catch (err) {
     console.error('[AI] 关键信息保存失败:', err)
   }
@@ -174,8 +176,6 @@ const SKIP_STRUCTURED_CATEGORIES = new Set([
   '验收',     // 验收材料、确认单
 ])
 
-let metadataQueue: Promise<void> = Promise.resolve()
-
 function extractStructuredDataAsync(
   projectId: number,
   category: string,
@@ -195,7 +195,7 @@ function extractStructuredDataAsync(
     .replace('{category}', category)
     .replace('{content}', truncatedContent)
 
-  metadataQueue = metadataQueue.then(async () => {
+  enqueueMetadataWrite(async () => {
     try {
       const structResult = await aiService.chat([{ role: 'user', content: structuredPrompt }])
       const structJson = structResult.content.match(/\{[\s\S]*\}/)

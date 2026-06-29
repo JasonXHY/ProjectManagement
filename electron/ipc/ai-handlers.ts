@@ -13,6 +13,7 @@ import { CHAT_SYSTEM_PROMPT } from '../prompts/chat'
 import { getAllSettings } from '../database/settings'
 import { handleClassify } from './handlers/classify'
 import { ROLE_HINT } from '../constants/ai'
+import { enqueueMetadataWrite } from '../utils/metadata-queue'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -201,39 +202,40 @@ export function registerAIHandlers() {
       }
 
       // 一次性写入 metadata（project_overview + key_info 合并）
-      const freshProject = projectDb.getProject(projectId)
-      const mergedMetadata: Record<string, unknown> = freshProject?.metadata ? JSON.parse(freshProject.metadata) : {}
+      await enqueueMetadataWrite(async () => {
+        const freshProject = projectDb.getProject(projectId)
+        const mergedMetadata: Record<string, unknown> = freshProject?.metadata ? JSON.parse(freshProject.metadata) : {}
 
-      if (briefSummary) {
-        mergedMetadata.project_overview = briefSummary
-      }
+        if (briefSummary) {
+          mergedMetadata.project_overview = briefSummary
+        }
 
-      if (newKeyInfo) {
-        for (const [key, value] of Object.entries(newKeyInfo)) {
-          if (typeof value === 'string' && value.trim()) {
-            mergedMetadata[key] = value.trim()
-          } else if (typeof value === 'number' && value > 0) {
-            mergedMetadata[key] = value
-          } else if (Array.isArray(value) && value.length > 0) {
-            mergedMetadata[key] = value
+        if (newKeyInfo) {
+          for (const [key, value] of Object.entries(newKeyInfo)) {
+            if (typeof value === 'string' && value.trim()) {
+              mergedMetadata[key] = value.trim()
+            } else if (typeof value === 'number' && value > 0) {
+              mergedMetadata[key] = value
+            } else if (Array.isArray(value) && value.length > 0) {
+              mergedMetadata[key] = value
+            }
           }
         }
-      }
 
-      const contractItems = (mergedMetadata.contract_items as any[]) || []
-      const itemsTotal = contractItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
-      if (contractItems.length >= 2 && itemsTotal > 0 && mergedMetadata.contract_amount) {
-        const amount = mergedMetadata.contract_amount as number
-        if (Math.abs(itemsTotal - amount) / amount > 0.05) {
-          mergedMetadata.contract_amount = itemsTotal
+        const contractItems = (mergedMetadata.contract_items as any[]) || []
+        const itemsTotal = contractItems.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
+        if (contractItems.length >= 2 && itemsTotal > 0 && mergedMetadata.contract_amount) {
+          const amount = mergedMetadata.contract_amount as number
+          if (Math.abs(itemsTotal - amount) / amount > 0.05) {
+            mergedMetadata.contract_amount = itemsTotal
+          }
         }
-      }
 
-      projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
+        projectDb.updateProject(projectId, { metadata: JSON.stringify(mergedMetadata) })
 
-      // 保存MD文件（关键信息）
-      const infoPath = path.join(projectPath, '.ai', 'project-info.md')
-      const infoMd = `# 项目关键信息
+        // 保存MD文件（关键信息）
+        const infoPath = path.join(projectPath, '.ai', 'project-info.md')
+        const infoMd = `# 项目关键信息
 
 | 字段 | 值 |
 |------|-----|
@@ -246,7 +248,8 @@ export function registerAIHandlers() {
 | 客户名称 | ${mergedMetadata.customer_name || '-'} |
 | 合同总金额 | ${mergedMetadata.contract_amount || '-'} |
 `
-      await fs.writeFile(infoPath, infoMd, 'utf-8')
+        await fs.writeFile(infoPath, infoMd, 'utf-8')
+      })
 
       // 提取里程碑
       try {
@@ -260,23 +263,24 @@ export function registerAIHandlers() {
         if (jsonMatch) {
           const newMilestones = JSON.parse(jsonMatch[0])
 
-          // 合并已有里程碑
-          const existingMilestones = project.milestones ? JSON.parse(project.milestones) : []
-          const mergedMilestones = [...existingMilestones]
+          await enqueueMetadataWrite(async () => {
+            const freshMilestoneProject = projectDb.getProject(projectId)
+            const existingMilestones = freshMilestoneProject?.milestones ? JSON.parse(freshMilestoneProject.milestones) : []
+            const mergedMilestones = [...existingMilestones]
 
-          for (const milestone of newMilestones) {
-            const exists = mergedMilestones.some(
-              (m: { date: string; title: string }) => m.date === milestone.date && m.title === milestone.title
-            )
-            if (!exists && milestone.date && milestone.title) {
-              mergedMilestones.push(milestone)
+            for (const milestone of newMilestones) {
+              const exists = mergedMilestones.some(
+                (m: { date: string; title: string }) => m.date === milestone.date && m.title === milestone.title
+              )
+              if (!exists && milestone.date && milestone.title) {
+                mergedMilestones.push(milestone)
+              }
             }
-          }
 
-          // 按日期排序
-          mergedMilestones.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            mergedMilestones.sort((a: { date: string }, b: { date: string }) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-          projectDb.updateProject(projectId, { milestones: JSON.stringify(mergedMilestones) })
+            projectDb.updateProject(projectId, { milestones: JSON.stringify(mergedMilestones) })
+          })
         }
       } catch (err) {
         console.error('[AI] 里程碑提取失败:', err)

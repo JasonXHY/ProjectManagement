@@ -13,6 +13,7 @@ import { EXTRACT_STRUCTURED_PROMPT } from '../../prompts/extract-structured'
 import { mergeStructuredData } from '../../utils/structured-merge'
 import { sanitizeCategory } from '../../utils/sanitize'
 import { matchFilenameHints } from '../../constants/classify'
+import { enqueueMetadataWrite } from '../../utils/metadata-queue'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -128,13 +129,15 @@ function extractStructuredDataAsync(
       const structJson = structResult.content.match(/\{[\s\S]*\}/)
       if (structJson) {
         const structuredData = JSON.parse(structJson[0])
-        const projectData = getProject(projectId)
-        if (projectData) {
-          const existingMeta = projectData.metadata ? JSON.parse(projectData.metadata) : {}
-          const mergedMeta = mergeStructuredData(existingMeta, structuredData)
-          const { updateProject } = await import('../../database/projects')
-          updateProject(projectId, { metadata: JSON.stringify(mergedMeta) })
-        }
+        await enqueueMetadataWrite(async () => {
+          const projectData = getProject(projectId)
+          if (projectData) {
+            const existingMeta = projectData.metadata ? JSON.parse(projectData.metadata) : {}
+            const mergedMeta = mergeStructuredData(existingMeta, structuredData)
+            const { updateProject } = await import('../../database/projects')
+            updateProject(projectId, { metadata: JSON.stringify(mergedMeta) })
+          }
+        })
       }
     } catch (e) {
       console.warn('[结构化提取] 解析失败，跳过:', (e as Error).message)
