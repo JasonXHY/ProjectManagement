@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Modal, InputNumber, Select, Button, Divider, Progress, message } from 'antd'
 import { PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import { calculateProfit, INTERNAL_UNIT_PRICES } from './ProfitCalculator'
@@ -38,10 +38,25 @@ function getLevelOptions(role: string) {
 export default function ProfitCalculatorModal({ open, onClose, projectId }: ProfitCalculatorModalProps) {
   const [contractAmount, setContractAmount] = useState<number>(0)
   const [members, setMembers] = useState<Member[]>([{ ...defaultMember }])
+  const [externalDays, setExternalDays] = useState<number>(0)
   const [externalUnitPrice, setExternalUnitPrice] = useState<number>(1200)
   const [internalTravel, setInternalTravel] = useState<number>(0)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [externalTravel, _setExternalTravel] = useState<number>(0)
+
+  useEffect(() => {
+    if (open && projectId) {
+      window.api.project.get(projectId).then(result => {
+        if (result.success && result.data) {
+          const meta = parseMetadata(result.data?.metadata ?? null)
+          const amount = (meta.contract_amount as number) || 0
+          if (amount > 0) {
+            setContractAmount(amount)
+          }
+        }
+      })
+    }
+  }, [open, projectId])
 
   const result = useMemo(() => {
     let internalDays = 0
@@ -57,13 +72,13 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
     return calculateProfit({
       contractAmount,
       internalDays,
-      externalDays: 0,
+      externalDays,
       internalUnitPrice: weightedInternalUnitPrice,
       externalUnitPrice,
       internalTravel,
       externalTravel,
     })
-  }, [contractAmount, members, externalUnitPrice, internalTravel, externalTravel])
+  }, [contractAmount, members, externalDays, externalUnitPrice, internalTravel, externalTravel])
 
   const totalInternalDays = members.reduce((s, m) => s + m.days, 0)
   const totalInternalCost = members.reduce((s, m) => s + m.days * (INTERNAL_UNIT_PRICES[m.role]?.[m.level] || 0), 0) + internalTravel
@@ -124,6 +139,7 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
       const evaluation = {
         members: members.map(({ id, ...rest }) => rest),
         contractAmount,
+        externalDays,
         externalUnitPrice,
         internalTravel,
         externalTravel,
@@ -230,6 +246,15 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
         <div>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>外部差旅（元）</label>
           <InputNumber style={{ width: '100%' }} value={externalTravel || undefined} onChange={v => _setExternalTravel(v || 0)} min={0} placeholder="0" />
+        </div>
+      </div>
+
+      {/* 外包资源 */}
+      <Divider style={{ margin: '12px 0' }}>外包资源</Divider>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>人天（天）</label>
+          <InputNumber style={{ width: '100%' }} value={externalDays || undefined} onChange={v => setExternalDays(v || 0)} min={0} placeholder="0" />
         </div>
         <div>
           <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>外包单价（元/天）</label>
