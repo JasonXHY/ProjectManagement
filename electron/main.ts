@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session } from 'electron'
+import { app, BrowserWindow, clipboard, ipcMain, session } from 'electron'
 import path from 'path'
 import { initDatabase, closeDatabase } from './database'
 import { initDefaultSettings } from './database/settings'
@@ -107,6 +107,10 @@ app.whenReady().then(async () => {
   registerSettingsHandlers()
   registerAIHandlers()
   registerHandoverHandlers()
+
+  ipcMain.handle('clipboard:writeText', (_event, text: string) => {
+    clipboard.writeText(text)
+  })
 
   SignatureDetector.init()
 

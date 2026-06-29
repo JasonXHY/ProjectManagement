@@ -69,6 +69,7 @@ declare global {
         preview: (zipPath: string) => Promise<{ success: boolean, data?: any, error?: string }>
         aiSelect: (projectId: number, description: string) => Promise<{ success: boolean, data?: HandoverFileInfo[], error?: string }>
       }
+      clipboardWriteText: (text: string) => Promise<void>
     }
   }
 }
