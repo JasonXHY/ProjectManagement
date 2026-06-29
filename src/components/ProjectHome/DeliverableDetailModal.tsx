@@ -88,6 +88,11 @@ const DeliverableDetailModal = memo(function DeliverableDetailModal({
                         <span style={{ flex: 1, color: 'var(--text-secondary)' }}>{version.note || '-'}</span>
                         <span style={{ color: 'var(--text-placeholder)' }}>{version.createdAt}</span>
                         <button
+                          onClick={() => {
+                            if (version.fileId) {
+                              window.api.file.open(Number(version.fileId))
+                            }
+                          }}
                           style={{
                             fontSize: '11px',
                             color: 'var(--color-primary)',
