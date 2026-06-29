@@ -48,13 +48,20 @@ const ImportDialog = memo(function ImportDialog({
       return false
     }
 
+    // Electron中File对象有path属性，包含完整路径
+    const fullPath = (file as any).path
+    if (!fullPath) {
+      message.error('无法获取文件路径，请通过文件选择器选择')
+      return false
+    }
+
     resetState()
     setLoadingPreview(true)
     try {
-      const result = await window.api.handover.preview(name)
+      const result = await window.api.handover.preview(fullPath)
       if (result.success && result.data) {
         const data = result.data
-        setFilePath(name)
+        setFilePath(fullPath)
         setPreview({
           projectName: data.projectName || data.project_name || '未命名项目',
           fileCount: data.fileCount || data.file_count || 0,
@@ -171,7 +178,7 @@ const ImportDialog = memo(function ImportDialog({
       onCancel={onClose}
       width={500}
       styles={{
-        body: { maxHeight: '400px', overflow: 'auto' }
+        body: { maxHeight: '800px', overflow: 'auto' }
       }}
       footer={
         preview ? (
