@@ -1,12 +1,6 @@
 import { memo, useState, useEffect } from 'react'
 import { Modal, Checkbox } from 'antd'
-
-interface Issue {
-  text: string
-  priority?: string
-  status?: string
-  source?: string
-}
+import { Issue } from '../../types'
 
 interface Props {
   open: boolean
