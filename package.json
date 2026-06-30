@@ -1,7 +1,7 @@
 {
   "name": "pmaer",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "PMAer - AI驱动的项目管理助手（内测版）",
   "main": "electron/dist/main.js",
   "scripts": {
