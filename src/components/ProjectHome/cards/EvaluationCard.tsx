@@ -68,7 +68,7 @@ export default function EvaluationCard({ project, onProjectUpdated }: Props) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         projectId={project.id}
-        onSaved={() => onProjectUpdated?.({ ...project })}
+        onSaved={(updatedProject) => onProjectUpdated?.(updatedProject)}
       />
     </>
   )

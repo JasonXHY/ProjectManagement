@@ -9,7 +9,7 @@ interface ProfitCalculatorModalProps {
   open: boolean
   onClose: () => void
   projectId?: number
-  onSaved?: () => void
+  onSaved?: (project: any) => void
 }
 
 interface Member {
@@ -45,19 +45,48 @@ export default function ProfitCalculatorModal({ open, onClose, projectId, onSave
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [externalTravel, _setExternalTravel] = useState<number>(0)
 
+  // Load saved evaluation data when modal opens
   useEffect(() => {
     if (open && projectId) {
       window.api.project.get(projectId).then(result => {
         if (result.success && result.data) {
           const meta = parseMetadata(result.data?.metadata ?? null)
-          const amount = (meta.contract_amount as number) || 0
-          if (amount > 0) {
-            setContractAmount(amount)
+          const evaluation = meta.evaluation as Record<string, unknown> | undefined
+          if (evaluation) {
+            const savedAmount = (evaluation.contractAmount as number) || (meta.contract_amount as number) || 0
+            if (savedAmount > 0) setContractAmount(savedAmount)
+
+            const savedMembers = evaluation.members as Array<{ role: string; level: string; days: number }> | undefined
+            if (savedMembers && savedMembers.length > 0) {
+              setMembers(savedMembers.map((m, i) => ({ id: i + 1, ...m })))
+            }
+
+            const savedExternalDays = (evaluation.externalDays as number) || 0
+            const savedExternalUnitPrice = (evaluation.externalUnitPrice as number) || 1200
+            const savedInternalTravel = (evaluation.internalTravel as number) || 0
+            const savedExternalTravel = (evaluation.externalTravel as number) || 0
+
+            setExternalDays(savedExternalDays)
+            setExternalUnitPrice(savedExternalUnitPrice)
+            setInternalTravel(savedInternalTravel)
+            _setExternalTravel(savedExternalTravel)
           }
         }
       })
     }
   }, [open, projectId])
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setContractAmount(0)
+      setMembers([{ id: 1, role: '实施顾问', level: 'C2-1', days: 1 }])
+      setExternalDays(0)
+      setExternalUnitPrice(1200)
+      setInternalTravel(0)
+      _setExternalTravel(0)
+    }
+  }, [open])
 
   const result = useMemo(() => {
     let internalDays = 0
@@ -158,7 +187,11 @@ export default function ProfitCalculatorModal({ open, onClose, projectId, onSave
         person_days: totalInternalDays,
       }
       await window.api.project.update(projectId, { metadata: JSON.stringify(mergedMeta) })
-      onSaved?.()
+
+      const updatedResult = await window.api.project.get(projectId)
+      if (updatedResult.success && updatedResult.data && onSaved) {
+        onSaved(updatedResult.data)
+      }
     } catch {
       message.error('保存利润测算失败')
     }
