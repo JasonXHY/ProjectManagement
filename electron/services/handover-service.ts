@@ -2,7 +2,7 @@ import JSZip from 'jszip'
 import fs from 'fs/promises'
 import path from 'path'
 import { app } from 'electron'
-import { getProject, createProject } from '../database/projects'
+import { getProject, createProject, updateProject } from '../database/projects'
 import { listFiles, createFile } from '../database/files'
 import { resolveProjectPathForProject, resolveProjectPath, createProjectDirectory, createStageFolders, generateProjectUuid } from '../utils/project-path'
 import { getAIService } from './ai-service'
@@ -188,12 +188,21 @@ export class HandoverService {
         file_type: fileEntry.file_type,
         file_size: fileEntry.file_size,
         content_extracted: fileEntry.content_extracted,
-        is_analyzed: false,
-        has_signature: false,
+        is_analyzed: !!(fileEntry.ai_summary || fileEntry.content_extracted),
+        has_signature: fileEntry.signature_status === 'signed',
         signature_status: (fileEntry.signature_status || 'unsigned') as 'unsigned' | 'pending' | 'signed' | 'rejected',
         ai_summary: fileEntry.ai_summary,
         ai_key_info: fileEntry.ai_key_info ? JSON.stringify(fileEntry.ai_key_info) : null,
       })
+    }
+
+    // 将metadata和阶段写入数据库
+    const metadataToRestore = data.project?.metadata || data.metadata || {}
+    if (Object.keys(metadataToRestore).length > 0) {
+      updateProject(projectId, { metadata: JSON.stringify(metadataToRestore) })
+    }
+    if (currentStage) {
+      updateProject(projectId, { current_stage: currentStage })
     }
 
     const summaryFile = zip.file('project-summary.md')
