@@ -4,9 +4,9 @@ import ProfitCalculatorModal from '../ProfitCalculatorModal'
 import { formatAmount, formatPercent } from '../../../utils/format'
 import { parseMetadata } from '../../../utils/metadata'
 
-interface Props { project: Project; allFiles?: FileRecord[] }
+interface Props { project: Project; allFiles?: FileRecord[]; onProjectUpdated?: (project: Project) => void }
 
-export default function EvaluationCard({ project }: Props) {
+export default function EvaluationCard({ project, onProjectUpdated }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const meta = parseMetadata(project.metadata) as Record<string, unknown>
   const evaluation = meta.evaluation as Record<string, unknown> | undefined
@@ -68,6 +68,7 @@ export default function EvaluationCard({ project }: Props) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         projectId={project.id}
+        onSaved={() => onProjectUpdated?.({ ...project })}
       />
     </>
   )

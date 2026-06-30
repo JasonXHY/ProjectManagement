@@ -9,6 +9,7 @@ interface ProfitCalculatorModalProps {
   open: boolean
   onClose: () => void
   projectId?: number
+  onSaved?: () => void
 }
 
 interface Member {
@@ -35,7 +36,7 @@ function getLevelOptions(role: string) {
   }))
 }
 
-export default function ProfitCalculatorModal({ open, onClose, projectId }: ProfitCalculatorModalProps) {
+export default function ProfitCalculatorModal({ open, onClose, projectId, onSaved }: ProfitCalculatorModalProps) {
   const [contractAmount, setContractAmount] = useState<number>(0)
   const [members, setMembers] = useState<Member[]>([{ ...defaultMember }])
   const [externalDays, setExternalDays] = useState<number>(0)
@@ -157,6 +158,7 @@ export default function ProfitCalculatorModal({ open, onClose, projectId }: Prof
         person_days: totalInternalDays,
       }
       await window.api.project.update(projectId, { metadata: JSON.stringify(mergedMeta) })
+      onSaved?.()
     } catch {
       message.error('保存利润测算失败')
     }

@@ -39,6 +39,7 @@ export interface FeatureCardsProps {
   project: Project
   selectedCategory: string | null
   allFiles: FileRecord[]
+  onProjectUpdated?: (project: Project) => void
 }
 
 const GROUP_MAP: Record<StageGroup, React.ComponentType<{project: Project; allFiles: FileRecord[]}>[]> = {
@@ -48,14 +49,14 @@ const GROUP_MAP: Record<StageGroup, React.ComponentType<{project: Project; allFi
   closed: CLOSED_CARDS,
 }
 
-export default function FeatureCards({ project, selectedCategory, allFiles }: FeatureCardsProps) {
+export default function FeatureCards({ project, selectedCategory, allFiles, onProjectUpdated }: FeatureCardsProps) {
   const stageGroup = getStageGroup(selectedCategory, project.current_stage)
   const cards = GROUP_MAP[stageGroup]
 
   return (
     <div className="feature-row">
       {cards.map((Card, index) => (
-        <Card key={index} project={project} allFiles={allFiles} />
+        <Card key={index} project={project} allFiles={allFiles} onProjectUpdated={onProjectUpdated} />
       ))}
     </div>
   )

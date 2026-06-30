@@ -99,6 +99,7 @@ export default function ProjectHome({ project, onProjectUpdated }: ProjectHomePr
           project={project}
           selectedCategory={selectedCategory}
           allFiles={allFiles}
+          onProjectUpdated={onProjectUpdated}
         />
 
         {/* ProjectInfoCard 已隐藏，使用 FeatureCards 中的 ProjectInfoPlaceholderCard */}
