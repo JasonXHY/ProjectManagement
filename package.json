@@ -61,6 +61,7 @@
     "autoprefixer": "^10.5.0",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
+    "docx": "^9.7.1",
     "electron": "^42.3.3",
     "electron-builder": "^26.15.0",
     "electron-icon-maker": "^0.0.5",
