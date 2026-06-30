@@ -14,10 +14,9 @@ describe('ImportDialog', () => {
     vi.mocked(window.api.handover.preview).mockResolvedValue({
       success: true,
       data: {
-        projectName: '测试项目',
-        fileCount: 10,
-        stage: '进行中',
-        handoverNote: '这是一个测试转交说明',
+        project: { name: '测试项目', current_stage: '进行中' },
+        files: [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
+        handover_note: '这是一个测试转交说明',
       },
     })
     vi.mocked(window.api.handover.import).mockResolvedValue({

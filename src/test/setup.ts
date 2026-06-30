@@ -74,6 +74,7 @@ Object.defineProperty(window, 'api', {
       getPrompts: vi.fn(),
       browseFolder: vi.fn(),
     },
+    getFilePath: vi.fn((file: File) => file.name),
     handover: {
       export: vi.fn(),
       import: vi.fn(),
