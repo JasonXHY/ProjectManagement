@@ -22,7 +22,7 @@ PMAer（Project Management Assistant）是一款AI驱动的项目管理桌面应
 3. 首次启动弹出引导窗口：
    - **Step 1**：选择项目文件存储位置（默认安装目录下 `projects` 文件夹，可自定义）
    - **Step 2**：选择AI配置方式
-     - **使用内置Key**：开箱即用，已预置免费AI接口
+     - **使用内置Key**：开发者的测试接口，可试用体验（2026年7月底关闭，届时请切换自己的Key）
      - **使用自己的Key**：填写API Key，支持11家AI厂商
 
 ![新建项目弹窗](screenshots/01-project-list-new-dialog.png)
@@ -393,7 +393,7 @@ PMAer（Project Management Assistant）是一款AI驱动的项目管理桌面应
 |--------|------|
 | 模型厂商 | 选择AI服务提供商（小米MiMo、智谱、阿里千问等11家） |
 | AI模型 | 选择具体模型 |
-| API Key | 填写API密钥。内测版已内置，可点击「使用自己的Key」切换 |
+| API Key | 填写API密钥。测试阶段可使用内置Key试用（7月底关闭），届时需填写自己的Key |
 | 计费模式 | 按量计费 / Token Plan / 自定义URL |
 | API地址 | 自定义API接口地址（高级） |
 
@@ -451,7 +451,7 @@ PMAer（Project Management Assistant）是一款AI驱动的项目管理桌面应
 
 | 厂商 | 说明 |
 |------|------|
-| 小米MiMo | 内测版默认内置 |
+| 小米MiMo | 测试阶段默认内置（7月底关闭） |
 | 智谱 | GLM系列 |
 | 阿里千问 | Qwen系列 |
 | 腾讯混元 | hunyuan系列 |
@@ -469,7 +469,7 @@ PMAer（Project Management Assistant）是一款AI驱动的项目管理桌面应
 
 ### Q：安装后提示"AI服务未配置"怎么办？
 
-打开设置页 → AI模型，选择厂商并填写API Key。内测版可直接选择「使用内置Key」。
+打开设置页 → AI模型，选择厂商并填写API Key。测试阶段可选择「使用内置Key」试用（7月底关闭）。
 
 ### Q：文件上传后没有自动分类？
 
