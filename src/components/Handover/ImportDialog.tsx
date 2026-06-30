@@ -63,12 +63,12 @@ const ImportDialog = memo(function ImportDialog({
         const data = result.data
         setFilePath(fullPath)
         setPreview({
-          projectName: data.projectName || data.project_name || '未命名项目',
-          fileCount: data.fileCount || data.file_count || 0,
-          stage: data.stage || '未设置',
-          handoverNote: data.handoverNote || data.handover_note || '',
+          projectName: data.project?.name || '未命名项目',
+          fileCount: data.files?.length || 0,
+          stage: data.project?.current_stage || '未设置',
+          handoverNote: data.handover_note || '',
         })
-        setProjectName(data.projectName || data.project_name || '')
+        setProjectName(data.project?.name || '')
       } else {
         message.error(result.error || '预览失败')
       }
@@ -118,14 +118,7 @@ const ImportDialog = memo(function ImportDialog({
           accept=".zip"
           showUploadList={false}
           beforeUpload={handleBeforeUpload}
-          style={{
-            padding: '24px 0',
-            height: '200px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={{ padding: '24px 0' }}
         >
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
@@ -178,7 +171,7 @@ const ImportDialog = memo(function ImportDialog({
       onCancel={onClose}
       width={500}
       styles={{
-        body: { maxHeight: '680px', overflow: 'auto' }
+        body: { maxHeight: '520px', overflow: 'auto' }
       }}
       footer={
         preview ? (
