@@ -49,6 +49,12 @@ textarea.ant-input:focus {
   max-height: 80px !important;
 }
 
+/* ImportDialog的拖拽上传区域需要更大空间 */
+.ant-modal .ant-upload-drag {
+  min-height: 200px !important;
+  max-height: none !important;
+}
+
 .ant-upload-drag:hover {
   border-color: var(--color-primary) !important;
   background: #FAFAFF !important;
