@@ -10,8 +10,8 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
 
 .title { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 700; color: #1a1a1a; opacity: 0; }
 
-/* Panel */
-.panel { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 700px; background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden; opacity: 0; }
+.panel { position: absolute; top: 100px; left: 0; right: 0; display: flex; justify-content: center; }
+.panel-inner { width: 700px; background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden; opacity: 0; }
 .panel-header { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; font-size: 15px; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
 .panel-body { padding: 16px 20px; }
 
@@ -22,7 +22,6 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
 .file-name { flex: 1; }
 .file-cat { padding: 2px 8px; border-radius: 4px; font-size: 11px; background: #f5f5f5; color: #666; }
 
-/* Export animation */
 .export-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 20; }
 .export-box { background: white; border-radius: 12px; padding: 40px; text-align: center; }
 .export-icon { font-size: 56px; margin-bottom: 16px; }
@@ -31,15 +30,14 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
 .export-progress { width: 300px; height: 6px; background: #f0f0f0; border-radius: 3px; margin-top: 16px; overflow: hidden; }
 .export-fill { height: 100%; background: #1677ff; border-radius: 3px; width: 0; transition: width 1.5s ease-out; }
 
-/* Import animation */
-.import-step { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 60px; align-items: center; opacity: 0; }
+.import-step { position: absolute; bottom: 120px; left: 0; right: 0; display: flex; justify-content: center; gap: 60px; align-items: center; opacity: 0; }
 .step-box { background: white; border-radius: 10px; padding: 24px 32px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .step-icon { font-size: 36px; margin-bottom: 8px; }
 .step-label { font-size: 14px; color: #1a1a1a; font-weight: 600; }
 .step-sub { font-size: 12px; color: #999; margin-top: 4px; }
 .arrow { font-size: 28px; color: #1677ff; }
 
-.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #52c41a; font-weight: 600; opacity: 0; }
+.subtitle { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; background: rgba(0,0,0,0.7); color: white; padding: 10px 24px; font-size: 16px; border-radius: 6px; margin: 0 200px; opacity: 0; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -50,19 +48,19 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
 
 <div class="title" style="animation:fadeUp 0.5s ease-out 0.3s forwards">项目转交</div>
 
-<!-- File list panel -->
-<div class="panel" style="animation:scaleIn 0.5s ease-out 0.8s forwards" id="panel">
-  <div class="panel-header">📦 选择要转交的文件</div>
-  <div class="panel-body">
-    <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 1.5s forwards">✓</div><div class="file-name">合同-XX项目.pdf</div><div class="file-cat">售前</div></div>
-    <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 1.8s forwards">✓</div><div class="file-name">需求文档v2.docx</div><div class="file-cat">需求</div></div>
-    <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 2.1s forwards">✓</div><div class="file-name">成本评估.xlsx</div><div class="file-cat">方案</div></div>
-    <div class="file-row"><div class="checkbox" style="animation:fadeIn 0.2s ease-out 2.4s forwards"></div><div class="file-name">会议纪要-0615.md</div><div class="file-cat">启动</div></div>
-    <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 2.7s forwards">✓</div><div class="file-name">验收报告-终版.pdf</div><div class="file-cat">验收</div></div>
+<div class="panel">
+  <div class="panel-inner" style="animation:scaleIn 0.5s ease-out 0.8s forwards" id="panel">
+    <div class="panel-header">📦 选择要转交的文件</div>
+    <div class="panel-body">
+      <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 1.5s forwards">✓</div><div class="file-name">合同-XX项目.pdf</div><div class="file-cat">售前</div></div>
+      <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 1.8s forwards">✓</div><div class="file-name">需求文档v2.docx</div><div class="file-cat">需求</div></div>
+      <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 2.1s forwards">✓</div><div class="file-name">成本评估.xlsx</div><div class="file-cat">方案</div></div>
+      <div class="file-row"><div class="checkbox" style="animation:fadeIn 0.2s ease-out 2.4s forwards"></div><div class="file-name">会议纪要-0615.md</div><div class="file-cat">启动</div></div>
+      <div class="file-row"><div class="checkbox checked" style="animation:fadeIn 0.2s ease-out 2.7s forwards">✓</div><div class="file-name">验收报告-终版.pdf</div><div class="file-cat">验收</div></div>
+    </div>
   </div>
 </div>
 
-<!-- Export overlay -->
 <div class="export-overlay" id="exportOverlay">
   <div class="export-box">
     <div class="export-icon">📦</div>
@@ -72,7 +70,6 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
   </div>
 </div>
 
-<!-- Import steps -->
 <div class="import-step" id="importStep">
   <div class="step-box">
     <div class="step-icon">📤</div>
@@ -93,14 +90,17 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
   </div>
 </div>
 
-<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 10s forwards">无缝交接，不丢数据</div>
+<div class="subtitle" id="sub1" style="animation:fadeIn 0.3s ease-out 1s forwards">选择要转交的项目文件，勾选后一键导出</div>
+<div class="subtitle" id="sub2" style="opacity:0">打包为 .pmaer.zip 数据包，包含所有分析数据</div>
+<div class="subtitle" id="sub3" style="opacity:0">对方导入后数据完整恢复，无缝交接</div>
 
 <script>
-// Export animation
-setTimeout(() => { document.getElementById('exportOverlay').style.opacity = '1'; document.getElementById('exportOverlay').style.transition = 'opacity 0.3s'; }, 4000);
+setTimeout(() => { document.getElementById('sub1').style.opacity = '0'; document.getElementById('sub2').style.opacity = '1'; }, 4000);
+setTimeout(() => { document.getElementById('exportOverlay').style.opacity = '1'; }, 4000);
 setTimeout(() => { document.getElementById('exportFill').style.width = '100%'; }, 4300);
 setTimeout(() => { document.getElementById('exportOverlay').style.opacity = '0'; }, 6500);
 setTimeout(() => { document.getElementById('panel').style.opacity = '0'; document.getElementById('panel').style.transition = 'opacity 0.3s'; }, 6800);
+setTimeout(() => { document.getElementById('sub2').style.opacity = '0'; document.getElementById('sub3').style.opacity = '1'; }, 7000);
 setTimeout(() => { document.getElementById('importStep').style.opacity = '1'; document.getElementById('importStep').style.transition = 'opacity 0.5s'; }, 7200);
 </script>
 

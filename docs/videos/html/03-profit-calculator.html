@@ -32,12 +32,11 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
 
 .warning { margin-top: 16px; padding: 12px 16px; background: #fff2f0; border: 1px solid #ffccc7; border-radius: 8px; font-size: 13px; color: #ff4d4f; display: flex; align-items: center; gap: 8px; opacity: 0; }
 
-.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #1a1a1a; font-weight: 600; opacity: 0; }
+.subtitle { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; background: rgba(0,0,0,0.7); color: white; padding: 10px 24px; font-size: 16px; border-radius: 6px; margin: 0 200px; opacity: 0; z-index: 30; }
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -50,15 +49,15 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
     <div class="input-row">
       <div class="input-group" style="animation:fadeUp 0.4s ease-out 1.5s forwards">
         <div class="input-label">合同金额（万元）</div>
-        <div class="input-value highlight" id="amount">128.5</div>
+        <div class="input-value highlight">128.5</div>
       </div>
       <div class="input-group" style="animation:fadeUp 0.4s ease-out 1.8s forwards">
         <div class="input-label">内部人天</div>
-        <div class="input-value" id="internalDays">45</div>
+        <div class="input-value">45</div>
       </div>
       <div class="input-group" style="animation:fadeUp 0.4s ease-out 2.1s forwards">
         <div class="input-label">外包人天</div>
-        <div class="input-value" id="externalDays">20</div>
+        <div class="input-value">20</div>
       </div>
     </div>
     <div class="input-row">
@@ -75,45 +74,24 @@ body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsof
         <div class="input-value">3.5</div>
       </div>
     </div>
-
-    <div class="calc-btn" style="animation:fadeIn 0.4s ease-out 3.5s forwards" id="calcBtn">开始测算</div>
-
-    <div class="results" id="results">
-      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5s forwards">
-        <div class="result-label">总成本</div>
-        <div class="result-value blue" id="totalCost">¥0</div>
-      </div>
-      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.3s forwards">
-        <div class="result-label">分配合同</div>
-        <div class="result-value" id="allocated">¥0</div>
-      </div>
-      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.6s forwards">
-        <div class="result-label">内部利润率</div>
-        <div class="result-value green" id="internalRate">0%</div>
-      </div>
-      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.9s forwards">
-        <div class="result-label">外部利润率</div>
-        <div class="result-value green" id="externalRate">0%</div>
-      </div>
+    <div class="calc-btn" style="animation:fadeIn 0.4s ease-out 3.5s forwards">开始测算</div>
+    <div class="results">
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5s forwards"><div class="result-label">总成本</div><div class="result-value blue" id="totalCost">¥27.4万</div></div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.3s forwards"><div class="result-label">分配合同</div><div class="result-value" id="allocated">¥85.0万</div></div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.6s forwards"><div class="result-label">内部利润率</div><div class="result-value green" id="internalRate">41.2%</div></div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.9s forwards"><div class="result-label">外部利润率</div><div class="result-value red" id="externalRate">38.5%</div></div>
     </div>
-
-    <div class="warning" style="animation:fadeIn 0.4s ease-out 7s forwards">
-      ⚠️ 外包利润率低于 40% 红线，请关注成本控制
-    </div>
+    <div class="warning" style="animation:fadeIn 0.4s ease-out 7s forwards">⚠️ 外包利润率低于 40% 红线，请关注成本控制</div>
   </div>
 </div>
 
-<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 8s forwards">一键测算，红线预警</div>
+<div class="subtitle" id="s1" style="animation:fadeIn 0.3s ease-out 1s forwards">输入合同金额、人天、单价等参数</div>
+<div class="subtitle" id="s2" style="opacity:0">实时计算利润率，自动检测红线</div>
+<div class="subtitle" id="s3" style="opacity:0">一键测算，红线预警，成本可控</div>
 
 <script>
-// Animate numbers
-setTimeout(() => {
-  document.getElementById('totalCost').textContent = '¥27.4万';
-  document.getElementById('allocated').textContent = '¥85.0万';
-  document.getElementById('internalRate').textContent = '41.2%';
-  document.getElementById('externalRate').textContent = '38.5%';
-  document.getElementById('externalRate').className = 'result-value red';
-}, 5500);
+setTimeout(() => { document.getElementById('s1').style.opacity = '0'; document.getElementById('s2').style.opacity = '1'; }, 4000);
+setTimeout(() => { document.getElementById('s2').style.opacity = '0'; document.getElementById('s3').style.opacity = '1'; }, 7500);
 </script>
 
 </body>
