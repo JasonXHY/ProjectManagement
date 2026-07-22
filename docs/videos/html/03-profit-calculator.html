@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - 利润测算</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+.title { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 700; color: #1a1a1a; opacity: 0; }
+
+.modal { width: 800px; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); overflow: hidden; opacity: 0; transform: scale(0.95); }
+.modal-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; font-size: 16px; font-weight: 600; color: #1a1a1a; }
+.modal-body { padding: 24px; }
+
+.input-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.input-group { opacity: 0; }
+.input-label { font-size: 13px; color: #666; margin-bottom: 6px; }
+.input-value { height: 40px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 12px; font-size: 15px; color: #1a1a1a; display: flex; align-items: center; background: #fafafa; }
+.input-value.highlight { border-color: #1677ff; background: #e6f4ff; }
+
+.calc-btn { width: 100%; height: 44px; background: #1677ff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; opacity: 0; }
+
+.results { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+.result-card { background: #fafafa; border-radius: 8px; padding: 16px; text-align: center; opacity: 0; transform: translateY(8px); }
+.result-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+.result-value { font-size: 22px; font-weight: 700; }
+.result-value.green { color: #52c41a; }
+.result-value.blue { color: #1677ff; }
+.result-value.red { color: #ff4d4f; }
+
+.warning { margin-top: 16px; padding: 12px 16px; background: #fff2f0; border: 1px solid #ffccc7; border-radius: 8px; font-size: 13px; color: #ff4d4f; display: flex; align-items: center; gap: 8px; opacity: 0; }
+
+.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #1a1a1a; font-weight: 600; opacity: 0; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes countUp { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="title" style="animation:fadeUp 0.5s ease-out 0.3s forwards">利润测算工具</div>
+
+<div class="modal" style="animation:scaleIn 0.5s ease-out 0.8s forwards">
+  <div class="modal-header">💰 利润测算</div>
+  <div class="modal-body">
+    <div class="input-row">
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 1.5s forwards">
+        <div class="input-label">合同金额（万元）</div>
+        <div class="input-value highlight" id="amount">128.5</div>
+      </div>
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 1.8s forwards">
+        <div class="input-label">内部人天</div>
+        <div class="input-value" id="internalDays">45</div>
+      </div>
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 2.1s forwards">
+        <div class="input-label">外包人天</div>
+        <div class="input-value" id="externalDays">20</div>
+      </div>
+    </div>
+    <div class="input-row">
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 2.4s forwards">
+        <div class="input-label">内部单价（元/天）</div>
+        <div class="input-value">2,500</div>
+      </div>
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 2.7s forwards">
+        <div class="input-label">外包单价（元/天）</div>
+        <div class="input-value">1,800</div>
+      </div>
+      <div class="input-group" style="animation:fadeUp 0.4s ease-out 3s forwards">
+        <div class="input-label">差旅费（万元）</div>
+        <div class="input-value">3.5</div>
+      </div>
+    </div>
+
+    <div class="calc-btn" style="animation:fadeIn 0.4s ease-out 3.5s forwards" id="calcBtn">开始测算</div>
+
+    <div class="results" id="results">
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5s forwards">
+        <div class="result-label">总成本</div>
+        <div class="result-value blue" id="totalCost">¥0</div>
+      </div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.3s forwards">
+        <div class="result-label">分配合同</div>
+        <div class="result-value" id="allocated">¥0</div>
+      </div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.6s forwards">
+        <div class="result-label">内部利润率</div>
+        <div class="result-value green" id="internalRate">0%</div>
+      </div>
+      <div class="result-card" style="animation:fadeUp 0.4s ease-out 5.9s forwards">
+        <div class="result-label">外部利润率</div>
+        <div class="result-value green" id="externalRate">0%</div>
+      </div>
+    </div>
+
+    <div class="warning" style="animation:fadeIn 0.4s ease-out 7s forwards">
+      ⚠️ 外包利润率低于 40% 红线，请关注成本控制
+    </div>
+  </div>
+</div>
+
+<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 8s forwards">一键测算，红线预警</div>
+
+<script>
+// Animate numbers
+setTimeout(() => {
+  document.getElementById('totalCost').textContent = '¥27.4万';
+  document.getElementById('allocated').textContent = '¥85.0万';
+  document.getElementById('internalRate').textContent = '41.2%';
+  document.getElementById('externalRate').textContent = '38.5%';
+  document.getElementById('externalRate').className = 'result-value red';
+}, 5500);
+</script>
+
+</body>
+</html>

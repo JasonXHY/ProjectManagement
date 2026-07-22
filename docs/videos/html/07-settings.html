@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - 系统设置</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; }
+
+.title { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 700; color: #1a1a1a; opacity: 0; }
+
+/* Settings layout */
+.settings { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); width: 800px; background: white; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); display: flex; overflow: hidden; opacity: 0; }
+.settings-sidebar { width: 180px; background: #fafafa; border-right: 1px solid #f0f0f0; padding: 8px 0; }
+.settings-tab { padding: 10px 20px; font-size: 13px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.settings-tab.active { background: #e6f4ff; color: #1677ff; font-weight: 600; border-right: 3px solid #1677ff; }
+.settings-content { flex: 1; padding: 24px; }
+.settings-section-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+.form-group { margin-bottom: 20px; opacity: 0; }
+.form-label { font-size: 13px; color: #666; margin-bottom: 6px; }
+.form-input { width: 100%; height: 36px; border: 1px solid #d9d9d9; border-radius: 6px; padding: 0 12px; font-size: 13px; color: #333; display: flex; align-items: center; }
+.form-input.filled { border-color: #1677ff; background: #f0f5ff; }
+
+.provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.provider-item { padding: 10px; border: 1px solid #d9d9d9; border-radius: 8px; text-align: center; font-size: 12px; color: #333; cursor: pointer; opacity: 0; }
+.provider-item.active { border-color: #1677ff; background: #e6f4ff; color: #1677ff; font-weight: 600; }
+
+.prompt-editor { width: 100%; height: 100px; border: 1px solid #d9d9d9; border-radius: 8px; padding: 12px; font-size: 12px; color: #333; line-height: 1.6; background: #fafafa; font-family: monospace; }
+
+.save-btn { display: inline-block; padding: 8px 24px; background: #1677ff; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; margin-top: 12px; opacity: 0; }
+
+.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #1a1a1a; font-weight: 600; opacity: 0; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div class="title" style="animation:fadeUp 0.5s ease-out 0.3s forwards">灵活配置</div>
+
+<div class="settings" style="animation:scaleIn 0.5s ease-out 0.8s forwards">
+  <div class="settings-sidebar">
+    <div class="settings-tab active" style="animation:fadeIn 0.3s ease-out 1.2s forwards">🤖 AI 模型</div>
+    <div class="settings-tab" style="animation:fadeIn 0.3s ease-out 1.5s forwards">📁 存储路径</div>
+    <div class="settings-tab" style="animation:fadeIn 0.3s ease-out 1.8s forwards">📝 Prompt</div>
+    <div class="settings-tab" style="animation:fadeIn 0.3s ease-out 2.1s forwards">👤 用户角色</div>
+  </div>
+  <div class="settings-content">
+    <!-- AI Model -->
+    <div class="settings-section-title" style="animation:fadeUp 0.4s ease-out 1.5s forwards">🤖 AI 供应商配置</div>
+
+    <div class="provider-grid">
+      <div class="provider-item active" style="animation:fadeIn 0.3s ease-out 2s forwards">小米 MiMo</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 2.2s forwards">智谱 GLM</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 2.4s forwards">阿里千问</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 2.6s forwards">DeepSeek</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 2.8s forwards">腾讯混元</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 3s forwards">百度文心</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 3.2s forwards">月之暗面</div>
+      <div class="provider-item" style="animation:fadeIn 0.3s ease-out 3.4s forwards">讯飞星火</div>
+    </div>
+
+    <div class="form-group" style="animation:fadeUp 0.4s ease-out 3.8s forwards">
+      <div class="form-label">API Key</div>
+      <div class="form-input filled">sk-****-****-****-1234</div>
+    </div>
+
+    <div class="form-group" style="animation:fadeUp 0.4s ease-out 4.2s forwards">
+      <div class="form-label">AI 分类 Prompt（自定义）</div>
+      <div class="prompt-editor">你是一个专业的项目文件分类助手。请根据文件内容判断：
+1. 该文件属于哪个项目阶段（售前/启动/需求/...）
+2. 该文件的具体分类（合同/需求文档/会议纪要/...）
+请返回 JSON 格式...</div>
+    </div>
+
+    <div class="save-btn" style="animation:fadeIn 0.4s ease-out 5s forwards">保存配置</div>
+  </div>
+</div>
+
+<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 6s forwards">你的 AI，你做主</div>
+
+</body>
+</html>

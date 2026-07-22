@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - 产品总览</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; position: relative; }
+
+/* Scene containers */
+.scene { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; display: flex; align-items: center; justify-content: center; opacity: 0; }
+.scene.active { opacity: 1; }
+
+/* Scene 1: Opening (0-5s) */
+.s1 { background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%); animation: show 0.5s ease-out 0s forwards; }
+.s1 .logo { font-size: 72px; font-weight: 800; color: white; letter-spacing: 8px; opacity: 0; animation: fadeUp 0.8s ease-out 0.3s forwards; }
+.s1 .tagline { color: rgba(255,255,255,0.85); font-size: 22px; margin-top: 16px; opacity: 0; animation: fadeUp 0.6s ease-out 0.8s forwards; }
+
+/* Scene 2: Pain point (5-12s) */
+.s2 { background: #f5f5f5; animation: show 0.5s ease-out 5s forwards; }
+.s2 .files { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 800px; }
+.s2 .file { background: white; border-radius: 8px; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 14px; color: #666; opacity: 0; transform: translateY(20px) rotate(var(--r, 0deg)); }
+.s2 .file:nth-child(1) { animation: fileIn 0.4s ease-out 5.5s forwards; --r: -3deg; }
+.s2 .file:nth-child(2) { animation: fileIn 0.4s ease-out 5.7s forwards; --r: 2deg; }
+.s2 .file:nth-child(3) { animation: fileIn 0.4s ease-out 5.9s forwards; --r: -1deg; }
+.s2 .file:nth-child(4) { animation: fileIn 0.4s ease-out 6.1s forwards; --r: 3deg; }
+.s2 .file:nth-child(5) { animation: fileIn 0.4s ease-out 6.3s forwards; --r: -2deg; }
+.s2 .file:nth-child(6) { animation: fileIn 0.4s ease-out 6.5s forwards; --r: 1deg; }
+.s2 .chaos { position: absolute; font-size: 48px; opacity: 0; animation: fadeIn 0.5s ease-out 7s forwards; }
+.s2 .label { position: absolute; bottom: 180px; font-size: 28px; color: #1a1a1a; font-weight: 600; opacity: 0; animation: fadeUp 0.5s ease-out 7.5s forwards; }
+
+/* Scene 3: Product reveal (12-20s) */
+.s3 { background: white; animation: show 0.5s ease-out 12s forwards; }
+.s3 .mockup { width: 900px; height: 560px; background: #fafafa; border-radius: 12px; border: 1px solid #e8e8e8; overflow: hidden; opacity: 0; transform: scale(0.95); animation: scaleIn 0.6s ease-out 12.5s forwards; }
+.s3 .sidebar { width: 200px; height: 100%; background: #001529; float: left; padding: 20px 0; }
+.s3 .sidebar-item { padding: 10px 24px; color: rgba(255,255,255,0.65); font-size: 13px; }
+.s3 .sidebar-item.active { color: white; background: #1677ff; }
+.s3 .main { margin-left: 200px; padding: 20px; }
+.s3 .header { height: 40px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.s3 .header-title { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+.s3 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.s3 .card { background: white; border-radius: 8px; padding: 16px; border: 1px solid #f0f0f0; opacity: 0; }
+.s3 .card:nth-child(1) { animation: cardIn 0.4s ease-out 13.5s forwards; }
+.s3 .card:nth-child(2) { animation: cardIn 0.4s ease-out 13.7s forwards; }
+.s3 .card:nth-child(3) { animation: cardIn 0.4s ease-out 13.9s forwards; }
+.s3 .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 8px; }
+.s3 .card-title { font-size: 13px; color: #666; margin-bottom: 4px; }
+.s3 .card-value { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+
+/* Scene 4: AI Classification (20-28s) */
+.s4 { background: #f5f5f5; animation: show 0.5s ease-out 20s forwards; }
+.s4 .center { display: flex; align-items: center; gap: 60px; }
+.s4 .file-stack { display: flex; flex-direction: column; gap: 8px; }
+.s4 .mini-file { background: white; border-radius: 6px; padding: 10px 16px; font-size: 13px; color: #666; box-shadow: 0 1px 4px rgba(0,0,0,0.06); opacity: 0; transform: translateX(-20px); }
+.s4 .mini-file:nth-child(1) { animation: slideRight 0.4s ease-out 20.8s forwards; }
+.s4 .mini-file:nth-child(2) { animation: slideRight 0.4s ease-out 21s forwards; }
+.s4 .mini-file:nth-child(3) { animation: slideRight 0.4s ease-out 21.2s forwards; }
+.s4 .ai-brain { width: 120px; height: 120px; background: linear-gradient(135deg, #1677ff, #69b1ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: 0; animation: scaleIn 0.5s ease-out 21.8s forwards; }
+.s4 .ai-brain.spin { animation: scaleIn 0.5s ease-out 21.8s forwards, pulse 1.5s ease-in-out 22.3s infinite; }
+.s4 .categories { display: flex; flex-direction: column; gap: 8px; }
+.s4 .cat-item { background: white; border-radius: 6px; padding: 10px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateX(20px); border-left: 3px solid; }
+.s4 .cat-item:nth-child(1) { animation: slideLeft 0.4s ease-out 23.5s forwards; border-color: #1677ff; }
+.s4 .cat-item:nth-child(2) { animation: slideLeft 0.4s ease-out 23.7s forwards; border-color: #52c41a; }
+.s4 .cat-item:nth-child(3) { animation: slideLeft 0.4s ease-out 23.9s forwards; border-color: #faad14; }
+.s4 .result { position: absolute; bottom: 140px; font-size: 22px; color: #1a1a1a; font-weight: 600; opacity: 0; animation: fadeUp 0.5s ease-out 24.5s forwards; }
+
+/* Scene 5: Card Visualization (28-38s) */
+.s5 { background: white; animation: show 0.5s ease-out 28s forwards; }
+.s5 .title { font-size: 24px; font-weight: 600; color: #1a1a1a; text-align: center; margin-bottom: 32px; opacity: 0; animation: fadeUp 0.5s ease-out 28.5s forwards; }
+.s5 .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; max-width: 900px; margin: 0 auto; }
+.s5 .vcard { background: #fafafa; border-radius: 10px; padding: 20px; border: 1px solid #f0f0f0; opacity: 0; transform: translateY(16px); }
+.s5 .vcard:nth-child(1) { animation: cardIn 0.4s ease-out 29.2s forwards; }
+.s5 .vcard:nth-child(2) { animation: cardIn 0.4s ease-out 29.4s forwards; }
+.s5 .vcard:nth-child(3) { animation: cardIn 0.4s ease-out 29.6s forwards; }
+.s5 .vcard:nth-child(4) { animation: cardIn 0.4s ease-out 29.8s forwards; }
+.s5 .vcard:nth-child(5) { animation: cardIn 0.4s ease-out 30s forwards; }
+.s5 .vcard:nth-child(6) { animation: cardIn 0.4s ease-out 30.2s forwards; }
+.s5 .vcard:nth-child(7) { animation: cardIn 0.4s ease-out 30.4s forwards; }
+.s5 .vcard:nth-child(8) { animation: cardIn 0.4s ease-out 30.6s forwards; }
+.s5 .vcard-icon { font-size: 24px; margin-bottom: 8px; }
+.s5 .vcard-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+.s5 .vcard-val { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+.s5 .summary { text-align: center; margin-top: 32px; font-size: 18px; color: #666; opacity: 0; animation: fadeUp 0.5s ease-out 31.5s forwards; }
+
+/* Scene 6: Handover (38-48s) */
+.s6 { background: #f5f5f5; animation: show 0.5s ease-out 38s forwards; }
+.s6 .flow { display: flex; align-items: center; gap: 40px; }
+.s6 .step-box { background: white; border-radius: 12px; padding: 32px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); opacity: 0; width: 220px; }
+.s6 .step-box:nth-child(1) { animation: scaleIn 0.5s ease-out 38.8s forwards; }
+.s6 .step-box:nth-child(3) { animation: scaleIn 0.5s ease-out 39.8s forwards; }
+.s6 .step-box:nth-child(5) { animation: scaleIn 0.5s ease-out 40.8s forwards; }
+.s6 .step-icon { font-size: 40px; margin-bottom: 12px; }
+.s6 .step-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
+.s6 .step-desc { font-size: 13px; color: #666; }
+.s6 .arrow { font-size: 32px; color: #1677ff; opacity: 0; }
+.s6 .arrow:nth-child(2) { animation: fadeIn 0.3s ease-out 39.5s forwards; }
+.s6 .arrow:nth-child(4) { animation: fadeIn 0.3s ease-out 40.5s forwards; }
+.s6 .result-text { position: absolute; bottom: 140px; font-size: 20px; color: #52c41a; font-weight: 600; opacity: 0; animation: fadeUp 0.5s ease-out 42s forwards; }
+
+/* Scene 7: Ending (48-60s) */
+.s7 { background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%); animation: show 0.5s ease-out 48s forwards; }
+.s7 .end-logo { font-size: 56px; font-weight: 800; color: white; letter-spacing: 6px; opacity: 0; animation: fadeUp 0.6s ease-out 48.5s forwards; }
+.s7 .end-version { color: rgba(255,255,255,0.8); font-size: 18px; margin-top: 12px; opacity: 0; animation: fadeUp 0.5s ease-out 49s forwards; }
+.s7 .end-features { display: flex; gap: 40px; margin-top: 48px; opacity: 0; animation: fadeUp 0.5s ease-out 49.5s forwards; }
+.s7 .end-feat { color: rgba(255,255,255,0.9); font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.s7 .end-feat .dot { width: 8px; height: 8px; background: #52c41a; border-radius: 50%; }
+.s7 .github { margin-top: 40px; color: rgba(255,255,255,0.6); font-size: 14px; opacity: 0; animation: fadeIn 0.5s ease-out 50.5s forwards; }
+
+/* Hide all scenes after their time */
+.s1 { animation: show 0.5s ease-out 0s forwards, hide 0.3s ease-out 4.8s forwards; }
+.s2 { animation: show 0.5s ease-out 5s forwards, hide 0.3s ease-out 11.8s forwards; }
+.s3 { animation: show 0.5s ease-out 12s forwards, hide 0.3s ease-out 19.8s forwards; }
+.s4 { animation: show 0.5s ease-out 20s forwards, hide 0.3s ease-out 27.8s forwards; }
+.s5 { animation: show 0.5s ease-out 28s forwards, hide 0.3s ease-out 37.8s forwards; }
+.s6 { animation: show 0.5s ease-out 38s forwards, hide 0.3s ease-out 47.8s forwards; }
+.s7 { animation: show 0.5s ease-out 48s forwards; }
+
+@keyframes show { to { opacity: 1; } }
+@keyframes hide { to { opacity: 0; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fileIn { from { opacity: 0; transform: translateY(20px) rotate(var(--r, 0deg)); } to { opacity: 1; transform: translateY(0) rotate(var(--r, 0deg)); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideLeft { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+</style>
+</head>
+<body>
+
+<!-- Scene 1: Opening -->
+<div class="scene s1">
+  <div style="text-align:center">
+    <div class="logo">PMAer</div>
+    <div class="tagline">AI 驱动的项目管理助手</div>
+  </div>
+</div>
+
+<!-- Scene 2: Pain Point -->
+<div class="scene s2">
+  <div class="files">
+    <div class="file">📄 合同-XX项目.pdf</div>
+    <div class="file">📋 需求文档v2.docx</div>
+    <div class="file">📊 成本评估.xlsx</div>
+    <div class="file">📝 会议纪要-0615.md</div>
+    <div class="file">📎 验收报告-终版.pdf</div>
+    <div class="file">📑 项目计划.xlsx</div>
+  </div>
+  <div class="chaos">😅</div>
+  <div class="label">文件散落各处，项目管理一团糟</div>
+</div>
+
+<!-- Scene 3: Product Reveal -->
+<div class="scene s3">
+  <div class="mockup">
+    <div class="sidebar">
+      <div class="sidebar-item active">📁 售前</div>
+      <div class="sidebar-item">📁 启动</div>
+      <div class="sidebar-item">📁 需求</div>
+      <div class="sidebar-item">📁 方案</div>
+      <div class="sidebar-item">📁 构建</div>
+      <div class="sidebar-item">📁 测试</div>
+      <div class="sidebar-item">📁 上线</div>
+      <div class="sidebar-item">📁 验收</div>
+    </div>
+    <div class="main">
+      <div class="header">
+        <div class="header-title">测试项目1530</div>
+        <span style="background:#e6f4ff;color:#1677ff;padding:2px 8px;border-radius:4px;font-size:12px">售前</span>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon" style="background:#e6f4ff">📋</div>
+          <div class="card-title">项目信息</div>
+          <div class="card-value">测试项目1530</div>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#fff7e6">💰</div>
+          <div class="card-title">合同概览</div>
+          <div class="card-value">¥128.5万</div>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:#f6ffed">📊</div>
+          <div class="card-title">项目评估</div>
+          <div class="card-value">利润率 32%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scene 4: AI Classification -->
+<div class="scene s4">
+  <div class="center">
+    <div class="file-stack">
+      <div class="mini-file">📄 合同-XX项目.pdf</div>
+      <div class="mini-file">📋 需求文档.docx</div>
+      <div class="mini-file">📊 成本评估.xlsx</div>
+    </div>
+    <div class="ai-brain spin">🧠</div>
+    <div class="categories">
+      <div class="cat-item">📁 售前 → 合同</div>
+      <div class="cat-item">📁 需求 → 需求文档</div>
+      <div class="cat-item">📁 方案 → 成本评估</div>
+    </div>
+  </div>
+  <div class="result">AI 自动分类，准确率 90%+</div>
+</div>
+
+<!-- Scene 5: Card Visualization -->
+<div class="scene s5">
+  <div class="title">10 个卡片，按阶段智能切换</div>
+  <div class="card-grid">
+    <div class="vcard"><div class="vcard-icon">📋</div><div class="vcard-label">项目信息</div><div class="vcard-val">XX项目</div></div>
+    <div class="vcard"><div class="vcard-icon">💰</div><div class="vcard-label">合同概览</div><div class="vcard-val">¥128.5万</div></div>
+    <div class="vcard"><div class="vcard-icon">📊</div><div class="vcard-label">项目评估</div><div class="vcard-val">32%</div></div>
+    <div class="vcard"><div class="vcard-icon">📝</div><div class="vcard-label">需求跟踪</div><div class="vcard-val">12项</div></div>
+    <div class="vcard"><div class="vcard-icon">⚠️</div><div class="vcard-label">关键问题</div><div class="vcard-val">3项</div></div>
+    <div class="vcard"><div class="vcard-icon">✍️</div><div class="vcard-label">签字追踪</div><div class="vcard-val">8/19</div></div>
+    <div class="vcard"><div class="vcard-icon">🚀</div><div class="vcard-label">拓展商机</div><div class="vcard-val">2项</div></div>
+    <div class="vcard"><div class="vcard-icon">📦</div><div class="vcard-label">交付物</div><div class="vcard-val">5项</div></div>
+  </div>
+  <div class="summary">项目全貌，一页掌握</div>
+</div>
+
+<!-- Scene 6: Project Handover -->
+<div class="scene s6">
+  <div class="flow">
+    <div class="step-box">
+      <div class="step-icon">✅</div>
+      <div class="step-title">选择文件</div>
+      <div class="step-desc">勾选要转交的项目文件</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step-box">
+      <div class="step-icon">📦</div>
+      <div class="step-title">导出打包</div>
+      <div class="step-desc">.pmaer.zip 完整数据</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step-box">
+      <div class="step-icon">📥</div>
+      <div class="step-title">导入恢复</div>
+      <div class="step-desc">数据完整，继续工作</div>
+    </div>
+  </div>
+  <div class="result-text">无缝交接，不丢数据</div>
+</div>
+
+<!-- Scene 7: Ending -->
+<div class="scene s7">
+  <div style="text-align:center">
+    <div class="end-logo">PMAer</div>
+    <div class="end-version">v0.2.0 — 体验深化版</div>
+    <div class="end-features">
+      <div class="end-feat"><span class="dot"></span> AI 智能分类</div>
+      <div class="end-feat"><span class="dot"></span> 卡片可视化</div>
+      <div class="end-feat"><span class="dot"></span> 项目转交</div>
+      <div class="end-feat"><span class="dot"></span> 利润测算</div>
+    </div>
+    <div class="github">github.com/JasonXHY/ProjectManagement</div>
+  </div>
+</div>
+
+</body>
+</html>

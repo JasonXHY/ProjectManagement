@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - 签字追踪</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; }
+
+.title { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 700; color: #1a1a1a; opacity: 0; }
+
+/* Stats bar */
+.stats { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); display: flex; gap: 24px; opacity: 0; }
+.stat-card { background: white; border-radius: 10px; padding: 16px 28px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.stat-value { font-size: 28px; font-weight: 700; }
+.stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+
+/* Checklist */
+.checklist { position: absolute; top: 220px; left: 50%; transform: translateX(-50%); width: 700px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; opacity: 0; }
+.checklist-header { padding: 14px 20px; border-bottom: 1px solid #f0f0f0; font-size: 14px; font-weight: 600; color: #1a1a1a; display: flex; align-items: center; justify-content: space-between; }
+.checklist-body { padding: 8px 0; }
+.check-item { display: flex; align-items: center; padding: 10px 20px; font-size: 13px; color: #333; border-bottom: 1px solid #f5f5f5; opacity: 0; }
+.check-item:last-child { border-bottom: none; }
+.check-status { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 12px; flex-shrink: 0; }
+.check-status.signed { background: #f6ffed; color: #52c41a; }
+.check-status.pending { background: #fff7e6; color: #faad14; }
+.check-name { flex: 1; }
+.check-file { font-size: 11px; color: #999; }
+
+/*档位标签 */
+.tier-badge { padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #1a1a1a; font-weight: 600; opacity: 0; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+</style>
+</head>
+<body>
+
+<div class="title" style="animation:fadeUp 0.5s ease-out 0.3s forwards">签字追踪</div>
+
+<!-- Stats -->
+<div class="stats" style="animation:fadeUp 0.5s ease-out 0.8s forwards">
+  <div class="stat-card">
+    <div class="stat-value" style="color:#1677ff">19</div>
+    <div class="stat-label">总签字件</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#52c41a">8</div>
+    <div class="stat-label">已签署</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#faad14">11</div>
+    <div class="stat-label">待签署</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#666">A档</div>
+    <div class="stat-label">合同金额 ≥50万</div>
+  </div>
+</div>
+
+<!-- Checklist -->
+<div class="checklist" style="animation:fadeIn 0.5s ease-out 1.5s forwards">
+  <div class="checklist-header">
+    <span>📋 签字清单</span>
+    <span class="tier-badge" style="background:#e6f4ff;color:#1677ff">A档 · 19份</span>
+  </div>
+  <div class="checklist-body">
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 2s forwards">
+      <div class="check-status signed">✓</div>
+      <div class="check-name">合同协议书</div>
+      <div class="check-file">合同-XX项目.pdf</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 2.3s forwards">
+      <div class="check-status signed">✓</div>
+      <div class="check-name">技术方案确认单</div>
+      <div class="check-file">技术方案-v2.pdf</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 2.6s forwards">
+      <div class="check-status signed">✓</div>
+      <div class="check-name">需求确认单</div>
+      <div class="check-file">需求文档v2.docx</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 2.9s forwards">
+      <div class="check-status pending">○</div>
+      <div class="check-name">开发需求设计确认单</div>
+      <div class="check-file" style="color:#faad14">未上传</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 3.2s forwards">
+      <div class="check-status signed">✓</div>
+      <div class="check-name">测试报告</div>
+      <div class="check-file">测试报告-终版.pdf</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 3.5s forwards">
+      <div class="check-status pending">○</div>
+      <div class="check-name">验收报告</div>
+      <div class="check-file" style="color:#faad14">未上传</div>
+    </div>
+    <div class="check-item" style="animation:slideRight 0.3s ease-out 3.8s forwards">
+      <div class="check-status signed">✓</div>
+      <div class="check-name">项目总结报告</div>
+      <div class="check-file">项目总结.pdf</div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 5s forwards">A/B/C 档位，自动生成清单</div>
+
+</body>
+</html>

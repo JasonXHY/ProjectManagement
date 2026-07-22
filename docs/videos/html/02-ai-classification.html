@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - AI智能分类</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; }
+
+.title { position: absolute; top: 40px; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 700; color: #1a1a1a; opacity: 0; }
+
+/* Upload area */
+.upload { position: absolute; left: 80px; top: 160px; width: 300px; height: 320px; border: 2px dashed #d9d9d9; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; opacity: 0; }
+.upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-text { font-size: 14px; color: #999; }
+.file-item { position: absolute; background: white; border-radius: 8px; padding: 10px 16px; font-size: 13px; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 8px; opacity: 0; }
+
+/* AI Brain */
+.ai-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.ai-brain { width: 140px; height: 140px; background: linear-gradient(135deg, #1677ff, #69b1ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 56px; opacity: 0; box-shadow: 0 8px 32px rgba(22,119,255,0.3); }
+.ai-brain.processing { animation: pulse 1.2s ease-in-out infinite; }
+.ai-label { text-align: center; margin-top: 16px; font-size: 14px; color: #1677ff; font-weight: 600; opacity: 0; }
+
+/* Categories */
+.categories { position: absolute; right: 80px; top: 160px; width: 300px; }
+.cat-item { background: white; border-radius: 8px; padding: 14px 18px; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); opacity: 0; transform: translateX(20px); border-left: 4px solid; }
+.cat-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Result */
+.result { position: absolute; bottom: 80px; left: 0; right: 0; text-align: center; font-size: 20px; color: #52c41a; font-weight: 600; opacity: 0; }
+.result-sub { font-size: 14px; color: #999; margin-top: 8px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideLeft { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(22,119,255,0.3); } 50% { transform: scale(1.05); box-shadow: 0 12px 40px rgba(22,119,255,0.4); } }
+@keyframes checkIn { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+</style>
+</head>
+<body>
+
+<div class="title" style="animation:fadeUp 0.5s ease-out 0.3s forwards">AI 智能分类</div>
+
+<!-- Upload area -->
+<div class="upload" style="animation:fadeIn 0.5s ease-out 0.8s forwards">
+  <div class="upload-icon">📁</div>
+  <div class="upload-text">拖拽文件到此处</div>
+</div>
+
+<!-- Files dropping in -->
+<div class="file-item" style="top:180px;left:100px;animation:slideRight 0.4s ease-out 2s forwards">📄 合同-XX项目.pdf</div>
+<div class="file-item" style="top:230px;left:110px;animation:slideRight 0.4s ease-out 2.3s forwards">📋 需求文档v2.docx</div>
+<div class="file-item" style="top:280px;left:90px;animation:slideRight 0.4s ease-out 2.6s forwards">📊 成本评估.xlsx</div>
+<div class="file-item" style="top:330px;left:105px;animation:slideRight 0.4s ease-out 2.9s forwards">📝 会议纪要-0615.md</div>
+
+<!-- AI Brain -->
+<div class="ai-center">
+  <div class="ai-brain" style="animation:scaleIn 0.5s ease-out 4s forwards">🧠</div>
+  <div class="ai-label" style="animation:fadeIn 0.4s ease-out 4.5s forwards">AI 正在分析...</div>
+</div>
+
+<!-- Categories -->
+<div class="categories">
+  <div class="cat-item" style="border-color:#1677ff;animation:slideLeft 0.4s ease-out 6s forwards">
+    <div class="cat-dot" style="background:#1677ff"></div>
+    <div>
+      <div style="font-weight:600;color:#1a1a1a">售前 → 合同</div>
+      <div style="font-size:12px;color:#999;margin-top:2px">合同-XX项目.pdf</div>
+    </div>
+    <div style="margin-left:auto;color:#52c41a;font-size:18px">✓</div>
+  </div>
+  <div class="cat-item" style="border-color:#52c41a;animation:slideLeft 0.4s ease-out 6.4s forwards">
+    <div class="cat-dot" style="background:#52c41a"></div>
+    <div>
+      <div style="font-weight:600;color:#1a1a1a">需求 → 需求文档</div>
+      <div style="font-size:12px;color:#999;margin-top:2px">需求文档v2.docx</div>
+    </div>
+    <div style="margin-left:auto;color:#52c41a;font-size:18px">✓</div>
+  </div>
+  <div class="cat-item" style="border-color:#faad14;animation:slideLeft 0.4s ease-out 6.8s forwards">
+    <div class="cat-dot" style="background:#faad14"></div>
+    <div>
+      <div style="font-weight:600;color:#1a1a1a">方案 → 成本评估</div>
+      <div style="font-size:12px;color:#999;margin-top:2px">成本评估.xlsx</div>
+    </div>
+    <div style="margin-left:auto;color:#52c41a;font-size:18px">✓</div>
+  </div>
+  <div class="cat-item" style="border-color:#722ed1;animation:slideLeft 0.4s ease-out 7.2s forwards">
+    <div class="cat-dot" style="background:#722ed1"></div>
+    <div>
+      <div style="font-weight:600;color:#1a1a1a">启动 → 会议纪要</div>
+      <div style="font-size:12px;color:#999;margin-top:2px">会议纪要-0615.md</div>
+    </div>
+    <div style="margin-left:auto;color:#52c41a;font-size:18px">✓</div>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="result" style="animation:fadeUp 0.5s ease-out 8.5s forwards">
+  分类完成，4 个文件已归档
+  <div class="result-sub">项目阶段自动推进：售前 → 进行中</div>
+</div>
+
+</body>
+</html>

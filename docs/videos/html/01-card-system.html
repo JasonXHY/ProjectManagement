@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>PMAer - 卡片系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { width: 1280px; height: 720px; background: #f5f5f5; font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; overflow: hidden; }
+
+.title-bar { position: absolute; top: 0; left: 0; right: 0; height: 64px; background: white; display: flex; align-items: center; padding: 0 40px; border-bottom: 1px solid #f0f0f0; z-index: 10; }
+.title-text { font-size: 20px; font-weight: 600; color: #1a1a1a; }
+.title-badge { margin-left: 12px; padding: 2px 10px; border-radius: 4px; font-size: 12px; }
+
+.stage-tabs { position: absolute; top: 80px; left: 40px; display: flex; gap: 8px; z-index: 10; }
+.stage-tab { padding: 8px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; border: 1px solid #d9d9d9; background: white; color: #666; opacity: 0; }
+.stage-tab.active { background: #1677ff; color: white; border-color: #1677ff; }
+
+.card-area { position: absolute; top: 140px; left: 40px; right: 40px; bottom: 40px; display: grid; gap: 16px; }
+.card-area.g3 { grid-template-columns: repeat(3, 1fr); }
+.card-area.g4 { grid-template-columns: repeat(4, 1fr); }
+
+.vcard { background: white; border-radius: 10px; padding: 24px; border: 1px solid #f0f0f0; opacity: 0; transform: translateY(12px); }
+.vcard-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.vcard-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.vcard-title { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.vcard-body { font-size: 13px; color: #666; line-height: 1.8; }
+.vcard-value { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-top: 8px; }
+
+.bottom-text { position: absolute; bottom: 40px; left: 0; right: 0; text-align: center; font-size: 18px; color: #1a1a1a; font-weight: 600; opacity: 0; }
+
+/* Scene transitions */
+.scene { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; opacity: 0; }
+.scene.show { opacity: 1; }
+
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- Title -->
+<div class="title-bar" style="opacity:0;animation:fadeIn 0.4s ease-out 0.2s forwards">
+  <div class="title-text">项目卡片系统</div>
+</div>
+
+<!-- Stage tabs -->
+<div class="stage-tabs">
+  <div class="stage-tab active" style="opacity:0;animation:fadeIn 0.3s ease-out 0.6s forwards">售前阶段</div>
+  <div class="stage-tab" style="opacity:0;animation:fadeIn 0.3s ease-out 3.5s forwards">进行中阶段</div>
+  <div class="stage-tab" style="opacity:0;animation:fadeIn 0.3s ease-out 6.5s forwards">关闭阶段</div>
+</div>
+
+<!-- Presale cards (0-10s) -->
+<div class="card-area g3" id="presale">
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 1s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#e6f4ff">📋</div>
+      <div class="vcard-title">项目信息</div>
+    </div>
+    <div class="vcard-body">
+      <div>项目名称：智慧城市项目</div>
+      <div>客户：XX科技有限公司</div>
+      <div>负责人：张经理</div>
+    </div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 1.3s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#fff7e6">💰</div>
+      <div class="vcard-title">合同概览</div>
+    </div>
+    <div class="vcard-value">¥128.5万</div>
+    <div class="vcard-body" style="margin-top:8px">
+      <div>已确认收入：¥85.0万</div>
+      <div style="height:6px;background:#f0f0f0;border-radius:3px;margin-top:8px"><div style="width:66%;height:100%;background:#1677ff;border-radius:3px"></div></div>
+    </div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 1.6s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#f6ffed">📊</div>
+      <div class="vcard-title">项目评估</div>
+    </div>
+    <div class="vcard-value" style="color:#52c41a">利润率 32.5%</div>
+    <div class="vcard-body" style="margin-top:8px">
+      <div>内部人天：45天</div>
+      <div>外包人天：20天</div>
+    </div>
+  </div>
+</div>
+
+<!-- In-progress cards (10-20s) -->
+<div class="card-area g4" id="progress" style="opacity:0">
+  <div class="vcard" style="animation:cardIn 0.35s ease-out 10.5s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#e6f4ff">📝</div>
+      <div class="vcard-title">需求跟踪</div>
+    </div>
+    <div class="vcard-value">12 项需求</div>
+    <div class="vcard-body" style="margin-top:8px;color:#52c41a">已完成 8 项</div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.35s ease-out 10.8s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#fff2e8">⚠️</div>
+      <div class="vcard-title">关键问题</div>
+    </div>
+    <div class="vcard-value" style="color:#ff4d4f">3 个问题</div>
+    <div class="vcard-body" style="margin-top:8px">1个高优先级</div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.35s ease-out 11.1s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#f6ffed">✍️</div>
+      <div class="vcard-title">签字追踪</div>
+    </div>
+    <div class="vcard-value">8 / 19</div>
+    <div class="vcard-body" style="margin-top:8px">A档 · 已签8份</div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.35s ease-out 11.4s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#fff7e6">🚀</div>
+      <div class="vcard-title">拓展商机</div>
+    </div>
+    <div class="vcard-value">2 项</div>
+    <div class="vcard-body" style="margin-top:8px">二期规划进行中</div>
+  </div>
+</div>
+
+<!-- Closed cards (20-28s) -->
+<div class="card-area g3" id="closed" style="opacity:0">
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 20.5s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#f6ffed">📦</div>
+      <div class="vcard-title">交付物清单</div>
+    </div>
+    <div class="vcard-value">5 项交付物</div>
+    <div class="vcard-body" style="margin-top:8px">全部已交付</div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 20.8s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#e6f4ff">📈</div>
+      <div class="vcard-title">项目总结</div>
+    </div>
+    <div class="vcard-body">
+      <div>成果：按时交付，客户满意</div>
+      <div>经验：需求变更管理需加强</div>
+    </div>
+  </div>
+  <div class="vcard" style="animation:cardIn 0.4s ease-out 21.1s forwards">
+    <div class="vcard-header">
+      <div class="vcard-icon" style="background:#fff7e6">💹</div>
+      <div class="vcard-title">利润汇总</div>
+    </div>
+    <div class="vcard-value" style="color:#52c41a">¥41.8万</div>
+    <div class="vcard-body" style="margin-top:8px">净利润率 32.5%</div>
+  </div>
+</div>
+
+<!-- Bottom text -->
+<div class="bottom-text" style="animation:fadeUp 0.5s ease-out 27s forwards">10 个卡片，按阶段智能切换</div>
+
+<script>
+// Show/hide card groups based on time
+setTimeout(() => { document.getElementById('presale').style.opacity = '1'; }, 100);
+setTimeout(() => { document.getElementById('presale').style.opacity = '0'; document.getElementById('presale').style.transition = 'opacity 0.3s'; }, 9500);
+setTimeout(() => { document.getElementById('progress').style.opacity = '1'; document.getElementById('progress').style.transition = 'opacity 0.3s'; }, 10000);
+setTimeout(() => { document.getElementById('progress').style.opacity = '0'; document.getElementById('progress').style.transition = 'opacity 0.3s'; }, 19500);
+setTimeout(() => { document.getElementById('closed').style.opacity = '1'; document.getElementById('closed').style.transition = 'opacity 0.3s'; }, 20000);
+</script>
+
+</body>
+</html>
