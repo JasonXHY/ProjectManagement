@@ -7,7 +7,9 @@ export default {
     if (input.tool !== "write" && input.tool !== "edit") return
 
     const filePath = input.args?.file_path || input.args?.path || ""
-    if (!filePath.includes("docs/") || filePath.includes("00-INDEX.md")) return
+    // Normalize path separators for cross-platform compatibility
+    const normalizedPath = filePath.replace(/\\/g, "/")
+    if (!normalizedPath.includes("docs/") || normalizedPath.includes("00-INDEX.md")) return
 
     // Check if this is a new file creation (write) or edit in docs/
     const docsDir = join(process.cwd(), "docs")
@@ -19,11 +21,11 @@ export default {
     const indexContent = readFileSync(indexPath, "utf-8")
 
     // Extract filename from path
-    const fileName = filePath.split("/").pop() || filePath.split("\\").pop() || ""
+    const fileName = normalizedPath.split("/").pop() || ""
     if (!fileName) return
 
     // Determine which directory it's in
-    const dirMatch = filePath.match(/docs\/(\d{2}-\w+)\//)
+    const dirMatch = normalizedPath.match(/docs\/(\d{2}-\w+)\//)
     if (!dirMatch) return
 
     const dirName = dirMatch[1]

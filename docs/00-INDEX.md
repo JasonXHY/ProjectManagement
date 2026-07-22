@@ -2,7 +2,7 @@
 
 > 最后更新：2026-06-30
 > 用途：AI Agent 文档导航入口
-> 方法论：参照 `04-guides/2026-07-03-guide-document-organization.md`
+> 方法论：参照 `侧耳倾听` 项目文档组织指南
 
 ---
 
@@ -33,6 +33,7 @@
 | `report` | 复盘报告 | 03-reports/ |
 | `guide` | 开发指南 | 04-guides/ |
 | `issue` | 问题记录 | 05-issues/ |
+| `task` | 已完成任务 | 06-archive/ |
 
 ---
 
@@ -66,7 +67,7 @@
 | 2026-06-29 | spec-import-dialog-fix.md | 导入弹窗修复规格 |
 | 2026-06-29 | spec-test-round-fixes.md | 测试轮次修复规格 |
 
-## 02-plans/ 实施方案 (16 files)
+## 02-plans/ 实施方案 (20 files)
 
 | 日期 | 文件 | 说明 | 状态 |
 |------|------|------|------|
@@ -128,12 +129,24 @@
 | 2026-06-18 | issue-bugfix-investigation.md | 5 个 Bug 排查 | 已修复 |
 | 2026-06-27 | issue-comprehensive-audit.md | 综合审计报告 | 活跃 |
 
-## 06-archive/ 历史归档 (6 files)
+## 06-archive/ 历史归档 (18 files)
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
 | 2026-06-15 | icon-design-options.html | 图标设计选项 |
 | 2026-06-15 | 用户操作手册-PMAer-v0.1.2-backup.md | 旧版手册备份 |
+| 2026-06-16 | task-G01-subcategory-data-model.md | 子分类数据模型任务 |
+| 2026-06-16 | task-G02-nested-folder-creation.md | 嵌套文件夹创建任务 |
+| 2026-06-16 | task-G03-classify-prompt.md | 分类Prompt任务 |
+| 2026-06-16 | task-G04-subcategory-ui.md | 子分类管理UI任务 |
+| 2026-06-16 | task-G05-csv-image-extraction.md | CSV/图片提取任务 |
+| 2026-06-16 | task-G06-manual-reclassify.md | 手动重分类任务 |
+| 2026-06-16 | task-G07-stage-reorder.md | 阶段排序任务 |
+| 2026-06-16 | task-G08-chat-timer-retry.md | 对话计时重试任务 |
+| 2026-06-16 | task-G09-provider-list.md | 供应商列表任务 |
+| 2026-06-16 | task-G10-e2e-tests.md | E2E测试任务 |
+| 2026-06-16 | task-human-verification.md | 人工验证任务 |
+| 2026-06-16 | task-readme.md | 任务说明 |
 | 2026-06-17 | bugfix-proposal.md | 早期 Bug 修复提案 |
 | 2026-06-17 | crash-investigation.md | 崩溃调查 |
 | 2026-06-17 | crash-investigation-v2.md | 崩溃调查 v2 |
