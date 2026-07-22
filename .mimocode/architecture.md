@@ -1,6 +1,6 @@
 # 技术架构
 
-> 最后更新：2026-06-13
+> 最后更新：2026-06-30
 
 ---
 
@@ -42,6 +42,7 @@ C:\NewProject\
 │   │   ├── Chat/ChatWindow.tsx    # AI对话
 │   │   ├── ProjectHome/           # 项目首页（10个子组件）
 │   │   ├── ProjectList/           # 项目列表
+│   │   ├── FeatureCards/          # 9个卡片组件
 │   │   ├── Settings/SettingsPage.tsx
 │   │   └── common/
 │   ├── services/                  # 前端服务层
@@ -53,40 +54,37 @@ C:\NewProject\
 │   ├── preload.ts                 # IPC桥接
 │   ├── database/                  # 数据库CRUD
 │   ├── ipc/                       # IPC处理器
-│   ├── services/                  # AI服务、文件提取
+│   ├── services/                  # AI服务、文件提取、签字检测
 │   ├── prompts/                   # Prompt模板
-│   └── utils/                     # 工具函数
-├── docs/                          # 项目文档
-├── .qoderwork/                    # QoderWork设计文件
+│   └── utils/                     # 工具函数（含metadata-queue）
+├── docs/                          # 项目文档（编号目录结构）
+│   ├── 00-INDEX.md                # 文档索引
+│   ├── 01-specs/                  # 需求规格
+│   ├── 02-plans/                  # 实施方案
+│   ├── 03-reports/                # 复盘报告
+│   ├── 04-guides/                 # 开发指南
+│   ├── 05-issues/                 # 问题记录
+│   ├── 06-archive/                # 历史归档
+│   ├── 99-mockups/                # UI原型
+│   └── screenshots/               # 截图
 ├── .mimocode/                     # 项目记忆（本目录）
-└── .archive/                      # 归档文件
+└── .qoderwork/                    # Qoder设计文件
 ```
 
 ---
 
-## 关键文件位置
+## 两套阶段体系（重要）
 
-### 配置文件
-- `package.json` — 依赖配置
-- `tsconfig.json` — 前端TS配置
-- `electron/tsconfig.json` — Electron TS配置
-- `vite.config.ts` — Vite配置
-- `vitest.config.ts` — 测试配置
-- `index.html` — Vite入口
-- `.gitignore`
+- **项目阶段**（DEFAULT_STAGES）：`electron/shared/stages.ts`
+  - 3个阶段：售前 → 进行中 → 关闭
+  - 用于项目状态管理
 
-### 数据库
-- 数据库文件：`{userData}/projects.db`
-- 项目文件夹：`{userData}/projects/{name}_{id}/`
-- AI元数据：`.ai/project-summary.md`、`.ai/project-info.md`
+- **文件分类阶段**（STAGE_DEFINITIONS）：`electron/shared/stages.ts`
+  - 10个阶段：售前、启动、需求、方案、构建、测试、上线、验收、转客户成功、关闭
+  - 每个阶段含子分类（3-7个），按文档用途区分
+  - 用于文件归类
 
-### 设计规范
-- `.qoderwork/design-system/v1-design-tokens.md` — 完整设计规范（543行）
-
-### 评审材料
-- `C:\Users\kingdee\Desktop\project-manager-requirements\01-业务需求规格说明书-v2.md`
-- `C:\Users\kingdee\Desktop\project-manager-requirements\02-评审指南-v2.md`
-- `C:\Users\kingdee\Desktop\project-manager-review-v2.zip`
+- **两者关系**：独立运作。AI分类时需同时判断：(1)文件属于哪个分类阶段，(2)该分类阶段是否触发项目阶段推进
 
 ---
 
@@ -99,16 +97,21 @@ C:\NewProject\
 | C3 | 进度卡片显示状态而非百分比 | 更直观 |
 | C4 | Prompt支持用户自定义 | 灵活性需求 |
 | C5 | 签字检测用OffscreenCanvas | 避免隐藏窗口安全风险 |
-| C6 | 数据库写入用Promise队列 | 防止并发交错 |
+| C6 | 数据库写入用metadata-queue | 防止5个handler并发覆盖 |
+| D47 | 移除AI内容截断 | 上下文窗口≥128K，截断影响准确性 |
+| D52 | UUID文件夹标识 | 解决切换存储路径后路径断裂 |
 
 ---
 
 ## 数据库Schema
 
 ```sql
-projects (id, name, category_type, custom_stages, current_stage, ai_suggested_stage, metadata, milestones, created_at, updated_at)
+projects (id, name, category_type, custom_stages, current_stage, ai_suggested_stage,
+          metadata, milestones, folder_uuid, created_at, updated_at)
 
-files (id, project_id, filename, original_path, stored_path, category, stage, file_type, file_size, content_extracted, is_analyzed, has_signature, created_at)
+files (id, project_id, filename, original_path, stored_path, category, stage,
+       subcategory, file_type, file_size, content_extracted, is_analyzed,
+       signature_status, ai_summary, ai_key_info, created_at)
 
 chat_messages (id, project_id, session_id, role, content, token_count, created_at)
 

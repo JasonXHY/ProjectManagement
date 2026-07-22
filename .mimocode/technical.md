@@ -1,6 +1,6 @@
 # 技术发现
 
-> 最后更新：2026-06-13
+> 最后更新：2026-06-30
 
 ---
 
@@ -15,7 +15,7 @@
 - Vite dev server在Electron中正常工作，端口1234
 - `electron:dev` 脚本：concurrently启动Vite + Electron
 - `start-dev.bat`：双击即可启动（含TypeScript编译）
-- `start-dev-quick.bat`：跳过编译的快速启动
+- 修改 `electron/` 目录下的TypeScript后，必须在 `electron/` 目录执行 `npx tsc` 重新编译
 
 ---
 
@@ -23,19 +23,14 @@
 
 ### sql.js注意事项
 - sql.js是同步操作，但fs.writeFileSync从IPC handler调用可能交错
-- Promise链序列化：`saveQueue = saveQueue.then(() => { ... })`
+- **metadata-queue**：`electron/utils/metadata-queue.ts`，所有metadata写入通过 `enqueueMetadataWrite` 串行化
 - `saveDatabase()`每次调用都序列化整个数据库写磁盘
 - 批量操作用`beginBatch()/endBatch()`跳过自动保存
 
 ### 迁移模式
 - `CREATE TABLE IF NOT EXISTS`不修改已有表结构
 - 新增列用 `ALTER TABLE ... ADD COLUMN` + try/catch（列已存在则忽略）
-- 示例：`database/index.ts:80` 添加session_id列迁移
-
-### 索引
-- `idx_chat_project_session ON chat_messages(project_id, session_id)`
-- `idx_files_project ON files(project_id)`
-- `idx_files_category ON files(project_id, category)`
+- folder_uuid列迁移：自动为缺少 `folder_uuid` 的旧项目生成UUID
 
 ---
 
@@ -43,14 +38,15 @@
 
 ### OpenAI兼容协议
 - 所有厂商走OpenAI兼容协议，通过base_url + chatPath区分
-- `getProviderById(id)` 和 `getFullApiUrl(id)` 在 `shared/model-registry.ts`
 - 通用Provider：`electron/services/ai-service.ts` 中的 `OpenAICompatibleProvider`
 
 ### safeStorage加密
-- `electron.safeStorage.encryptString(value)` 返回Buffer，可base64编码存SQLite
-- `electron.safeStorage.decryptString(buf)` 接受Buffer返回明文
-- 迁移策略：读取时检测非base64格式 → 加密 → 回写
-- API Key字段：ai_api_key、classify_api_key、zhipu_api_key、mimo_api_key
+- API Key在本地SQLite中明文存储（桌面本地应用安全风险可控）
+- safeStorage加密链断裂，已移除加密方案
+
+### AI内容截断
+- 已移除所有 `substring()` 截断，全量发送文件内容给AI
+- 当前支持的AI模型上下文窗口均≥128K
 
 ---
 
@@ -58,36 +54,38 @@
 
 ### Tailwind v4兼容
 - `@tailwindcss/vite` 插件支持v3风格config文件
-- CSS入口使用 `@import "tailwindcss"` 而非旧版 `@tailwind base/components/utilities`
-- `tailwind.config.ts` 中的content/theme/plugins配置均兼容
+- CSS入口使用 `@import "tailwindcss"`
 
-### AntD Form竞态
-- `initialValue` 仅首渲染生效，异步数据到达后form不会更新
-- 修复：异步加载完成后调用 `form.setFieldsValue()`
-- 示例：SettingsPage.tsx prompts加载
+### Ant Design 6 迁移发现
+- `Space` `direction` prop deprecated — use `orientation`
+- Button CJK text has internal space — 测试用 regex `/测\s*算/`
+- `CheckboxValueType` removed — use `(string | number | boolean)[]`
+- `Spin` `tip` renamed to `description`
+- `Input` `addonAfter` deprecated — use `Space.Compact`
 
 ### 组件拆分模式
-- 大型组件可按 styles→hooks→子组件→主文件 组合拆分
-- ProjectHome.tsx 1204行成功拆分为144行主文件+7个子组件
-- 自定义Hook承载所有状态+业务逻辑
+- styles → hooks → 子组件 → 主文件组合
+- ProjectHome.tsx 1204行 → 144行主文件 + 7个子组件
 
 ---
 
 ## 踩坑记录
 
-### DEFAULT_STAGES vs 分类阶段
-- `DEFAULT_STAGES = ['售前', '进行中', '关闭']` 是项目级别阶段（project status）
-- 设计规范的11个阶段是分类阶段（classification）
-- 两个是独立概念，不要混淆
+### UUID文件夹标识方案（D52）
+- 文件夹名：仅 `{sanitized_name}`（无编号）
+- 数据库新增 `folder_uuid` 字段
+- `resolveProjectPath` 4级fallback：UUID→scan .uuid→旧 _${id} 后缀→名称匹配
 
-### H2修复需要四点联动
-- preload.ts（forward sessionId）
-- ai-handlers.ts（WHERE加AND session_id=?）
-- aiService.ts（pass sessionId）
-- ChatWindow.tsx（pass currentSessionId）
-- 只改一处会导致前后端参数不匹配
+### metadata竞态修复
+- 5个handler并发写入metadata导致数据丢失
+- 新建 `electron/utils/metadata-queue.ts`，串行化所有写入
 
-### 签字检测方案演变
-- 原方案：pdfjs-dist getOperatorList（准确率60-70%，无法处理扫描件）
-- 中间方案：Electron隐藏BrowserWindow渲染+截图（有安全风险）
-- 当前方案：FileExtractor.pdfToImage + OffscreenCanvas（无额外依赖）
+### 360拦截electron二进制
+- 360企业版在v0.1.2到v0.2.0之间更新了监控规则
+- 新规则拦截electron二进制文件解压
+- 非目录位置问题，非electron版本问题
+
+### 构建相关
+- CSC_IDENTITY_AUTO_DISCOVERY=false 跳过代码签名
+- NODE_TLS_REJECT_UNAUTHORIZED=0 绕过SSL证书问题
+- build/目录不打入asar，运行时图标需通过 extraResources 分发
